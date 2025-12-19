@@ -1,0 +1,75 @@
+<% content_for :title, "Recipes" %>
+
+<%# Wrap in view-switcher controller %>
+<div data-controller="view-switcher">
+  <%# App Toolbar %>
+  <%= render "recipes/topbar" %>
+
+  <%# Content Scroll Area %>
+  <div class="flex-1 overflow-y-auto p-6 scroll-smooth">
+
+    <%# Flash Notice %>
+    <% if notice.present? %>
+      <div class="mb-6 flex items-center gap-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 px-4 py-3 rounded-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span class="text-sm"><%= notice %></span>
+      </div>
+    <% end %>
+
+    <% if @recipes.any? %>
+
+      <%# GRID VIEW - Masonry Layout %>
+      <div data-view-switcher-target="gridView">
+        <div data-controller="masonry" class="pb-20">
+          <%# Recipe Cards %>
+          <% @recipes.each do |recipe| %>
+            <div class="masonry-item px-3 mb-6">
+              <%= render "recipes/recipe_card", recipe: recipe %>
+            </div>
+          <% end %>
+
+          <%# Add New Recipe Placeholder Card %>
+          <div class="masonry-item px-3 mb-6">
+            <%= link_to new_recipe_path, class: "block border-2 border-dashed border-stone-200 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center p-8 text-gray-400 dark:text-gray-500 hover:border-amber-800/50 dark:hover:border-amber-700/50 hover:text-amber-800 dark:hover:text-amber-500 hover:bg-amber-800/5 dark:hover:bg-amber-500/5 transition-colors group min-h-[156px]" do %>
+              <div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-amber-800/10 dark:group-hover:bg-amber-500/10 text-gray-400 dark:text-gray-500 group-hover:text-amber-800 dark:group-hover:text-amber-500 flex items-center justify-center mb-3 transition-colors">
+                <%= lucide_icon "plus", class: "size-6" %>
+              </div>
+              <span class="font-medium text-sm">Create New Recipe</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# LIST VIEW - Horizontal Cards %>
+      <div data-view-switcher-target="listView" class="hidden">
+        <div class="max-w-4xl mx-auto pb-20">
+          <%# Recipe List Items %>
+          <% @recipes.each do |recipe| %>
+            <%= render "recipes/recipe_list_item", recipe: recipe %>
+          <% end %>
+
+          <%# Add New Recipe List Item %>
+          <%= link_to new_recipe_path, class: "w-full border-2 border-dashed border-stone-200 dark:border-gray-700 rounded-lg flex items-center justify-center p-4 text-gray-400 dark:text-gray-500 hover:border-amber-800/50 dark:hover:border-amber-700/50 hover:text-amber-800 dark:hover:text-amber-500 hover:bg-amber-800/5 dark:hover:bg-amber-500/5 transition-colors group mt-4" do %>
+            <div class="flex items-center gap-2 font-medium text-sm">
+              <%= lucide_icon "plus", class: "size-4" %>
+              <span>Create New Recipe</span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    <% else %>
+      <%# Empty State %>
+      <div class="h-full flex flex-col items-center justify-center text-center py-20 opacity-60">
+        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+          <%= lucide_icon "search", class: "size-6 text-gray-400 dark:text-gray-500" %>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">No recipes found</h3>
+        <p class="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mb-4">
+          Start building your recipe collection by adding your first recipe.
+        </p>
+        <%= link_to "Create Your First Recipe", new_recipe_path, class: "text-amber-800 dark:text-amber-500 font-medium hover:underline" %>
+      </div>
+    <% end %>
+  </div>
+</div>

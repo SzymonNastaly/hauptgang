@@ -1,0 +1,57 @@
+<%# Recipe List Item for List View - Horizontal layout with thumbnail %>
+
+<%= link_to recipe, class: "group flex items-center gap-4 p-3 bg-white dark:bg-gray-800 border border-stone-200 dark:border-gray-700 rounded-lg hover:border-amber-800/30 dark:hover:border-amber-700/30 transition-all cursor-pointer mb-2 shadow-sm hover:shadow-md" do %>
+
+  <%# Thumbnail - Fixed size with placeholder %>
+  <div class="w-16 h-16 shrink-0 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden relative border border-gray-100 dark:border-gray-700">
+    <%# TODO: Add image_url field to recipes table %>
+    <% if false %>
+      <%# <%= image_tag recipe.image_url, alt: recipe.name, class: "w-full h-full object-cover" %>
+    <% else %>
+      <%# No Image Placeholder %>
+      <div class="w-full h-full flex items-center justify-center bg-stone-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600">
+        <%= lucide_icon "chef-hat", class: "size-5" %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Content - Takes remaining space %>
+  <div class="flex-1 min-w-0 py-1">
+    <%# Title and Category Badge %>
+    <div class="flex items-center gap-3 mb-1">
+      <h3 class="font-bold text-gray-900 dark:text-gray-100 truncate">
+        <%= recipe.name %>
+      </h3>
+      <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-500 bg-amber-800/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm shrink-0">
+        <%# TODO: Add category field to recipes table %>
+        Recipe
+      </span>
+    </div>
+
+    <%# Description - Single line truncate %>
+    <p class="text-gray-500 dark:text-gray-400 text-xs truncate mb-1.5">
+      <%= recipe.description || "No description available." %>
+    </p>
+
+    <%# Metadata - Time only %>
+    <div class="flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500 font-medium">
+      <div class="flex items-center gap-1">
+        <%= lucide_icon "clock", class: "size-3" %>
+        <%# TODO: Add prep_time field to recipes table %>
+        <span>30m</span>
+      </div>
+    </div>
+  </div>
+
+  <%# Action Buttons - Visible on hover %>
+  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity px-2">
+    <%# Favorite Button - Visual only for now %>
+    <button type="button" class="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+      <%= lucide_icon "heart", class: "size-4 #{recipe.favorite? ? 'fill-red-500 text-red-500' : ''}" %>
+    </button>
+    <%# More Actions Button - Placeholder %>
+    <button type="button" class="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-gray-400 dark:text-gray-500 hover:text-amber-800 dark:hover:text-amber-500 transition-colors">
+      <%= lucide_icon "more-horizontal", class: "size-4" %>
+    </button>
+  </div>
+<% end %>

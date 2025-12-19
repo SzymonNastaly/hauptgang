@@ -1,0 +1,13 @@
+<div class="shadow-sm">
+  <div>
+    <%= link_to "RecipeTracker", root_path, class: "text-xl" %>
+  </div>
+  <div>
+    <% if authenticated? %>
+      <%= button_to "Logout", session_path, method: :delete %>
+    <% else %>
+      <%= link_to "Login", new_session_path %>
+      <%= link_to "Sign Up", new_registration_path %>
+    <% end %>
+  </div>
+</div>

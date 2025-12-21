@@ -10,15 +10,12 @@ export default class extends Controller {
   connect() {
     // Load saved preference from localStorage
     const savedMode = localStorage.getItem("recipeViewMode");
-    console.log("connect() - Loaded from localStorage:", savedMode);
     if (savedMode && (savedMode === "grid" || savedMode === "list")) {
       this.modeValue = savedMode;
-      console.log("connect() - Set modeValue to:", this.modeValue);
     }
 
     // Apply the current mode
     this.applyMode();
-    console.log("connect() - Final mode after applyMode:", this.modeValue);
 
     // Mark as initialized - now we can save preferences
     this.initialized = true;
@@ -81,6 +78,7 @@ export default class extends Controller {
   }
 
   // Update button styles to reflect active state
+  // Note: Updates ALL button sets (mobile + desktop)
   updateButtons() {
     if (!this.hasGridButtonTarget || !this.hasListButtonTarget) return;
 
@@ -98,16 +96,25 @@ export default class extends Controller {
       "dark:hover:text-gray-400",
     ];
 
+    // Update ALL grid buttons (plural targets)
     if (this.modeValue === "grid") {
-      this.gridButtonTarget.classList.add(...activeClasses);
-      this.gridButtonTarget.classList.remove(...inactiveClasses);
-      this.listButtonTarget.classList.remove(...activeClasses);
-      this.listButtonTarget.classList.add(...inactiveClasses);
+      this.gridButtonTargets.forEach(btn => {
+        btn.classList.add(...activeClasses);
+        btn.classList.remove(...inactiveClasses);
+      });
+      this.listButtonTargets.forEach(btn => {
+        btn.classList.remove(...activeClasses);
+        btn.classList.add(...inactiveClasses);
+      });
     } else {
-      this.listButtonTarget.classList.add(...activeClasses);
-      this.listButtonTarget.classList.remove(...inactiveClasses);
-      this.gridButtonTarget.classList.remove(...activeClasses);
-      this.gridButtonTarget.classList.add(...inactiveClasses);
+      this.listButtonTargets.forEach(btn => {
+        btn.classList.add(...activeClasses);
+        btn.classList.remove(...inactiveClasses);
+      });
+      this.gridButtonTargets.forEach(btn => {
+        btn.classList.remove(...activeClasses);
+        btn.classList.add(...inactiveClasses);
+      });
     }
   }
 
@@ -118,15 +125,11 @@ export default class extends Controller {
 
   // Stimulus value changed callback - automatically called when modeValue changes
   modeValueChanged() {
-    console.log("modeValueChanged called, new mode:", this.modeValue);
     this.applyMode();
 
     // Only save if we're initialized (don't save during initial setup)
     if (this.initialized) {
       this.savePreference();
-      console.log("Saved to localStorage:", localStorage.getItem("recipeViewMode"));
-    } else {
-      console.log("Skipped save (not initialized yet)");
     }
   }
 }

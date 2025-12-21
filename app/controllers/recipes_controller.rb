@@ -1,9 +1,20 @@
 class RecipesController < ApplicationController
-  before_action :set_recipe, only: %i[ show edit update destroy ]
+  before_action :set_recipe, only: %i[ show edit update destroy toggle_favorite ]
 
   # GET /recipes or /recipes.json
   def index
     @recipes = Recipe.all
+
+    # Filter by favorites if requested
+    @recipes = @recipes.favorited if params[:view] == "favorites"
+
+    # Filter by tag if requested
+    if params[:tag].present?
+      @selected_tag = Tag.find_by(slug: params[:tag])
+      @recipes = @recipes.joins(:tags).where(tags: { id: @selected_tag.id }) if @selected_tag
+    end
+
+    @tags = Tag.all.order(:name)
   end
 
   # GET /recipes/1 or /recipes/1.json
@@ -54,6 +65,16 @@ class RecipesController < ApplicationController
     respond_to do |format|
       format.html { redirect_to recipes_path, notice: "Recipe was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
+    end
+  end
+
+  # PATCH /recipes/1/toggle_favorite
+  def toggle_favorite
+    @recipe.update(favorite: !@recipe.favorite)
+
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to recipes_path }
     end
   end
 

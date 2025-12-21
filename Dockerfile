@@ -2,8 +2,8 @@
 # check=error=true
 
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t recipetracker .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name recipetracker recipetracker
+# docker build -t notjustpesto .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name notjustpesto notjustpesto
 
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 

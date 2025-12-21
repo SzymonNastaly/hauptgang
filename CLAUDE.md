@@ -18,7 +18,7 @@ The goal is learning and understanding, not just getting features built quickly.
 
 ## Project Overview
 
-RecipeTracker is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails features including Hotwire (Turbo and Stimulus), SQLite databases, and the Solid suite (Solid Cache, Solid Queue, Solid Cable) for caching, background jobs, and Action Cable.
+NotJustPesto is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails features including Hotwire (Turbo and Stimulus), SQLite databases, and the Solid suite (Solid Cache, Solid Queue, Solid Cable) for caching, background jobs, and Action Cable.
 
 ## Development Commands
 
@@ -114,7 +114,7 @@ bin/kamal dbc               # Open database console on deployed server
 - Docker-based deployment with Thruster as the HTTP server
 - Deployment config in `config/deploy.yml`
 - Server configured at `192.168.0.1` (update for your environment)
-- Persistent storage volume: `recipetracker_storage:/rails/storage`
+- Persistent storage volume: `notjustpesto_storage:/rails/storage`
 
 ## Code Style
 
@@ -134,7 +134,7 @@ All checks must pass before merging.
 
 ## Key Files
 
-- `config/application.rb`: Main application configuration (module: `Recipetracker`)
+- `config/application.rb`: Main application configuration (module: `NotJustPesto`)
 - `config/routes.rb`: Route definitions
 - `config/database.yml`: Multi-database configuration
 - `config/deploy.yml`: Kamal deployment settings

@@ -9,7 +9,7 @@
   <%= render "recipes/topbar" %>
 
   <%# Content Scroll Area %>
-  <div class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth pb-24 md:pb-6">
+  <div class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth pb-8 md:pb-6">
 
     <%# Mobile View Context (Mobile Only) %>
     <div class="md:hidden mb-4">
@@ -39,7 +39,7 @@
 
       <%# GRID VIEW - Masonry Layout %>
       <div data-view-switcher-target="gridView">
-        <div data-controller="masonry" class="pb-20">
+        <div data-controller="masonry">
           <%# Recipe Cards %>
           <% @recipes.each do |recipe| %>
             <div class="masonry-item px-3 mb-6">
@@ -61,7 +61,7 @@
 
       <%# LIST VIEW - Horizontal Cards %>
       <div data-view-switcher-target="listView" class="hidden">
-        <div class="max-w-4xl mx-auto pb-20">
+        <div class="max-w-4xl mx-auto">
           <%# Recipe List Items %>
           <% @recipes.each do |recipe| %>
             <%= render "recipes/recipe_list_item", recipe: recipe %>

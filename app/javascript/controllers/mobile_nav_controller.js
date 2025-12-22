@@ -2,30 +2,61 @@ import { Controller } from "@hotwired/stimulus";
 
 // Connects to data-controller="mobile-nav"
 export default class extends Controller {
-  static targets = ["searchBar", "searchIcon", "closeIcon"];
+  static targets = ["drawer", "backdrop"];
   static values = {
-    searchOpen: { type: Boolean, default: false }
+    sidebarOpen: { type: Boolean, default: false }
   };
 
-  // Toggle search bar visibility
-  toggleSearch() {
-    this.searchOpenValue = !this.searchOpenValue;
+  // Toggle sidebar drawer visibility
+  toggleSidebar() {
+    this.sidebarOpenValue = !this.sidebarOpenValue;
   }
 
-  // When searchOpen value changes, update the UI
-  searchOpenValueChanged() {
-    if (this.hasSearchBarTarget) {
-      if (this.searchOpenValue) {
-        this.searchBarTarget.classList.remove("hidden");
-        this.searchBarTarget.classList.add("animate-in", "slide-in-from-top-2");
-        // Focus the input
-        const input = this.searchBarTarget.querySelector("input");
-        if (input) {
-          setTimeout(() => input.focus(), 100);
-        }
+  // Close sidebar drawer
+  closeSidebar() {
+    this.sidebarOpenValue = false;
+  }
+
+  // When sidebarOpen value changes, update the UI
+  sidebarOpenValueChanged() {
+    if (this.hasDrawerTarget && this.hasBackdropTarget) {
+      if (this.sidebarOpenValue) {
+        // Show drawer in DOM (remove hidden class)
+        this.drawerTarget.classList.remove("hidden");
+        this.drawerTarget.classList.add("flex");
+
+        // Force a reflow to ensure the transition works
+        this.drawerTarget.offsetHeight;
+
+        // Slide drawer in
+        this.drawerTarget.classList.remove("-translate-x-full");
+        this.drawerTarget.classList.add("translate-x-0");
+
+        // Show backdrop
+        this.backdropTarget.classList.remove("pointer-events-none", "opacity-0");
+        this.backdropTarget.classList.add("pointer-events-auto", "opacity-100");
+
+        // Prevent body scroll
+        document.body.style.overflow = "hidden";
       } else {
-        this.searchBarTarget.classList.add("hidden");
-        this.searchBarTarget.classList.remove("animate-in", "slide-in-from-top-2");
+        // Slide drawer out
+        this.drawerTarget.classList.remove("translate-x-0");
+        this.drawerTarget.classList.add("-translate-x-full");
+
+        // Hide backdrop
+        this.backdropTarget.classList.remove("pointer-events-auto", "opacity-100");
+        this.backdropTarget.classList.add("pointer-events-none", "opacity-0");
+
+        // After animation completes, hide drawer from DOM
+        setTimeout(() => {
+          if (!this.sidebarOpenValue) {
+            this.drawerTarget.classList.remove("flex");
+            this.drawerTarget.classList.add("hidden");
+          }
+        }, 300); // Match transition duration
+
+        // Restore body scroll
+        document.body.style.overflow = "";
       }
     }
   }

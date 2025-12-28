@@ -28,18 +28,27 @@
       </span>
     </div>
 
-    <%# Description - Single line truncate %>
+    <%# Notes - Single line truncate %>
     <p class="text-text-secondary dark:text-gray-400 text-xs truncate mb-1.5">
-      <%= recipe.description || "No description available." %>
+      <%= recipe.notes || "No notes available." %>
     </p>
 
     <%# Metadata - Time only %>
     <div class="flex items-center gap-4 text-xs text-text-tertiary dark:text-gray-500 font-medium">
-      <div class="flex items-center gap-1">
-        <%= lucide_icon "clock", class: "size-3" %>
-        <%# TODO: Add prep_time field to recipes table %>
-        <span>30m</span>
-      </div>
+      <% if recipe.prep_time.present? || recipe.cook_time.present? %>
+        <div class="flex items-center gap-1">
+          <%= lucide_icon "clock", class: "size-3" %>
+          <span>
+            <% if recipe.prep_time.present? && recipe.cook_time.present? %>
+              <%= recipe.prep_time + recipe.cook_time %>m
+            <% elsif recipe.prep_time.present? %>
+              <%= recipe.prep_time %>m
+            <% else %>
+              <%= recipe.cook_time %>m
+            <% end %>
+          </span>
+        </div>
+      <% end %>
     </div>
   </div>
 

@@ -1,10 +1,10 @@
-<%= tag.div(flash[:alert], style: "color:red") if flash[:alert] %>
-<%= tag.div(flash[:notice], style: "color:green") if flash[:notice] %>
+<%= tag.div(flash[:alert], style: "color:red", data: { testid: "flash-alert" }) if flash[:alert] %>
+<%= tag.div(flash[:notice], style: "color:green", data: { testid: "flash-notice" }) if flash[:notice] %>
 
-<%= form_with url: session_path do |form| %>
-  <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address] %><br>
-  <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72 %><br>
-  <%= form.submit "Sign in" %>
+<%= form_with url: session_path, data: { testid: "login-form" } do |form| %>
+  <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], data: { testid: "email-input" } %><br>
+  <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, data: { testid: "password-input" } %><br>
+  <%= form.submit "Sign in", data: { testid: "sign-in-button" } %>
 <% end %>
 <br>
 

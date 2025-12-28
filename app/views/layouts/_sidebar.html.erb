@@ -20,7 +20,7 @@
           <span>All Recipes</span>
         </div>
         <span class="text-xs <%= current_page?(recipes_path) && params[:view] != 'favorites' ? 'text-brand-primary/70 dark:text-amber-500/70' : 'text-text-tertiary dark:text-gray-500' %>">
-          <%= @recipes&.count || 0 %>
+          <%= Recipe.count %>
         </span>
       <% end %>
 
@@ -31,7 +31,7 @@
           <span>Favorites</span>
         </div>
         <span class="text-xs <%= params[:view] == 'favorites' ? 'text-brand-primary/70 dark:text-amber-500/70' : 'text-text-tertiary dark:text-gray-500' %>">
-          <%= @recipes&.where(favorite: true)&.count || 0 %>
+          <%= Recipe.where(favorite: true).count %>
         </span>
       <% end %>
     </div>

@@ -1,12 +1,7 @@
-<% content_for :title, "Editing recipe" %>
+<% content_for :title, "Edit Recipe" %>
 
-<div class="prose w-full max-w-none">
-  <h1>Editing recipe</h1>
-
-  <%= render "form", recipe: @recipe %>
-
-  <div class="flex space-x-2 mt-4">
-    <%= link_to "Show this recipe", @recipe %>
-    <%= link_to "Back to recipes", recipes_path %>
+<div class="h-full overflow-y-auto">
+  <div class="p-4 md:p-8">
+    <%= render "form", recipe: @recipe %>
   </div>
 </div>

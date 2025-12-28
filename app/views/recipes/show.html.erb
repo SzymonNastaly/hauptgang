@@ -17,8 +17,8 @@
   </div>
 
   <div class="flex space-x-2 mt-4">
-    <%= link_to "Edit this recipe", edit_recipe_path(@recipe) %>
-    <%= link_to "Back to recipes", recipes_path %>
-    <%= button_to "Destroy this recipe", @recipe, method: :delete, data: { turbo_confirm: "Are you sure?" } %>
+    <%= link_to "Edit this recipe", edit_recipe_path(@recipe), data: { testid: "edit-recipe-link" } %>
+    <%= link_to "Back to recipes", recipes_path, data: { testid: "back-to-recipes-link" } %>
+    <%= button_to "Destroy this recipe", @recipe, method: :delete, data: { turbo_confirm: "Are you sure?", testid: "delete-recipe-button" } %>
   </div>
 </div>

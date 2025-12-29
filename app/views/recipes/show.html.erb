@@ -2,8 +2,7 @@
 
 <div class="flex flex-col h-full">
   <%# Header Bar - Sticky on mobile %>
-  <div class="sticky top-0 z-20 bg-surface-base/95 dark:bg-gray-950/95 backdrop-blur-sm border-b border-border-subtle dark:border-gray-800">
-    <div class="flex items-center justify-between px-4 py-3 md:px-6 md:py-4">
+  <div class="sticky top-0 z-20 h-14 flex items-center justify-between px-4 md:px-6 bg-surface-base dark:bg-gray-950 border-b border-border-subtle dark:border-gray-800">
       <%# Left: Back button %>
       <%= link_to recipes_path, class: "flex items-center gap-2 text-text-secondary dark:text-gray-400 hover:text-text-primary dark:hover:text-gray-200 transition-colors", data: { testid: "back-to-recipes-link" } do %>
         <%= lucide_icon "chevron-left", class: "size-5" %>
@@ -29,7 +28,6 @@
           <%= lucide_icon "trash-2", class: "size-5" %>
         <% end %>
       </div>
-    </div>
   </div>
 
   <%# Content Area %>

@@ -15,10 +15,15 @@ class RecipesController < ApplicationController
     end
 
     @tags = Tag.all.order(:name)
+
+    # Set ETag for conditional requests (304 Not Modified)
+    fresh_when(@recipes)
   end
 
   # GET /recipes/1 or /recipes/1.json
   def show
+    # Set ETag for conditional requests (304 Not Modified)
+    fresh_when(@recipe)
   end
 
   # GET /recipes/new
@@ -36,6 +41,7 @@ class RecipesController < ApplicationController
 
     respond_to do |format|
       if @recipe.save
+        flash[:invalidate_cache] = recipe_path(@recipe)
         format.html { redirect_to @recipe, notice: "Recipe was successfully created." }
         format.json { render :show, status: :created, location: @recipe }
       else
@@ -49,6 +55,7 @@ class RecipesController < ApplicationController
   def update
     respond_to do |format|
       if @recipe.update(recipe_params)
+        flash[:invalidate_cache] = recipe_path(@recipe)
         format.html { redirect_to @recipe, notice: "Recipe was successfully updated.", status: :see_other }
         format.json { render :show, status: :ok, location: @recipe }
       else
@@ -60,7 +67,9 @@ class RecipesController < ApplicationController
 
   # DELETE /recipes/1 or /recipes/1.json
   def destroy
+    recipe_path_for_cache = recipe_path(@recipe)
     @recipe.destroy!
+    flash[:invalidate_cache] = recipe_path_for_cache
 
     respond_to do |format|
       format.html { redirect_to recipes_path, notice: "Recipe was successfully destroyed.", status: :see_other }

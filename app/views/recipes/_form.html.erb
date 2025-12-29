@@ -2,7 +2,7 @@
 
   <%# Top Controls %>
   <div class="h-14 flex items-center justify-between sticky top-0 bg-surface-base dark:bg-gray-950 z-30 border-b border-border-subtle dark:border-gray-800 px-4 md:px-6">
-    <%= link_to recipes_path, class: "flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" do %>
+    <%= link_to (recipe.persisted? ? recipe_path(recipe) : recipes_path), class: "flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" do %>
       <%= lucide_icon "chevron-left", class: "size-5" %>
       <span class="hidden sm:inline text-sm font-medium">Cancel</span>
     <% end %>

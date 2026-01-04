@@ -80,6 +80,7 @@ class RecipesController < ApplicationController
   # PATCH /recipes/1/toggle_favorite
   def toggle_favorite
     @recipe.update(favorite: !@recipe.favorite)
+    @context = request.referer&.include?(recipe_path(@recipe)) ? :show : :card
 
     respond_to do |format|
       format.turbo_stream

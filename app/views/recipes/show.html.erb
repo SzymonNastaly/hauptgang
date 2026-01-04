@@ -12,11 +12,7 @@
       <%# Right: Actions %>
       <div class="flex items-center gap-2">
         <%# Favorite Button %>
-        <div id="recipe_<%= @recipe.id %>_favorite">
-          <%= button_to toggle_favorite_recipe_path(@recipe), method: :patch, class: "p-2 rounded-md text-text-secondary dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer" do %>
-            <%= lucide_icon "heart", class: "size-5 #{@recipe.favorite? ? 'fill-red-500 text-red-500' : ''}" %>
-          <% end %>
-        </div>
+        <%= render "recipes/favorite_button", recipe: @recipe, context: :show %>
 
         <%# Edit Button %>
         <%= link_to edit_recipe_path(@recipe), class: "p-2 rounded-md text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors", data: { testid: "edit-recipe-link" } do %>

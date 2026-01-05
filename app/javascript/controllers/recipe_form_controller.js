@@ -20,6 +20,56 @@ export default class extends Controller {
   connect() {
     this.loadIngredients()
     this.loadInstructions()
+    this.setupDirtyTracking()
+  }
+
+  disconnect() {
+    // Clean up event listeners to prevent memory leaks during Turbo navigation
+    this.element.removeEventListener("input", this.markDirty)
+    this.element.removeEventListener("change", this.markDirty)
+    this.element.removeEventListener("submit", this.clearDirty)
+    window.removeEventListener("beforeunload", this.beforeUnload)
+    document.removeEventListener("turbo:before-visit", this.turboBeforeVisit)
+  }
+
+  setupDirtyTracking() {
+    this.dirty = false
+
+    // Listen for form changes
+    this.element.addEventListener("input", this.markDirty)
+    this.element.addEventListener("change", this.markDirty)
+
+    // Clear dirty state on form submit (so warning doesn't show after saving)
+    this.element.addEventListener("submit", this.clearDirty)
+
+    // Listen for page leave events
+    window.addEventListener("beforeunload", this.beforeUnload)
+    document.addEventListener("turbo:before-visit", this.turboBeforeVisit)
+  }
+
+  // Arrow functions automatically capture 'this' from the surrounding scope
+  markDirty = () => {
+    this.dirty = true
+  }
+
+  clearDirty = () => {
+    this.dirty = false
+  }
+
+  beforeUnload = (event) => {
+    if (this.dirty) {
+      event.preventDefault()
+      // Modern browsers ignore custom messages, but setting returnValue is required
+      event.returnValue = ""
+    }
+  }
+
+  turboBeforeVisit = (event) => {
+    if (this.dirty) {
+      if (!confirm("You have unsaved changes. Are you sure you want to leave?")) {
+        event.preventDefault()
+      }
+    }
   }
 
   loadIngredients() {

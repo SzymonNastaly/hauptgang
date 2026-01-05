@@ -1,6 +1,15 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
+# Load custom cops from lib/rubocop/cop
+require:
+  - ./lib/rubocop/cop/notjustpesto/scoped_recipe_query
+
+# Enable custom cops
+NotJustPesto/ScopedRecipeQuery:
+  Enabled: true
+  Description: "Detects unscoped Recipe queries that leak data across users"
+
 # Overwrite or add rules to create your own house style
 #
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`

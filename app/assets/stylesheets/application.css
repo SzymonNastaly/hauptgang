@@ -9,36 +9,84 @@
  * Consider organizing styles into separate files for maintainability.
  */
 
-/* DM Sans - Variable Font */
+/* Lato */
 @font-face {
-  font-family: "DM Sans";
-  src: url("DMSans-VariableFont.woff2") format("woff2");
-  font-weight: 100 1000;
+  font-family: "Lato";
+  src: url("Lato-Regular.woff2") format("woff2");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "DM Sans";
-  src: url("DMSans-Italic-VariableFont.woff2") format("woff2");
-  font-weight: 100 1000;
+  font-family: "Lato";
+  src: url("Lato-Italic.woff2") format("woff2");
+  font-weight: 400;
   font-style: italic;
   font-display: swap;
 }
 
-/* DM Serif Display */
 @font-face {
-  font-family: "DM Serif Display";
-  src: url("DMSerifDisplay-Regular.woff2") format("woff2");
+  font-family: "Lato";
+  src: url("Lato-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("Lato-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("Lato-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Lato";
+  src: url("Lato-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Merriweather */
+@font-face {
+  font-family: "Merriweather";
+  src: url("Merriweather24pt-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "DM Serif Display";
-  src: url("DMSerifDisplay-Italic.woff2") format("woff2");
+  font-family: "Merriweather";
+  src: url("Merriweather24pt-Italic.woff2") format("woff2");
   font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Merriweather";
+  src: url("Merriweather24pt-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Merriweather";
+  src: url("Merriweather24pt-BoldItalic.woff2") format("woff2");
+  font-weight: 700;
   font-style: italic;
   font-display: swap;
 }

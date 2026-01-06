@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 @theme {
+  /* Font Families */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "DM Serif Display", ui-serif, Georgia, serif;
+
   /* Brand Colors */
   --color-brand-primary: #8B5E34;
   --color-brand-primary-dark: #6B4826;

@@ -9,6 +9,40 @@
  * Consider organizing styles into separate files for maintainability.
  */
 
+/* DM Sans - Variable Font */
+@font-face {
+  font-family: "DM Sans";
+  src: url("DMSans-VariableFont.woff2") format("woff2");
+  font-weight: 100 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("DMSans-Italic-VariableFont.woff2") format("woff2");
+  font-weight: 100 1000;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DM Serif Display */
+@font-face {
+  font-family: "DM Serif Display";
+  src: url("DMSerifDisplay-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Serif Display";
+  src: url("DMSerifDisplay-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* Masonry: Fix flash of unstyled content by hiding items until layout is ready. Only applies when JavaScript is enabled (progressive enhancement). */
 [data-controller="masonry"]:not(.masonry-loaded) .masonry-item {
   opacity: 0;

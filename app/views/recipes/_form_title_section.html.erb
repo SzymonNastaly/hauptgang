@@ -13,6 +13,7 @@
           <%= check_box_tag "recipe[tag_ids][]",
               tag.id,
               recipe.tag_ids.include?(tag.id),
+              id: "recipe_tag_ids_#{tag.id}",
               class: "sr-only peer" %>
           <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-all
                        peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary

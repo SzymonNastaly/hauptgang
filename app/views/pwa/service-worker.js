@@ -1,8 +1,8 @@
-// Service Worker for NotJustPesto PWA
+// Service Worker for Hauptgang PWA
 // Implements cache-first strategy for offline recipe access
 
 const CACHE_VERSION = "v6"
-const CACHE_NAME = `notjustpesto-${CACHE_VERSION}`
+const CACHE_NAME = `hauptgang-${CACHE_VERSION}`
 
 // Static assets to cache on install
 // These are the core files needed for the app shell
@@ -30,7 +30,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys
-          .filter((key) => key.startsWith("notjustpesto-") && key !== CACHE_NAME)
+          .filter((key) => key.startsWith("hauptgang-") && key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
     })

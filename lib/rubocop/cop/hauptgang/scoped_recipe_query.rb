@@ -2,7 +2,7 @@
 
 module RuboCop
   module Cop
-    module NotJustPesto
+    module Hauptgang
       # Detects unscoped Recipe queries that may leak data across users.
       #
       # In a multi-user application, queries like `Recipe.count` or

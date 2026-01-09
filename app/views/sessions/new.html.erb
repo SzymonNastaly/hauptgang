@@ -1,11 +1,61 @@
-<%= tag.div(flash[:alert], style: "color:red", data: { testid: "flash-alert" }) if flash[:alert] %>
-<%= tag.div(flash[:notice], style: "color:green", data: { testid: "flash-notice" }) if flash[:notice] %>
+<div class="w-full max-w-md">
+  <%# Auth Card %>
+  <div class="bg-surface-overlay dark:bg-gray-800 rounded-xl shadow-lg border border-border-subtle dark:border-gray-700 p-8">
+    <%# Header %>
+    <div class="text-center mb-8">
+      <h1 class="font-serif text-2xl font-bold text-text-primary dark:text-gray-100">
+        Welcome back
+      </h1>
+      <p class="text-sm text-text-secondary dark:text-gray-400 mt-1">
+        Sign in to your account
+      </p>
+    </div>
 
-<%= form_with url: session_path, data: { testid: "login-form" } do |form| %>
-  <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], data: { testid: "email-input" } %><br>
-  <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, data: { testid: "password-input" } %><br>
-  <%= form.submit "Sign in", data: { testid: "sign-in-button" } %>
-<% end %>
-<br>
+    <%# Form %>
+    <%= form_with url: session_path, class: "space-y-4", data: { testid: "login-form" } do |form| %>
+      <div>
+        <label for="email_address" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
+          Email
+        </label>
+        <%= form.email_field :email_address,
+            required: true,
+            autofocus: true,
+            autocomplete: "username",
+            placeholder: "you@example.com",
+            value: params[:email_address],
+            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500",
+            data: { testid: "email-input" } %>
+      </div>
 
-<%= link_to "Forgot password?", new_password_path %>
+      <div>
+        <label for="password" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
+          Password
+        </label>
+        <%= form.password_field :password,
+            required: true,
+            autocomplete: "current-password",
+            placeholder: "Enter your password",
+            maxlength: 72,
+            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500",
+            data: { testid: "password-input" } %>
+      </div>
+
+      <%= form.submit "Sign in",
+          class: "w-full bg-brand-primary hover:bg-brand-primary-dark dark:bg-amber-700 dark:hover:bg-amber-800 text-white py-3 rounded-lg font-medium shadow-sm hover:shadow-md transition-all cursor-pointer",
+          data: { testid: "sign-in-button" } %>
+    <% end %>
+
+    <%# Forgot password link %>
+    <div class="mt-6 text-center">
+      <%= link_to "Forgot your password?", new_password_path,
+          class: "text-sm text-brand-primary dark:text-amber-500 hover:underline" %>
+    </div>
+  </div>
+
+  <%# Sign up link below card %>
+  <p class="text-center mt-6 text-sm text-text-secondary dark:text-gray-400">
+    Don't have an account?
+    <%= link_to "Sign up", new_registration_path,
+        class: "text-brand-primary dark:text-amber-500 font-medium hover:underline" %>
+  </p>
+</div>

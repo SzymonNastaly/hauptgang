@@ -69,17 +69,33 @@
     </div>
   </div>
 
-  <%# Sidebar Footer - User Profile Placeholder %>
-  <div class="p-3 border-t border-border-subtle dark:border-gray-800">
-    <button class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left">
+  <%# Sidebar Footer - Account Dropdown %>
+  <div class="p-3 border-t border-border-subtle dark:border-gray-800 relative"
+       data-controller="account-dropdown"
+       data-action="click@window->account-dropdown#clickOutside keydown.escape@window->account-dropdown#close">
+
+    <%# Account Button %>
+    <button data-action="click->account-dropdown#toggle"
+            class="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-left">
       <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
         <%= lucide_icon "user", class: "size-4 text-gray-500 dark:text-gray-400" %>
       </div>
       <div class="flex-1 min-w-0">
-        <div class="font-medium text-gray-900 dark:text-gray-100 truncate">My Kitchen</div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 truncate">Free Plan</div>
+        <div class="font-medium text-gray-900 dark:text-gray-100 truncate">Account</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= Current.user&.email_address %></div>
       </div>
-      <%= lucide_icon "settings", class: "size-3.5 text-gray-400 dark:text-gray-500" %>
+      <%= lucide_icon "chevron-up", class: "size-3.5 text-gray-400 dark:text-gray-500" %>
     </button>
+
+    <%# Dropdown Menu %>
+    <div data-account-dropdown-target="menu"
+         class="hidden absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-border-subtle dark:border-gray-700 overflow-hidden">
+      <%= button_to session_path, method: :delete,
+          class: "w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors",
+          data: { controller: "logout", action: "click->logout#clearCache" } do %>
+        <%= lucide_icon "log-out", class: "size-4 text-gray-400 dark:text-gray-500" %>
+        <span>Log Out</span>
+      <% end %>
+    </div>
   </div>
 </aside>

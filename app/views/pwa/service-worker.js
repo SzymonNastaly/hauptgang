@@ -124,6 +124,13 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (!event.data) return
 
+  // Handle full cache clear (used on logout)
+  // Deletes all cached content so the next user starts fresh
+  if (event.data.type === "CLEAR_CACHE") {
+    caches.delete(CACHE_NAME)
+    return
+  }
+
   // Handle per-recipe cache invalidation
   // When a recipe is updated, the app sends this message to delete just that URL
   if (event.data.type === "INVALIDATE_RECIPE") {

@@ -78,16 +78,22 @@
       <% end %>
     </div>
 
-    <%# User Profile Section %>
+    <%# User Profile Section with Logout %>
     <div class="p-3 border-t border-border-subtle dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-300 dark:border-gray-600">
           <%= lucide_icon "user", class: "size-5 text-gray-500 dark:text-gray-400" %>
         </div>
-        <div>
-          <div class="font-bold text-gray-900 dark:text-gray-100 text-sm">My Kitchen</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Free Plan</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-gray-900 dark:text-gray-100 text-sm truncate">Account</div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= Current.user&.email_address %></div>
         </div>
+        <%= button_to session_path, method: :delete,
+            class: "p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors",
+            title: "Log Out",
+            data: { controller: "logout", action: "click->logout#clearCache" } do %>
+          <%= lucide_icon "log-out", class: "size-5" %>
+        <% end %>
       </div>
     </div>
   </div>

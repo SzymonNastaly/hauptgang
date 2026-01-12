@@ -1,4 +1,14 @@
 <div id="<%= dom_id recipe %>" class="max-w-5xl mx-auto">
+  <%# Cover Image %>
+  <% if recipe.cover_image.attached? %>
+    <div class="mb-6 md:mb-8 rounded-lg overflow-hidden shadow-md">
+      <%= image_tag recipe.cover_image.variant(:display),
+          alt: recipe.name,
+          class: "w-full h-auto object-cover max-h-[400px]",
+          loading: "eager" %>
+    </div>
+  <% end %>
+
   <%# Recipe Header %>
   <div class="mb-6 md:mb-8">
     <%# Tags %>

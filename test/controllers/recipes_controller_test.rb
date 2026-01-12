@@ -241,4 +241,62 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_match recipes(:three).name, response.body
     assert_no_match recipes(:one).name, response.body
   end
+
+  # ===================
+  # COVER IMAGE TESTS
+  # ===================
+
+  test "should create recipe with cover image" do
+    image = fixture_file_upload("test_image.png", "image/png")
+
+    assert_difference("Recipe.count") do
+      post recipes_url, params: {
+        recipe: {
+          name: "Recipe With Image",
+          cover_image: image
+        }
+      }
+    end
+
+    created_recipe = Recipe.last
+    assert created_recipe.cover_image.attached?
+    assert_redirected_to recipe_url(created_recipe)
+  end
+
+  test "should update recipe with cover image" do
+    image = fixture_file_upload("test_image.png", "image/png")
+
+    patch recipe_url(@recipe), params: {
+      recipe: {
+        cover_image: image
+      }
+    }
+
+    assert_redirected_to recipe_url(@recipe)
+    @recipe.reload
+    assert @recipe.cover_image.attached?
+  end
+
+  test "should replace existing cover image" do
+    # First attach an image
+    @recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "original.png",
+      content_type: "image/png"
+    )
+    @recipe.save!
+    original_blob_id = @recipe.cover_image.blob.id
+
+    # Now replace it via controller
+    new_image = fixture_file_upload("test_image.png", "image/png")
+    patch recipe_url(@recipe), params: {
+      recipe: {
+        cover_image: new_image
+      }
+    }
+
+    @recipe.reload
+    assert @recipe.cover_image.attached?
+    assert_not_equal original_blob_id, @recipe.cover_image.blob.id
+  end
 end

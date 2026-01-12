@@ -42,9 +42,9 @@
     <%# LEFT COLUMN: Image, Stats, Ingredients - Second on mobile, left side spanning both rows on desktop %>
     <div class="md:col-span-5 md:col-start-1 md:row-start-1 md:row-span-2 space-y-8">
 
-      <%# Image Upload %>
-      <div class="relative aspect-video bg-surface-raised dark:bg-gray-800 border-2 border-dashed border-border-subtle dark:border-gray-700 rounded-lg flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 hover:border-brand-primary/50 dark:hover:border-amber-700/50 hover:text-brand-primary dark:hover:text-amber-500 hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-all cursor-pointer group overflow-hidden"
-           data-action="click->recipe-form#triggerImageUpload">
+      <%# Image Upload - uses <label> for native click-to-upload behavior %>
+      <%= form.label :cover_image,
+          class: "relative aspect-video bg-surface-raised dark:bg-gray-800 border-2 border-dashed border-border-subtle dark:border-gray-700 rounded-lg flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 hover:border-brand-primary/50 dark:hover:border-amber-700/50 hover:text-brand-primary dark:hover:text-amber-500 hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-all cursor-pointer group overflow-hidden" do %>
 
         <%= form.file_field :cover_image,
             accept: "image/*",
@@ -52,15 +52,26 @@
               recipe_form_target: "imageInput",
               action: "change->recipe-form#handleImageUpload"
             },
-            class: "absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" %>
+            class: "sr-only" %>
 
-        <div data-recipe-form-target="imagePreview" class="absolute inset-0 z-10"></div>
-
-        <div class="w-12 h-12 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition-transform z-0">
-          <%= lucide_icon "camera", class: "size-5" %>
+        <div data-recipe-form-target="imagePreview" class="absolute inset-0">
+          <% if recipe.cover_image.attached? %>
+            <%= image_tag recipe.cover_image.variant(:display),
+                alt: "Cover preview",
+                class: "w-full h-full object-cover" %>
+            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium">
+              Change Photo
+            </div>
+          <% end %>
         </div>
-        <span class="text-sm font-medium z-0">Add Cover Photo</span>
-      </div>
+
+        <% unless recipe.cover_image.attached? %>
+          <div class="w-12 h-12 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center mb-2 shadow-sm group-hover:scale-110 transition-transform">
+            <%= lucide_icon "camera", class: "size-5" %>
+          </div>
+          <span class="text-sm font-medium">Add Cover Photo</span>
+        <% end %>
+      <% end %>
 
       <%# Quick Stats %>
       <div class="grid grid-cols-3 gap-4">

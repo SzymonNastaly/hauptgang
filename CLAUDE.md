@@ -129,6 +129,14 @@ bin/kamal dbc               # Open database console on deployed server
 
 This project uses **rubocop-rails-omakase** for Ruby styling, which provides standardized Rails conventions from Basecamp/37signals. Follow these standards when writing code.
 
+## Git Commit Messages
+
+When creating git commits:
+
+- **DO NOT** include "Co-Authored-By: Claude" or any similar AI attribution in commit messages
+- Keep commit messages clear and focused on what changed and why
+- Follow conventional commit message format when appropriate
+
 ## CI Pipeline
 
 The CI pipeline (`bin/ci`) runs:

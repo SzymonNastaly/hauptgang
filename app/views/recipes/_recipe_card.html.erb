@@ -1,14 +1,14 @@
-<%# Recipe Card for Grid View - Supports dynamic height with/without images %>
+<%# Recipe Card for Grid View - Card with image = 2x card without image + gap (24px) %>
 
-<%= link_to recipe, class: "group bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 shadow-sm hover:shadow-md hover:border-brand-primary/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative min-h-[156px] w-full", data: { testid: "recipe-card-#{recipe.id}" } do %>
-  <%# Note: Cards with images will be 156px + 160px (h-40) = 316px tall %>
+<%= link_to recipe, class: "group bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 shadow-sm hover:shadow-md hover:border-brand-primary/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative w-full #{recipe.cover_image.attached? ? 'h-[332px]' : 'h-[154px]'}", data: { testid: "recipe-card-#{recipe.id}" } do %>
+  <%# Note: Cards without images = 154px, cards with images = 332px (2 × 154px + 24px gap) %>
 
   <%# Overlay Action Buttons - Always visible on mobile, hover on desktop %>
   <%= render "recipes/favorite_button", recipe: recipe, context: :card %>
 
-  <%# Image Area - Only render if image exists %>
+  <%# Image Area - Only render if image exists - 178px (332px total - 154px content) %>
   <% if recipe.cover_image.attached? %>
-    <div class="h-48 md:h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg">
+    <div class="h-[178px] bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg shrink-0">
       <%= image_tag recipe.cover_image.variant(:thumbnail),
           alt: recipe.name,
           class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500",

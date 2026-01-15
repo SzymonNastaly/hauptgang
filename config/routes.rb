@@ -4,7 +4,7 @@ Rails.application.routes.draw do
       patch :toggle_favorite
     end
   end
-  root "recipes#index"
+  root to: redirect("/recipes")
   resource :session
   resources :passwords, param: :token
 

@@ -1,16 +1,16 @@
 <%# Recipe Card for Grid View - Supports dynamic height with/without images %>
 
-<%= link_to recipe, class: "group bg-white dark:bg-gray-800 rounded-lg border border-stone-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-amber-800/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative min-h-[156px] w-full" do %>
+<%= link_to recipe, class: "group bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 shadow-sm hover:shadow-md hover:border-brand-primary/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative min-h-[156px] w-full" do %>
   <%# Note: Cards with images will be 156px + 160px (h-40) = 316px tall %>
 
   <%# Overlay Action Buttons - Visible on hover %>
   <div class="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-4px] group-hover:translate-y-0 duration-200">
     <%# Favorite Button - Visual only for now, will wire up later %>
-    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-amber-800 dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
+    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
       <%= lucide_icon "heart", class: "size-3.5 #{recipe.favorite? ? 'fill-red-500 text-red-500' : ''}" %>
     </button>
     <%# More Actions Button - Placeholder %>
-    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-amber-800 dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
+    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
       <%= lucide_icon "more-horizontal", class: "size-3.5" %>
     </button>
   </div>
@@ -27,24 +27,24 @@
   <div class="p-4 flex flex-col">
     <%# Category Badge - Using placeholder for now %>
     <div class="flex justify-between items-start mb-2">
-      <span class="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-500 bg-amber-800/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
         <%# TODO: Add category field to recipes table %>
         Recipe
       </span>
     </div>
 
     <%# Recipe Title %>
-    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 leading-snug mb-1 line-clamp-2">
+    <h3 class="text-lg font-bold text-text-primary dark:text-gray-100 leading-snug mb-1 line-clamp-2">
       <%= recipe.name %>
     </h3>
 
     <%# Recipe Description %>
-    <p class="text-gray-500 dark:text-gray-400 text-xs line-clamp-4 mb-4">
+    <p class="text-text-secondary dark:text-gray-400 text-xs line-clamp-4 mb-4">
       <%= recipe.description || "No description available." %>
     </p>
 
     <%# Footer Metadata %>
-    <div class="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 font-medium pt-3 border-t border-gray-100 dark:border-gray-700 mt-auto">
+    <div class="flex items-center justify-between text-xs text-text-tertiary dark:text-gray-500 font-medium pt-3 border-t border-gray-100 dark:border-gray-700 mt-auto">
       <div class="flex items-center gap-1">
         <%= lucide_icon "clock", class: "size-3" %>
         <%# TODO: Add prep_time field to recipes table %>

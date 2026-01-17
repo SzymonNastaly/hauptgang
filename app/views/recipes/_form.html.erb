@@ -120,8 +120,9 @@
           <div data-recipe-form-target="ingredientsList"></div>
           <button
             type="button"
+            data-recipe-form-target="addIngredientButton"
             data-action="click->recipe-form#addIngredient"
-            class="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-brand-primary dark:text-amber-500 uppercase tracking-wider hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-colors"
+            class="w-full py-3 flex items-center justify-center gap-2 text-xs font-bold text-brand-primary dark:text-amber-500 uppercase tracking-wider hover:bg-brand-primary/5 dark:hover:bg-amber-500/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <%= lucide_icon "plus", class: "size-3.5" %>
             Add Ingredient
@@ -136,7 +137,7 @@
             type="text"
             name="recipe[ingredients][]"
             placeholder="e.g. 2 cups Flour"
-            data-action="keydown->recipe-form#handleIngredientKeydown"
+            data-action="keydown->recipe-form#handleIngredientKeydown input->recipe-form#handleIngredientInput"
             class="flex-1 bg-transparent py-3 pl-3 text-sm text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none"
           />
           <button

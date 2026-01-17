@@ -7,14 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **IMPORTANT**: This is first and foremost a learning project. The developer has a programming background but has never developed a Ruby on Rails project and wants to learn Rails properly.
 
 When assisting with this project:
+
 - **Explain** what you're doing and why, rather than just doing it
 - **Teach** Rails conventions, patterns, and best practices
-- **Guide** the developer to write code themselves when possible
 - **Suggest** approaches and let the developer implement them
-- **Ask** if the developer wants to try implementing something before doing it for them
-- Only write complete implementations when explicitly requested or for boilerplate/setup tasks
-
-The goal is learning and understanding, not just getting features built quickly.
 
 ## Project Overview
 
@@ -23,6 +19,7 @@ NotJustPesto is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conve
 ## Development Commands
 
 ### Initial Setup
+
 ```bash
 bin/setup                    # Install dependencies, prepare database, start server
 bin/setup --skip-server     # Setup without starting server
@@ -30,12 +27,14 @@ bin/setup --reset           # Reset database during setup
 ```
 
 ### Running the Application
+
 ```bash
 bin/dev                     # Start development server (Rails server)
 bin/rails server            # Alternative way to start server
 ```
 
 ### Database Operations
+
 ```bash
 bin/rails db:prepare        # Create and migrate database
 bin/rails db:migrate        # Run pending migrations
@@ -46,6 +45,7 @@ bin/rails dbconsole         # Open database console
 ```
 
 ### Testing
+
 ```bash
 bin/rails test              # Run all tests
 bin/rails test:system       # Run system tests only
@@ -54,6 +54,7 @@ bin/rails test test/models/your_model_test.rb:10  # Run test at specific line
 ```
 
 ### Code Quality & Security
+
 ```bash
 bin/rubocop                 # Run Ruby style checker (Omakase Ruby styling)
 bin/rubocop -a              # Auto-fix safe offenses
@@ -64,12 +65,14 @@ bin/ci                      # Run full CI suite (setup, style, security, tests)
 ```
 
 ### Asset Management
+
 ```bash
 bin/importmap               # Manage JavaScript dependencies via importmap
 bin/rails assets:precompile # Precompile assets for production
 ```
 
 ### Deployment (Kamal)
+
 ```bash
 bin/kamal console           # Open Rails console on deployed server
 bin/kamal shell             # SSH into deployed container
@@ -80,6 +83,7 @@ bin/kamal dbc               # Open database console on deployed server
 ## Architecture
 
 ### Database Configuration
+
 - **Development/Test**: SQLite3 databases in `storage/` directory
 - **Production**: Multi-database setup with separate SQLite databases for:
   - `primary`: Main application data
@@ -88,19 +92,23 @@ bin/kamal dbc               # Open database console on deployed server
   - `cable`: Solid Cable storage (migrations in `db/cable_migrate`)
 
 ### Background Jobs
+
 - Uses **Solid Queue** for background job processing
 - In production, `SOLID_QUEUE_IN_PUMA=true` runs queue supervisor inside Puma process
 - For multi-server setups, dedicated job servers should be configured
 
 ### Caching
+
 - Uses **Solid Cache** for database-backed caching in production
 - Configuration in `config/cache.yml`
 
 ### Real-time Features
+
 - Uses **Solid Cable** for Action Cable WebSocket connections
 - Database-backed adapter for production
 
 ### Frontend Stack
+
 - **Tailwind CSS v4** via `tailwindcss-rails` gem (media query-based dark mode)
 - **SVG icon partials** in `app/views/icons/` (no external icon library)
 - **Importmap** for JavaScript dependencies (no Node.js/npm required)
@@ -110,6 +118,7 @@ bin/kamal dbc               # Open database console on deployed server
 - Assets served from `app/assets` and `app/javascript`
 
 ### Deployment
+
 - Configured for **Kamal** deployment
 - Docker-based deployment with Thruster as the HTTP server
 - Deployment config in `config/deploy.yml`
@@ -123,6 +132,7 @@ This project uses **rubocop-rails-omakase** for Ruby styling, which provides sta
 ## CI Pipeline
 
 The CI pipeline (`bin/ci`) runs:
+
 1. Setup (dependencies and database)
 2. Ruby style checks (RuboCop)
 3. Security audits (bundler-audit, importmap audit, Brakeman)

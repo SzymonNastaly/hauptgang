@@ -1,0 +1,19 @@
+<div id="<%= dom_id recipe %>" class="space-y-2">
+  <h2 class="card-title"><%= recipe.name %></h2>
+  <p><%= recipe.description %></p>
+  
+  <div class="py-2">
+    <h3 class="font-bold">Ingredients</h3>
+    <p><%= recipe.ingredients %></p>
+  </div>
+  
+  <div class="py-2">
+    <h3 class="font-bold">Instructions</h3>
+    <p><%= recipe.instructions %></p>
+  </div>
+
+  <div class="stat">
+    <div class="stat-title">Servings</div>
+    <div class="stat-value"><%= recipe.servings %></div>
+  </div>
+</div>

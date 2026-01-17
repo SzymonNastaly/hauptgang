@@ -1,0 +1,44 @@
+<%= form_with(model: recipe, class: "space-y-4") do |form| %>
+  <% if recipe.errors.any? %>
+    <div role="alert">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <div>
+        <h3 class="font-bold"><%= pluralize(recipe.errors.count, "error") %> prohibited this recipe from being saved:</h3>
+        <ul class="list-disc ml-6">
+          <% recipe.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="w-full">
+    <%= form.label :name %>
+    <%= form.text_field :name, class: "w-full" %>
+  </div>
+
+  <div class="w-full">
+    <%= form.label :description %>
+    <%= form.textarea :description, rows: 4, class: "w-full" %>
+  </div>
+
+  <div class="w-full">
+    <%= form.label :ingredients %>
+    <%= form.textarea :ingredients, rows: 4, class: "w-full" %>
+  </div>
+
+  <div class="w-full">
+    <%= form.label :instructions %>
+    <%= form.textarea :instructions, rows: 4, class: "w-full" %>
+  </div>
+
+  <div class="w-full">
+    <%= form.label :servings %>
+    <%= form.number_field :servings, class: "w-full" %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

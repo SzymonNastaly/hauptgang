@@ -1,0 +1,66 @@
+<%# Mobile Header (Mobile Only) %>
+<header class="md:hidden flex flex-col border-b border-border-subtle dark:border-gray-800 bg-surface-base/90 dark:bg-gray-950/90 backdrop-blur-md sticky top-0 z-20">
+  <%# Top Bar: Title, Add Button, Avatar %>
+  <div class="h-14 flex items-center justify-between px-4">
+    <%# Left: Simple Title %>
+    <h1 class="font-bold text-xl text-text-primary dark:text-gray-100 tracking-tight">
+      NotJustPesto
+    </h1>
+
+    <%# Right: Add Button + Avatar %>
+    <div class="flex items-center gap-3">
+      <%= link_to new_recipe_path, class: "flex items-center justify-center w-9 h-9 bg-brand-primary dark:bg-amber-700 text-white rounded-md shadow-sm hover:bg-brand-primary-dark dark:hover:bg-amber-800 transition-colors", "aria-label": "Create new recipe" do %>
+        <%= lucide_icon "plus", class: "size-5", stroke_width: 2.5 %>
+      <% end %>
+      <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center overflow-hidden border border-gray-200 dark:border-gray-600">
+        <%= lucide_icon "user", class: "size-4 text-gray-500 dark:text-gray-400" %>
+      </div>
+    </div>
+  </div>
+
+  <%# Expandable Search Bar - Triggered by bottom nav %>
+  <div
+    data-mobile-nav-target="searchBar"
+    class="hidden px-4 pb-3"
+  >
+    <div class="relative">
+      <%= lucide_icon "search", class: "size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" %>
+      <input
+        type="text"
+        placeholder="Search your recipes..."
+        class="w-full pl-9 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-full text-sm focus:outline-none focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 shadow-sm text-gray-900 dark:text-gray-100"
+      />
+    </div>
+  </div>
+
+  <%# Tag Scroller %>
+  <div class="px-4 pb-3 overflow-x-auto scrollbar-hide flex items-center gap-2">
+    <%# All Recipes Tag %>
+    <%= link_to recipes_path, class: "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap #{current_page?(recipes_path) && params[:view] != 'favorites' && params[:tag].blank? ? 'bg-brand-primary dark:bg-amber-700 text-white shadow-md shadow-brand-primary/20 dark:shadow-amber-700/20' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}" do %>
+      All
+    <% end %>
+
+    <%# Favorites Tag %>
+    <%= link_to recipes_path(view: 'favorites'), class: "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap #{params[:view] == 'favorites' ? 'bg-brand-primary dark:bg-amber-700 text-white shadow-md shadow-brand-primary/20 dark:shadow-amber-700/20' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}" do %>
+      Favorites
+    <% end %>
+
+    <%# Real Tags from Database %>
+    <% @tags.each do |tag| %>
+      <%= link_to recipes_path(tag: tag.slug), class: "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors whitespace-nowrap #{params[:tag] == tag.slug ? 'bg-brand-primary dark:bg-amber-700 text-white shadow-md shadow-brand-primary/20 dark:shadow-amber-700/20' : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}" do %>
+        <%= tag.name %>
+      <% end %>
+    <% end %>
+  </div>
+</header>
+
+<%# Custom styles for hiding scrollbar %>
+<style>
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>

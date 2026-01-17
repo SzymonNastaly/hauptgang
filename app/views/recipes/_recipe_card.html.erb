@@ -3,34 +3,35 @@
 <%= link_to recipe, class: "group bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 shadow-sm hover:shadow-md hover:border-brand-primary/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative min-h-[156px] w-full" do %>
   <%# Note: Cards with images will be 156px + 160px (h-40) = 316px tall %>
 
-  <%# Overlay Action Buttons - Visible on hover %>
-  <div class="absolute top-2 right-2 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity translate-y-[-4px] group-hover:translate-y-0 duration-200">
-    <%# Favorite Button - Visual only for now, will wire up later %>
-    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
+  <%# Overlay Action Buttons - Always visible on mobile, hover on desktop %>
+  <div id="recipe_<%= recipe.id %>_favorite" class="absolute top-2 right-2 flex gap-1 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity md:translate-y-[-4px] md:group-hover:translate-y-0 duration-200" onclick="event.stopPropagation();">
+    <%# Favorite Button %>
+    <%= button_to toggle_favorite_recipe_path(recipe), method: :patch, form_class: "inline-block", class: "p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-text-secondary dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-100 dark:border-gray-700 cursor-pointer" do %>
       <%= lucide_icon "heart", class: "size-3.5 #{recipe.favorite? ? 'fill-red-500 text-red-500' : ''}" %>
-    </button>
-    <%# More Actions Button - Placeholder %>
-    <button type="button" class="p-1.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md shadow-sm hover:bg-white dark:hover:bg-gray-800 text-text-secondary dark:text-gray-400 hover:text-brand-primary dark:hover:text-amber-500 border border-gray-100 dark:border-gray-700">
-      <%= lucide_icon "more-horizontal", class: "size-3.5" %>
-    </button>
+    <% end %>
   </div>
 
   <%# Image Area - Only render if image exists %>
   <%# TODO: Add image_url field to recipes table %>
   <% if false %>
-    <div class="h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg">
+    <div class="h-48 md:h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg">
       <%# <%= image_tag recipe.image_url, alt: recipe.name, class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" %>
     </div>
   <% end %>
 
   <%# Content Area %>
   <div class="p-4 flex flex-col">
-    <%# Category Badge - Using placeholder for now %>
+    <%# Tags - Show first tag or "Recipe" if no tags %>
     <div class="flex justify-between items-start mb-2">
-      <span class="text-[10px] font-bold uppercase tracking-wider text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
-        <%# TODO: Add category field to recipes table %>
-        Recipe
-      </span>
+      <% if recipe.tags.any? %>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
+          <%= recipe.tags.first.name %>
+        </span>
+      <% else %>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-sm">
+          Recipe
+        </span>
+      <% end %>
     </div>
 
     <%# Recipe Title %>

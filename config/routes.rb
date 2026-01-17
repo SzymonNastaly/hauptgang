@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
-  resources :recipes
+  resources :recipes do
+    member do
+      patch :toggle_favorite
+    end
+  end
   root "recipes#index"
   resource :session
   resources :passwords, param: :token

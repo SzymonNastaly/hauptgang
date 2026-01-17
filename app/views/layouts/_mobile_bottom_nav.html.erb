@@ -1,0 +1,49 @@
+<%# Bottom Navigation Bar (Mobile Only) - 5 Items with Centered Search %>
+<nav class="md:hidden fixed bottom-0 w-full bg-surface-base/90 dark:bg-gray-950/90 backdrop-blur-xl border-t border-border-subtle dark:border-gray-800 z-40" style="padding-bottom: env(safe-area-inset-bottom, 1.25rem);">
+  <div class="flex justify-between items-center px-4 h-16">
+
+    <%# Home Tab %>
+    <div class="flex-1 flex justify-center">
+      <%= link_to recipes_path, class: "flex flex-col items-center justify-center gap-1 #{current_page?(recipes_path) && params[:view] != 'favorites' ? 'text-brand-primary dark:text-amber-500' : 'text-gray-400 dark:text-gray-500 hover:text-text-secondary dark:hover:text-gray-400'}", data: { action: "click->mobile-nav#scrollToTop" } do %>
+        <%= lucide_icon "home", class: "size-6", stroke_width: (current_page?(recipes_path) && params[:view] != 'favorites' ? 2.5 : 2) %>
+        <span class="text-[10px] font-medium tracking-tight">Home</span>
+      <% end %>
+    </div>
+
+    <%# Saved Tab %>
+    <div class="flex-1 flex justify-center">
+      <%= link_to recipes_path(view: 'favorites'), class: "flex flex-col items-center justify-center gap-1 #{params[:view] == 'favorites' ? 'text-brand-primary dark:text-amber-500' : 'text-gray-400 dark:text-gray-500 hover:text-text-secondary dark:hover:text-gray-400'}", data: { action: "click->mobile-nav#scrollToTop" } do %>
+        <%= lucide_icon "heart", class: "size-6", stroke_width: (params[:view] == 'favorites' ? 2.5 : 2) %>
+        <span class="text-[10px] font-medium tracking-tight">Saved</span>
+      <% end %>
+    </div>
+
+    <%# CENTER SEARCH BUTTON - Elevated Design %>
+    <div class="flex-1 flex justify-center">
+      <button
+        data-action="click->mobile-nav#toggleSearch click->mobile-nav#scrollToTop"
+        class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md active:scale-95 transition-all bg-brand-primary dark:bg-amber-700 text-white shadow-brand-primary/30 dark:shadow-amber-700/30"
+        aria-label="Toggle search"
+      >
+        <%= lucide_icon "search", class: "size-5", stroke_width: 2.5 %>
+      </button>
+    </div>
+
+    <%# Plan Tab (Placeholder) %>
+    <div class="flex-1 flex justify-center">
+      <button class="flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:text-text-secondary dark:hover:text-gray-400" disabled>
+        <%= lucide_icon "calendar", class: "size-6", stroke_width: 2 %>
+        <span class="text-[10px] font-medium tracking-tight">Plan</span>
+      </button>
+    </div>
+
+    <%# Shop Tab (Placeholder) %>
+    <div class="flex-1 flex justify-center">
+      <button class="flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-gray-500 hover:text-text-secondary dark:hover:text-gray-400" disabled>
+        <%= lucide_icon "shopping-cart", class: "size-6", stroke_width: 2 %>
+        <span class="text-[10px] font-medium tracking-tight">Shop</span>
+      </button>
+    </div>
+
+  </div>
+</nav>

@@ -19,6 +19,10 @@ gem "jbuilder"
 # Lucide icon library for Rails [https://github.com/heyvito/lucide-rails]
 gem "lucide-rails"
 
+# HTTP client for recipe imports [https://lostisland.github.io/faraday/]
+gem "faraday"
+gem "faraday-follow_redirects", require: "faraday/follow_redirects"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
@@ -65,6 +69,9 @@ group :test do
   # System testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+
+  # HTTP request stubbing for testing [https://github.com/bblimke/webmock]
+  gem "webmock"
 end
 
 gem "tailwindcss-rails", "~> 4.4"

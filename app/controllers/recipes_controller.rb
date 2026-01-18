@@ -28,9 +28,30 @@ class RecipesController < ApplicationController
     fresh_when(@recipe)
   end
 
-  # GET /recipes/new
+  # GET /recipes/new - Choice screen
   def new
-    @recipe = Current.user.recipes.build
+  end
+
+  # GET /recipes/new/form - Manual recipe creation form
+  def new_form
+    @recipe = Current.user.recipes.build(imported_recipe_params)
+  end
+
+  # GET /recipes/new/import - Import URL input
+  def new_import
+  end
+
+  # POST /recipes/import - Process URL and redirect to form
+  def import
+    result = RecipeImporter.new(params[:url]).import
+
+    if result.success?
+      session[:imported_recipe] = result.recipe_attributes
+      redirect_to new_form_recipes_path
+    else
+      flash.now[:alert] = result.error
+      render :new_import, status: :unprocessable_entity
+    end
   end
 
   # GET /recipes/1/edit
@@ -95,6 +116,23 @@ class RecipesController < ApplicationController
     # Scoped to current user - prevents accessing other users' recipes
     def set_recipe
       @recipe = Current.user.recipes.find(params.expect(:id))
+    end
+
+    # Params for imported recipe (from session storage)
+    def imported_recipe_params
+      imported = session.delete(:imported_recipe)
+      return {} unless imported.present?
+
+      imported.slice(
+        "name",
+        "notes",
+        "servings",
+        "prep_time",
+        "cook_time",
+        "source_url",
+        "ingredients",
+        "instructions"
+      ).symbolize_keys
     end
 
     # Only allow a list of trusted parameters through.

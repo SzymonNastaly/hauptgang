@@ -1,7 +1,12 @@
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
+require "webmock/minitest"
+require "minitest/mock"
 require_relative "test_helpers/session_test_helper"
+
+# Allow localhost connections for system tests (Selenium WebDriver, Capybara)
+WebMock.disable_net_connect!(allow_localhost: true)
 
 module ActiveSupport
   class TestCase

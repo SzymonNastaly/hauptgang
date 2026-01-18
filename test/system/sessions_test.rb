@@ -10,6 +10,6 @@ class SessionsTest < ApplicationSystemTestCase
     find("[data-testid='password-input']").fill_in with: "password"
     find("[data-testid='sign-in-button']").click
 
-    assert_current_path root_path
+    assert_current_path recipes_path
   end
 end

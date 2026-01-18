@@ -243,6 +243,146 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   # ===================
+  # IMPORT TESTS
+  # ===================
+
+  test "should get new_import" do
+    get new_import_recipes_url
+    assert_response :success
+  end
+
+  test "should get new_form" do
+    get new_form_recipes_url
+    assert_response :success
+  end
+
+  test "should get new_form with prefilled recipe from session" do
+    html = <<~HTML
+      <html>
+      <head>
+        <script type="application/ld+json">
+          {"@type": "Recipe", "name": "Imported Recipe", "recipeIngredient": ["flour"]}
+        </script>
+      </head>
+      <body></body>
+      </html>
+    HTML
+
+    stub_request(:get, "https://example.com/recipe")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    post import_recipes_url, params: { url: "https://example.com/recipe" }
+    follow_redirect!
+
+    assert_response :success
+    assert_match "Imported Recipe", response.body
+  end
+
+  test "import stores recipe in session and redirects to new_form" do
+    html = <<~HTML
+      <html>
+      <head>
+        <script type="application/ld+json">
+          {"@type": "Recipe", "name": "Test Recipe", "recipeIngredient": ["1 cup flour"]}
+        </script>
+      </head>
+      <body></body>
+      </html>
+    HTML
+
+    stub_request(:get, "https://example.com/recipe")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    post import_recipes_url, params: { url: "https://example.com/recipe" }
+
+    assert_response :redirect
+    assert_equal new_form_recipes_path, response.location.sub(/\Ahttp:\/\/[^\/]+/, "")
+  end
+
+  test "new_form reads from session and clears it" do
+    html = <<~HTML
+      <html>
+      <head>
+        <script type="application/ld+json">
+          {"@type": "Recipe", "name": "Session Recipe", "recipeIngredient": ["butter"]}
+        </script>
+      </head>
+      <body></body>
+      </html>
+    HTML
+
+    stub_request(:get, "https://example.com/recipe")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    post import_recipes_url, params: { url: "https://example.com/recipe" }
+    assert session[:imported_recipe].present?
+
+    get new_form_recipes_url
+    assert_response :success
+    assert_match "Session Recipe", response.body
+    assert_nil session[:imported_recipe]
+  end
+
+  test "session data is cleared after being read to prevent replay" do
+    html = <<~HTML
+      <html>
+      <head>
+        <script type="application/ld+json">
+          {"@type": "Recipe", "name": "One Time Recipe", "recipeIngredient": ["salt"]}
+        </script>
+      </head>
+      <body></body>
+      </html>
+    HTML
+
+    stub_request(:get, "https://example.com/recipe")
+      .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
+
+    post import_recipes_url, params: { url: "https://example.com/recipe" }
+
+    # First visit consumes the session data
+    get new_form_recipes_url
+    assert_match "One Time Recipe", response.body
+
+    # Second visit should not have the prefilled data
+    get new_form_recipes_url
+    assert_no_match(/One Time Recipe/, response.body)
+  end
+
+  test "import renders error on failure" do
+    stub_request(:get, "https://example.com/page")
+      .to_return(status: 200, body: "<html><body>No recipe</body></html>", headers: { "Content-Type" => "text/html" })
+
+    post import_recipes_url, params: { url: "https://example.com/page" }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "import requires authentication" do
+    sign_out
+
+    post import_recipes_url, params: { url: "https://example.com/recipe" }
+
+    assert_redirected_to new_session_path
+  end
+
+  test "new_import requires authentication" do
+    sign_out
+
+    get new_import_recipes_url
+
+    assert_redirected_to new_session_path
+  end
+
+  test "new_form requires authentication" do
+    sign_out
+
+    get new_form_recipes_url
+
+    assert_redirected_to new_session_path
+  end
+
+  # ===================
   # COVER IMAGE TESTS
   # ===================
 

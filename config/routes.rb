@@ -3,6 +3,11 @@ Rails.application.routes.draw do
     member do
       patch :toggle_favorite
     end
+    collection do
+      get "new/form", to: "recipes#new_form", as: :new_form
+      get "new/import", to: "recipes#new_import", as: :new_import
+      post "import", to: "recipes#import", as: :import
+    end
   end
   root to: redirect("/recipes")
   resource :session

@@ -1,0 +1,417 @@
+openapi: 3.1.0
+info:
+  title: Hauptgang API
+  description: JSON API for the Hauptgang recipe management application
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token returned from login endpoint
+
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: integer
+          description: User ID
+        email:
+          type: string
+          format: email
+          description: User email address
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          description: User password
+        device_name:
+          type: string
+          description: Optional device name for token identification
+
+    LoginResponse:
+      type: object
+      required:
+        - token
+        - expires_at
+        - user
+      properties:
+        token:
+          type: string
+          description: Bearer token for API authentication
+        expires_at:
+          type: string
+          format: date-time
+          description: Token expiration timestamp
+        user:
+          $ref: '#/components/schemas/User'
+
+    LogoutResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: Logged out successfully
+
+    Tag:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          description: Tag ID
+        name:
+          type: string
+          description: Tag name
+
+    RecipeListItem:
+      type: object
+      required:
+        - id
+        - name
+        - favorite
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Recipe ID
+        name:
+          type: string
+          description: Recipe name
+        prep_time:
+          type:
+            - integer
+            - 'null'
+          description: Preparation time in minutes
+        cook_time:
+          type:
+            - integer
+            - 'null'
+          description: Cooking time in minutes
+        favorite:
+          type: boolean
+          description: Whether recipe is marked as favorite
+        cover_image_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: URL to recipe thumbnail image
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    RecipeDetail:
+      type: object
+      required:
+        - id
+        - name
+        - favorite
+        - ingredients
+        - instructions
+        - tags
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: integer
+          description: Recipe ID
+        name:
+          type: string
+          description: Recipe name
+        prep_time:
+          type:
+            - integer
+            - 'null'
+          description: Preparation time in minutes
+        cook_time:
+          type:
+            - integer
+            - 'null'
+          description: Cooking time in minutes
+        servings:
+          type:
+            - integer
+            - 'null'
+          description: Number of servings
+        favorite:
+          type: boolean
+          description: Whether recipe is marked as favorite
+        ingredients:
+          type: array
+          items:
+            type: string
+          description: List of ingredients
+        instructions:
+          type:
+            - string
+            - 'null'
+          description: Cooking instructions (may contain markdown)
+        notes:
+          type:
+            - string
+            - 'null'
+          description: Additional notes
+        source_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: Original recipe source URL
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          description: Recipe tags/categories
+        cover_image_url:
+          type:
+            - string
+            - 'null'
+          format: uri
+          description: URL to recipe display image
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    FavoriteResponse:
+      type: object
+      required:
+        - id
+        - favorite
+      properties:
+        id:
+          type: integer
+          description: Recipe ID
+        favorite:
+          type: boolean
+          description: Current favorite status
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+
+paths:
+  /session:
+    post:
+      operationId: login
+      summary: Create session (login)
+      description: Authenticate user and receive an API token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '201':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid email or password
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Too many login attempts. Try again later.
+
+    delete:
+      operationId: logout
+      summary: Destroy session (logout)
+      description: Revoke the current API token
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /recipes:
+    get:
+      operationId: getRecipes
+      summary: List recipes
+      description: Get all recipes for the authenticated user
+      parameters:
+        - name: favorites
+          in: query
+          description: Filter to only show favorites
+          schema:
+            type: string
+            enum: ['true']
+      responses:
+        '200':
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipeListItem'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /recipes/{id}:
+    get:
+      operationId: getRecipe
+      summary: Get recipe details
+      description: Get full details for a specific recipe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Recipe ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recipe details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeDetail'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Recipe not found
+
+  /recipes/{recipe_id}/favorite:
+    put:
+      operationId: addFavorite
+      summary: Add recipe to favorites
+      description: Mark a recipe as favorite (idempotent)
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          description: Recipe ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recipe favorited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+              example:
+                id: 1
+                favorite: true
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Recipe not found
+
+    delete:
+      operationId: removeFavorite
+      summary: Remove recipe from favorites
+      description: Unmark a recipe as favorite (idempotent)
+      parameters:
+        - name: recipe_id
+          in: path
+          required: true
+          description: Recipe ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recipe unfavorited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+              example:
+                id: 1
+                favorite: false
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Recipe not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Recipe not found

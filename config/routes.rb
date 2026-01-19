@@ -1,4 +1,13 @@
 Rails.application.routes.draw do
+  namespace :api do
+    namespace :v1 do
+      resource :session, only: [ :create, :destroy ]
+      resources :recipes, only: [ :index, :show ] do
+        resource :favorite, only: [ :update, :destroy ]
+      end
+    end
+  end
+
   resources :recipes do
     member do
       patch :toggle_favorite

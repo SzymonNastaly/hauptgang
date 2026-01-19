@@ -16,6 +16,8 @@ gem "turbo-rails"
 gem "stimulus-rails"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 gem "jbuilder"
+# CORS support for API endpoints [https://github.com/cyu/rack-cors]
+gem "rack-cors"
 # Lucide icon library for Rails [https://github.com/heyvito/lucide-rails]
 gem "lucide-rails"
 

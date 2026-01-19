@@ -1,6 +1,11 @@
 # Omakase Ruby styling for Rails
 inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
+# Exclude mobile app directory (has its own tooling)
+AllCops:
+  Exclude:
+    - "hauptgang-mobile/**/*"
+
 # Load custom cops from lib/rubocop/cop
 require:
   - ./lib/rubocop/cop/hauptgang/scoped_recipe_query

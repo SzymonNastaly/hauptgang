@@ -2,16 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Learning Project
-
-**IMPORTANT**: This is first and foremost a learning project. The developer has a programming background but has never developed a Ruby on Rails project and wants to learn Rails properly.
-
-When assisting with this project:
-
-- **Explain** what you're doing and why, rather than just doing it
-- **Teach** Rails conventions, patterns, and best practices
-- **Suggest** approaches and let the developer implement them
-
 ## Project Overview
 
 Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails 8+ features including:

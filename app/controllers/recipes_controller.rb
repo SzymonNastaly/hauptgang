@@ -3,7 +3,7 @@ class RecipesController < ApplicationController
 
   # GET /recipes or /recipes.json
   def index
-    @recipes = Recipe.all
+    @recipes = Current.user.recipes
 
     # Filter by favorites if requested
     @recipes = @recipes.favorited if params[:view] == "favorites"
@@ -23,7 +23,7 @@ class RecipesController < ApplicationController
 
   # GET /recipes/new
   def new
-    @recipe = Recipe.new
+    @recipe = Current.user.recipes.build
   end
 
   # GET /recipes/1/edit
@@ -32,7 +32,7 @@ class RecipesController < ApplicationController
 
   # POST /recipes or /recipes.json
   def create
-    @recipe = Recipe.new(recipe_params)
+    @recipe = Current.user.recipes.build(recipe_params)
 
     respond_to do |format|
       if @recipe.save
@@ -80,12 +80,34 @@ class RecipesController < ApplicationController
 
   private
     # Use callbacks to share common setup or constraints between actions.
+    # Scoped to current user - prevents accessing other users' recipes
     def set_recipe
-      @recipe = Recipe.find(params.expect(:id))
+      @recipe = Current.user.recipes.find(params.expect(:id))
     end
 
     # Only allow a list of trusted parameters through.
     def recipe_params
-      params.expect(recipe: [ :name, :description, :ingredients, :instructions, :servings ])
+      permitted = params.require(:recipe).permit(
+        :name,
+        :notes,
+        :servings,
+        :prep_time,
+        :cook_time,
+        :cover_image,
+        tag_ids: [],
+        ingredients: [],
+        instructions: []
+      )
+
+      # Filter out empty strings from arrays
+      if permitted[:ingredients].is_a?(Array)
+        permitted[:ingredients] = permitted[:ingredients].reject(&:blank?)
+      end
+
+      if permitted[:instructions].is_a?(Array)
+        permitted[:instructions] = permitted[:instructions].reject(&:blank?)
+      end
+
+      permitted
     end
 end

@@ -1,9 +1,7 @@
-<% content_for :title, "New recipe" %>
+<% content_for :title, "Create New Recipe" %>
 
-<div class="prose w-full max-w-none">
-  <h1>New recipe</h1>
-
-  <%= render "form", recipe: @recipe %>
-
-  <%= link_to "Back to recipes", recipes_path, class: "mt-4" %>
+<div class="h-full overflow-y-auto">
+  <div class="p-4 md:p-8">
+    <%= render "form", recipe: @recipe %>
+  </div>
 </div>

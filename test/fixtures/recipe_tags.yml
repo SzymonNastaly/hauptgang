@@ -1,9 +1,14 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Join table: connects recipes to tags
+# Note: recipe names match fixtures in recipes.yml, tag names match tags.yml
 
-one:
+pasta_breakfast:
   recipe: one
-  tag: one
+  tag: breakfast
 
-two:
+curry_dinner:
   recipe: two
-  tag: two
+  tag: dinner
+
+salad_vegetarian:
+  recipe: three
+  tag: vegetarian

@@ -64,7 +64,7 @@
     </div>
 
     <%# New Recipe Button %>
-    <%= link_to new_recipe_path, class: "flex items-center gap-1 bg-brand-primary dark:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-brand-primary-dark dark:hover:bg-amber-800 shadow-sm transition-colors ml-2" do %>
+    <%= link_to new_recipe_path, class: "flex items-center gap-1 bg-brand-primary dark:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-brand-primary-dark dark:hover:bg-amber-800 shadow-sm transition-colors ml-2", data: { testid: "new-recipe-button" } do %>
       <%= lucide_icon "plus", class: "size-3.5" %>
       <span>New</span>
     <% end %>

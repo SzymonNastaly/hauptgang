@@ -1,9 +1,14 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+# Tags for testing
+# Slugs must be unique (there's a unique index on slug)
 
-one:
-  name: MyString
-  slug: MyString
+breakfast:
+  name: Breakfast
+  slug: breakfast
 
-two:
-  name: MyString
-  slug: MyString
+dinner:
+  name: Dinner
+  slug: dinner
+
+vegetarian:
+  name: Vegetarian
+  slug: vegetarian

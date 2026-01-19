@@ -1,0 +1,32 @@
+# API token fixtures
+# Note: These use a known digest for the raw token "test_token_one"
+# SHA256 of "test_token_one" = 5e884898da28047d0e2b19f52f6b81dc3e9d63c72d2f2c20e5d8a6c8a4d8b6f7
+# (We use a predictable digest for testing - in production, tokens are random)
+
+<% active_digest = Digest::SHA256.hexdigest("test_token_active") %>
+<% revoked_digest = Digest::SHA256.hexdigest("test_token_revoked") %>
+<% expired_digest = Digest::SHA256.hexdigest("test_token_expired") %>
+
+active:
+  user: one
+  token_digest: <%= active_digest %>
+  name: "Test Device"
+  last_used_at: <%= 1.hour.ago %>
+  expires_at: <%= 30.days.from_now %>
+  revoked_at: null
+
+revoked:
+  user: one
+  token_digest: <%= revoked_digest %>
+  name: "Revoked Device"
+  last_used_at: <%= 1.day.ago %>
+  expires_at: <%= 30.days.from_now %>
+  revoked_at: <%= 1.hour.ago %>
+
+expired:
+  user: one
+  token_digest: <%= expired_digest %>
+  name: "Expired Device"
+  last_used_at: <%= 100.days.ago %>
+  expires_at: <%= 1.day.ago %>
+  revoked_at: null

@@ -1,60 +1,113 @@
-<div id="<%= dom_id recipe %>" class="space-y-6">
-  <h2 class="text-3xl font-bold"><%= recipe.name %></h2>
+<div id="<%= dom_id recipe %>" class="max-w-5xl mx-auto">
+  <%# Recipe Header %>
+  <div class="mb-6 md:mb-8">
+    <%# Tags %>
+    <% if recipe.tags.any? %>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <% recipe.tags.each do |tag| %>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
+            <%= tag.name %>
+          </span>
+        <% end %>
+      </div>
+    <% end %>
 
-  <% if recipe.notes.present? %>
-    <p class="text-text-secondary dark:text-gray-400"><%= recipe.notes %></p>
-  <% end %>
+    <%# Title %>
+    <h1 class="text-2xl md:text-3xl font-bold text-text-primary dark:text-gray-100 mb-3">
+      <%= recipe.name %>
+    </h1>
 
+    <%# Notes/Description %>
+    <% if recipe.notes.present? %>
+      <p class="text-text-secondary dark:text-gray-400 text-sm md:text-base leading-relaxed">
+        <%= recipe.notes %>
+      </p>
+    <% end %>
+  </div>
+
+  <%# Metadata Bar %>
   <% if recipe.prep_time.present? || recipe.cook_time.present? || recipe.servings.present? %>
-    <div class="flex gap-4 text-sm">
+    <div class="flex flex-wrap gap-4 md:gap-6 p-4 bg-surface-raised dark:bg-gray-900 rounded-lg mb-6 md:mb-8">
       <% if recipe.prep_time.present? %>
-        <div class="flex items-center gap-1">
-          <%= lucide_icon "clock", class: "size-4 text-brand-primary dark:text-amber-500" %>
-          <span>Prep: <%= recipe.prep_time %>m</span>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-brand-primary/10 dark:bg-amber-500/10 flex items-center justify-center">
+            <%= lucide_icon "clock", class: "size-4 text-brand-primary dark:text-amber-500" %>
+          </div>
+          <div>
+            <p class="text-[10px] font-medium uppercase tracking-wider text-text-tertiary dark:text-gray-500">Prep</p>
+            <p class="text-sm font-semibold text-text-primary dark:text-gray-200"><%= recipe.prep_time %> min</p>
+          </div>
         </div>
       <% end %>
       <% if recipe.cook_time.present? %>
-        <div class="flex items-center gap-1">
-          <%= lucide_icon "flame", class: "size-4 text-brand-primary dark:text-amber-500" %>
-          <span>Cook: <%= recipe.cook_time %>m</span>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-brand-primary/10 dark:bg-amber-500/10 flex items-center justify-center">
+            <%= lucide_icon "flame", class: "size-4 text-brand-primary dark:text-amber-500" %>
+          </div>
+          <div>
+            <p class="text-[10px] font-medium uppercase tracking-wider text-text-tertiary dark:text-gray-500">Cook</p>
+            <p class="text-sm font-semibold text-text-primary dark:text-gray-200"><%= recipe.cook_time %> min</p>
+          </div>
         </div>
       <% end %>
       <% if recipe.servings.present? %>
-        <div class="flex items-center gap-1">
-          <%= lucide_icon "users", class: "size-4 text-brand-primary dark:text-amber-500" %>
-          <span>Serves: <%= recipe.servings %></span>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-brand-primary/10 dark:bg-amber-500/10 flex items-center justify-center">
+            <%= lucide_icon "users", class: "size-4 text-brand-primary dark:text-amber-500" %>
+          </div>
+          <div>
+            <p class="text-[10px] font-medium uppercase tracking-wider text-text-tertiary dark:text-gray-500">Servings</p>
+            <p class="text-sm font-semibold text-text-primary dark:text-gray-200"><%= recipe.servings %></p>
+          </div>
         </div>
       <% end %>
     </div>
   <% end %>
 
-  <% if recipe.ingredients.present? && recipe.ingredients.any? %>
-    <div>
-      <h3 class="text-xl font-bold mb-3">Ingredients</h3>
-      <ul class="space-y-2">
-        <% recipe.ingredients.each do |ingredient| %>
-          <li class="flex items-start gap-2">
-            <span class="text-brand-primary dark:text-amber-500 mt-1">•</span>
-            <span><%= ingredient %></span>
-          </li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%# Main Content: Two-column on desktop, stacked on mobile %>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
+    <%# Ingredients Column %>
+    <% if recipe.ingredients.present? && recipe.ingredients.any? %>
+      <div class="lg:col-span-4">
+        <div class="lg:sticky lg:top-24">
+          <div class="bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 p-4 md:p-5">
+            <h2 class="text-lg font-bold text-text-primary dark:text-gray-100 mb-4 flex items-center gap-2">
+              <%= lucide_icon "list", class: "size-5 text-brand-primary dark:text-amber-500" %>
+              Ingredients
+            </h2>
+            <ul class="space-y-3">
+              <% recipe.ingredients.each do |ingredient| %>
+                <li class="flex items-start gap-3 text-sm text-text-primary dark:text-gray-200">
+                  <span class="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-brand-primary dark:bg-amber-500 mt-2"></span>
+                  <span><%= ingredient %></span>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    <% end %>
 
-  <% if recipe.instructions.present? && recipe.instructions.any? %>
-    <div>
-      <h3 class="text-xl font-bold mb-3">Instructions</h3>
-      <ol class="space-y-4">
-        <% recipe.instructions.each_with_index do |instruction, index| %>
-          <li class="flex gap-4">
-            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-primary/10 dark:bg-amber-500/10 text-brand-primary dark:text-amber-500 font-bold flex items-center justify-center">
-              <%= index + 1 %>
-            </span>
-            <span class="flex-1 pt-1"><%= instruction %></span>
-          </li>
-        <% end %>
-      </ol>
-    </div>
-  <% end %>
+    <%# Instructions Column %>
+    <% if recipe.instructions.present? && recipe.instructions.any? %>
+      <div class="<%= recipe.ingredients.present? && recipe.ingredients.any? ? 'lg:col-span-8' : 'lg:col-span-12' %>">
+        <h2 class="text-lg font-bold text-text-primary dark:text-gray-100 mb-4 flex items-center gap-2">
+          <%= lucide_icon "chef-hat", class: "size-5 text-brand-primary dark:text-amber-500" %>
+          Instructions
+        </h2>
+        <ol class="space-y-4">
+          <% recipe.instructions.each_with_index do |instruction, index| %>
+            <li class="flex gap-4 group">
+              <span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-primary dark:bg-amber-600 text-white font-bold text-sm flex items-center justify-center shadow-sm">
+                <%= index + 1 %>
+              </span>
+              <div class="flex-1 pt-1">
+                <p class="text-text-primary dark:text-gray-200 leading-relaxed"><%= instruction %></p>
+              </div>
+            </li>
+          <% end %>
+        </ol>
+      </div>
+    <% end %>
+  </div>
 </div>

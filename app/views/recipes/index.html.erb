@@ -38,7 +38,7 @@
     <% if @recipes.any? %>
 
       <%# GRID VIEW - Masonry Layout %>
-      <div data-view-switcher-target="gridView" data-testid="recipes-grid">
+      <div data-view-switcher-target="gridView">
         <div data-controller="masonry">
           <%# Recipe Cards %>
           <% @recipes.each do |recipe| %>
@@ -79,7 +79,7 @@
 
     <% else %>
       <%# Empty State %>
-      <div class="h-full flex flex-col items-center justify-center text-center py-20 opacity-60" data-testid="empty-state">
+      <div class="h-full flex flex-col items-center justify-center text-center py-20 opacity-60">
         <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
           <%= lucide_icon "search", class: "size-6 text-text-tertiary dark:text-gray-500" %>
         </div>

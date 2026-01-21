@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -e
+
+# Start Rails + ngrok + Expo for mobile development
+# Usage: bin/dev-mobile
+
+MOBILE_DIR="hauptgang-mobile"
+MOBILE_ENV_FILE="$MOBILE_DIR/.env"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+cleanup() {
+  echo ""
+  echo -e "${YELLOW}Shutting down all services...${NC}"
+  kill $NGROK_PID 2>/dev/null || true
+  kill $RAILS_PID 2>/dev/null || true
+  kill $EXPO_PID 2>/dev/null || true
+  exit 0
+}
+
+trap cleanup SIGINT SIGTERM
+
+# Start ngrok in background
+echo -e "${BLUE}[ngrok]${NC} Starting tunnel..."
+ngrok http 3000 --log=stdout > /dev/null 2>&1 &
+NGROK_PID=$!
+
+# Wait for ngrok to be ready
+for i in {1..30}; do
+  NGROK_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | grep -o '"public_url":"https://[^"]*' | head -1 | cut -d'"' -f4)
+  if [ -n "$NGROK_URL" ]; then
+    break
+  fi
+  sleep 0.5
+done
+
+if [ -z "$NGROK_URL" ]; then
+  echo -e "${RED}[ngrok]${NC} Error: Could not get ngrok URL"
+  cleanup
+  exit 1
+fi
+
+NGROK_HOST=$(echo "$NGROK_URL" | sed 's|https://||')
+
+echo ""
+echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+echo -e "${GREEN}  API URL: ${NGROK_URL}${NC}"
+echo -e "${GREEN}════════════════════════════════════════════════════════════${NC}"
+echo ""
+
+# Update mobile .env
+echo "EXPO_PUBLIC_API_BASE_URL=$NGROK_URL" > "$MOBILE_ENV_FILE"
+echo -e "${BLUE}[config]${NC} Updated $MOBILE_ENV_FILE"
+
+# Start Rails in background
+echo -e "${RED}[rails]${NC} Starting server..."
+NGROK_HOST="$NGROK_HOST" bin/rails server 2>&1 | sed "s/^/$(echo -e "${RED}[rails]${NC} ")/" &
+RAILS_PID=$!
+
+# Give Rails a moment to start
+sleep 2
+
+# Start Expo
+echo -e "${GREEN}[expo]${NC} Starting mobile app..."
+cd "$MOBILE_DIR" && npx expo start --tunnel --clear 2>&1 | sed "s/^/$(echo -e "${GREEN}[expo]${NC} ")/" &
+EXPO_PID=$!
+
+# Wait for any process to exit
+wait

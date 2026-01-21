@@ -30,6 +30,36 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_no_match @other_recipe.name, response.body
   end
 
+  test "sidebar recipe count shows only current user's recipes" do
+    get recipes_url
+
+    # User one has 2 recipes (one and three), user two has 1 recipe (two)
+    # Sidebar should show "2", not "3" (total)
+    user_recipe_count = @user.recipes.count
+    total_recipes = Recipe.count
+
+    assert_equal 2, user_recipe_count, "Fixture assumption: user one should have 2 recipes"
+    assert_equal 3, total_recipes, "Fixture assumption: total recipes should be 3"
+
+    # Use data-testid for stable test selectors
+    assert_select "[data-testid='all-recipes-count']", text: user_recipe_count.to_s
+  end
+
+  test "sidebar favorites count shows only current user's favorites" do
+    get recipes_url
+
+    # User one has 1 favorite (three), user two has 1 favorite (two)
+    # Sidebar should show "1", not "2" (total)
+    user_favorites_count = @user.recipes.favorited.count
+    total_favorites = Recipe.where(favorite: true).count
+
+    assert_equal 1, user_favorites_count, "Fixture assumption: user one should have 1 favorite"
+    assert_equal 2, total_favorites, "Fixture assumption: total favorites should be 2"
+
+    # Use data-testid for stable test selectors
+    assert_select "[data-testid='favorites-count']", text: user_favorites_count.to_s
+  end
+
   test "should get new" do
     get new_recipe_url
     assert_response :success

@@ -10,6 +10,8 @@ export default class extends Controller {
 
   connect() {
     this.invalidateCache()
+    // Remove the element after invalidation is triggered
+    this.element.remove()
   }
 
   invalidateCache() {

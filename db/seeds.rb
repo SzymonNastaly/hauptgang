@@ -3,7 +3,7 @@
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
 # Create tags
-["Breakfast", "Lunch", "Dinner", "Baking", "Dessert", "Quick & Easy", "Vegetarian"].each do |tag_name|
+[ "Breakfast", "Lunch", "Dinner", "Baking", "Dessert", "Quick & Easy", "Vegetarian" ].each do |tag_name|
   Tag.find_or_create_by!(name: tag_name)
 end
 

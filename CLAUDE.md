@@ -45,3 +45,20 @@ When creating git commits:
 ## CI Requirements
 
 Run `bin/ci` before committing. All checks (style, security audits, tests) must pass before merging.
+
+## Mobile Development
+
+The mobile app is in `hauptgang-mobile/`. API connection uses `lib/config.ts` which auto-detects the environment.
+
+```bash
+# iOS Simulator development (localhost backend)
+bin/mobile-reset             # Clear .env for localhost mode
+bin/dev                      # Start Rails
+cd hauptgang-mobile && npx expo start        # Start Expo
+cd hauptgang-mobile && npx expo run:ios      # Build & run iOS
+
+# Physical device development (ngrok tunnel)
+bin/dev-mobile               # Starts ngrok + Rails + Expo
+```
+
+**Production API**: `https://cook.hauptgang.app`

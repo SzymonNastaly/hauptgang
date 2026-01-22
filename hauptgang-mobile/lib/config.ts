@@ -37,8 +37,8 @@ function getApiBaseUrl(): string {
     return 'http://localhost:3000';
   }
 
-  // Production URL - update when deploying
-  return 'https://hauptgang.example.com';
+  // Production URL
+  return 'https://cook.hauptgang.app';
 }
 
 export const API_BASE_URL = getApiBaseUrl();

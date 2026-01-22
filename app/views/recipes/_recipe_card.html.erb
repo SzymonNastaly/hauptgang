@@ -17,7 +17,7 @@
   <% end %>
 
   <%# Content Area %>
-  <div class="p-4 flex flex-col flex-1">
+  <div class="px-4 pt-4 pb-2 flex flex-col flex-1 min-h-0 overflow-hidden">
     <%# Tags - Show first tag or "Recipe" if no tags %>
     <div class="flex justify-between items-start mb-2">
       <% if recipe.tags.any? %>
@@ -32,19 +32,19 @@
     </div>
 
     <%# Recipe Title %>
-    <h3 class="font-serif font-bold text-lg text-text-primary dark:text-gray-100 leading-snug mb-1 line-clamp-2">
+    <h3 class="font-serif font-bold text-lg text-text-primary dark:text-gray-100 leading-normal mb-1 line-clamp-2">
       <%= recipe.name %>
     </h3>
 
     <%# Recipe Notes Preview %>
-    <p class="text-text-secondary dark:text-gray-400 text-xs line-clamp-4 mb-4">
+    <p class="text-text-secondary dark:text-gray-400 text-xs line-clamp-2 mb-auto">
       <%= recipe.notes || "No notes available." %>
     </p>
 
     <%# Footer Metadata - Only show if time data exists %>
     <% total_time = (recipe.prep_time || 0) + (recipe.cook_time || 0) %>
     <% if total_time > 0 %>
-      <div class="flex items-center justify-between text-xs text-text-tertiary dark:text-gray-500 font-medium pt-3 border-t border-gray-100 dark:border-gray-700 mt-auto">
+      <div class="flex items-center justify-between text-xs text-text-tertiary dark:text-gray-500 font-medium mt-auto">
         <div class="flex items-center gap-1">
           <%= lucide_icon "clock", class: "size-3" %>
           <span><%= total_time %>m</span>

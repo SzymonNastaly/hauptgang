@@ -3,6 +3,8 @@ import { Image } from 'expo-image';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Haptics from 'expo-haptics';
 import type { RecipeListItem } from '@/lib/api';
+import { brand, brandDark } from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
 
 interface RecipeCardProps {
   recipe: RecipeListItem;
@@ -10,12 +12,17 @@ interface RecipeCardProps {
 }
 
 export default function RecipeCard({ recipe, onPress }: RecipeCardProps) {
+  const colorScheme = useColorScheme();
+  const accentColor = colorScheme === 'dark' ? brandDark.primary : brand.primary;
+  const iconColor = colorScheme === 'dark' ? '#6B7280' : '#9B9B9B';
+
   const handlePress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     onPress();
   };
+
   const formatTime = (minutes: number | null | undefined) => {
     if (!minutes) return null;
     if (minutes < 60) return `${minutes}m`;
@@ -31,7 +38,7 @@ export default function RecipeCard({ recipe, onPress }: RecipeCardProps) {
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.7}
-      className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm"
+      className="bg-surface-overlay dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm border border-border-subtle dark:border-gray-700"
     >
       {recipe.cover_image_url ? (
         <Image
@@ -40,28 +47,28 @@ export default function RecipeCard({ recipe, onPress }: RecipeCardProps) {
           contentFit="cover"
         />
       ) : (
-        <View className="w-full h-40 bg-gray-200 dark:bg-gray-700 items-center justify-center">
-          <FontAwesome name="cutlery" size={32} color="#9CA3AF" />
+        <View className="w-full h-40 bg-surface-raised dark:bg-gray-700 items-center justify-center">
+          <FontAwesome name="cutlery" size={32} color={iconColor} />
         </View>
       )}
 
       <View className="p-4">
         <View className="flex-row items-start justify-between">
           <Text
-            className="text-lg font-semibold text-gray-900 dark:text-white flex-1 mr-2"
+            className="text-lg font-bold text-text-primary dark:text-gray-100 flex-1 mr-2 font-serif"
             numberOfLines={2}
           >
             {recipe.name}
           </Text>
           {recipe.favorite && (
-            <FontAwesome name="heart" size={18} color="#f97316" />
+            <FontAwesome name="heart" size={18} color={accentColor} />
           )}
         </View>
 
         {totalTime && (
           <View className="flex-row items-center mt-2">
-            <FontAwesome name="clock-o" size={14} color="#6B7280" />
-            <Text className="text-gray-500 dark:text-gray-400 ml-1.5 text-sm">
+            <FontAwesome name="clock-o" size={14} color={iconColor} />
+            <Text className="text-text-tertiary dark:text-gray-400 ml-1.5 text-sm">
               {formatTime(totalTime)}
             </Text>
           </View>

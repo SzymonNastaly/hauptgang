@@ -9,8 +9,12 @@ import { router, Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { getRecipes } from '@/lib/api';
 import RecipeCard from '@/components/RecipeCard';
+import { brand, brandDark } from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
 
 export default function RecipeListScreen() {
+  const colorScheme = useColorScheme();
+  const tintColor = colorScheme === 'dark' ? brandDark.primary : brand.primary;
 
   const {
     data: recipes,
@@ -25,19 +29,19 @@ export default function RecipeListScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <ActivityIndicator size="large" color="#f97316" />
+      <View className="flex-1 items-center justify-center bg-surface-base dark:bg-gray-950">
+        <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+      <View className="flex-1 items-center justify-center bg-surface-base dark:bg-gray-950 px-4">
         <Text className="text-red-500 text-center mb-4">
           Failed to load recipes
         </Text>
-        <Text className="text-gray-500 dark:text-gray-400 text-center">
+        <Text className="text-text-tertiary dark:text-gray-400 text-center">
           {error.message}
         </Text>
       </View>
@@ -46,11 +50,11 @@ export default function RecipeListScreen() {
 
   if (!recipes || recipes.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-        <Text className="text-gray-500 dark:text-gray-400 text-center text-lg">
+      <View className="flex-1 items-center justify-center bg-surface-base dark:bg-gray-950 px-4">
+        <Text className="text-text-secondary dark:text-gray-400 text-center text-lg">
           No recipes yet
         </Text>
-        <Text className="text-gray-400 dark:text-gray-500 text-center mt-2">
+        <Text className="text-text-tertiary dark:text-gray-500 text-center mt-2">
           Add recipes from the web app to see them here
         </Text>
       </View>
@@ -58,7 +62,7 @@ export default function RecipeListScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-900">
+    <View className="flex-1 bg-surface-base dark:bg-gray-950">
       <FlatList
         data={recipes}
         keyExtractor={(item) => item.id.toString()}
@@ -75,7 +79,7 @@ export default function RecipeListScreen() {
           <RefreshControl
             refreshing={isRefetching}
             onRefresh={() => refetch()}
-            tintColor="#f97316"
+            tintColor={tintColor}
           />
         }
       />

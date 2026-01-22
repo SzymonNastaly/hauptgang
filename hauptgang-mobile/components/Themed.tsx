@@ -1,5 +1,5 @@
 /**
- * Learn more about Light and Dark modes:
+ * Themed components using Hauptgang design system colors.
  * https://docs.expo.io/guides/color-schemes/
  */
 

@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hauptgang Design System Custom Properties */
+:root {
+  --color-brand-primary: #8B5E34;
+  --color-brand-primary-dark: #6B4826;
+  --color-brand-primary-light: #A57A52;
+
+  --color-surface-base: #FDFBF7;
+  --color-surface-raised: #F5F2EA;
+  --color-surface-overlay: #FFFFFF;
+
+  --color-border-subtle: #E5E0D5;
+  --color-border-medium: #D5CABF;
+
+  --color-text-primary: #1F1F1F;
+  --color-text-secondary: #6B6B6B;
+  --color-text-tertiary: #9B9B9B;
+}

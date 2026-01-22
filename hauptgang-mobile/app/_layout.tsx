@@ -12,6 +12,7 @@ import '../global.css';
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { ApiRequestError } from '@/lib/api';
+import Colors, { brand, brandDark } from '@/constants/Colors';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,31 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Custom navigation themes using Hauptgang design tokens
+const HauptgangLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: brand.primary,
+    background: Colors.light.background,
+    card: Colors.light.surface,
+    text: Colors.light.text,
+    border: Colors.light.borderSubtle,
+  },
+};
+
+const HauptgangDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: brandDark.primary,
+    background: Colors.dark.background,
+    card: Colors.dark.surface,
+    text: Colors.dark.text,
+    border: Colors.dark.borderSubtle,
+  },
+};
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -90,18 +116,20 @@ function RootLayoutNav() {
     }
   }, [isLoading, isAuthenticated, segments, navigationState?.key]);
 
+  const tintColor = colorScheme === 'dark' ? brandDark.primary : brand.primary;
+
   // Show loading screen while checking auth
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <ActivityIndicator size="large" color="#f97316" />
+      <View className="flex-1 items-center justify-center bg-surface-base dark:bg-gray-950">
+        <ActivityIndicator size="large" color={tintColor} />
       </View>
     );
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={colorScheme === 'dark' ? HauptgangDarkTheme : HauptgangLightTheme}>
         <Stack>
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(main)" options={{ headerShown: false }} />

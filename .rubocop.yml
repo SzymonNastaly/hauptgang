@@ -3,10 +3,10 @@ inherit_gem: { rubocop-rails-omakase: rubocop.yml }
 
 # Load custom cops from lib/rubocop/cop
 require:
-  - ./lib/rubocop/cop/notjustpesto/scoped_recipe_query
+  - ./lib/rubocop/cop/hauptgang/scoped_recipe_query
 
 # Enable custom cops
-NotJustPesto/ScopedRecipeQuery:
+Hauptgang/ScopedRecipeQuery:
   Enabled: true
   Description: "Detects unscoped Recipe queries that leak data across users"
 

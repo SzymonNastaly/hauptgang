@@ -1,55 +1,47 @@
-<%# Recipe Card for Grid View - Card with image = 2x card without image + gap (24px) %>
+<%# Recipe Card for Grid View - Uniform height with overlay design %>
 
-<%= link_to recipe, class: "group bg-surface-overlay dark:bg-gray-800 rounded-lg border border-border-subtle dark:border-gray-700 shadow-sm hover:shadow-md hover:border-brand-primary/30 dark:hover:border-amber-700/30 transition-all cursor-pointer flex flex-col relative w-full #{recipe.cover_image.attached? ? 'h-[332px]' : 'h-[154px]'}", data: { testid: "recipe-card-#{recipe.id}" } do %>
-  <%# Note: Cards without images = 154px, cards with images = 332px (2 × 154px + 24px gap) %>
+<%= link_to recipe, class: "block group relative h-[224px] rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer #{recipe.cover_image.attached? ? 'bg-gray-200 dark:bg-gray-700' : 'bg-surface-raised dark:bg-gray-800 border border-border-subtle dark:border-gray-700'}", data: { testid: "recipe-card-#{recipe.id}" } do %>
 
-  <%# Overlay Action Buttons - Always visible on mobile, hover on desktop %>
-  <%= render "recipes/favorite_button", recipe: recipe, context: :card %>
-
-  <%# Image Area - Only render if image exists - 178px (332px total - 154px content) %>
   <% if recipe.cover_image.attached? %>
-    <div class="h-[178px] bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg shrink-0">
-      <%= image_tag recipe.cover_image.variant(:thumbnail),
-          alt: recipe.name,
-          class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500",
-          loading: "lazy" %>
-    </div>
+    <%# Full-bleed background image %>
+    <%= image_tag recipe.cover_image.variant(:thumbnail),
+        alt: recipe.name,
+        class: "absolute inset-0 w-full h-full object-cover",
+        loading: "lazy" %>
+
+    <%# Gradient overlay for text readability %>
+    <div class="absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.35)_40%,transparent_70%)]"></div>
   <% end %>
 
-  <%# Content Area %>
-  <div class="px-4 pt-4 pb-2 flex flex-col flex-1 min-h-0 overflow-hidden">
-    <%# Tags - Show first tag or "Recipe" if no tags %>
-    <div class="flex justify-between items-start mb-2">
-      <% if recipe.tags.any? %>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10 px-2 py-0.5 rounded-sm">
-          <%= recipe.tags.first.name %>
-        </span>
-      <% else %>
-        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-sm">
-          Recipe
-        </span>
-      <% end %>
-    </div>
+  <%# Favorite button - positioned in top-right %>
+  <%= render "recipes/favorite_button", recipe: recipe, context: :card %>
 
-    <%# Recipe Title %>
-    <h3 class="font-serif font-bold text-lg text-text-primary dark:text-gray-100 leading-normal mb-1 line-clamp-2">
+  <%# Content - Positioned at Bottom %>
+  <div class="absolute inset-x-0 bottom-0 p-4 flex flex-col">
+    <%# Title %>
+    <h3 class="font-serif font-bold text-lg leading-tight mb-2 line-clamp-2 <%= recipe.cover_image.attached? ? 'text-gray-100' : 'text-text-primary dark:text-gray-100' %>">
       <%= recipe.name %>
     </h3>
 
-    <%# Recipe Notes Preview %>
-    <p class="text-text-secondary dark:text-gray-400 text-xs line-clamp-2 mb-auto">
-      <%= recipe.notes || "No notes available." %>
-    </p>
-
-    <%# Footer Metadata - Only show if time data exists %>
-    <% total_time = (recipe.prep_time || 0) + (recipe.cook_time || 0) %>
-    <% if total_time > 0 %>
-      <div class="flex items-center justify-between text-xs text-text-tertiary dark:text-gray-500 font-medium mt-auto">
-        <div class="flex items-center gap-1">
+    <%# Time + Tag Row %>
+    <div class="flex items-center justify-between">
+      <%# Time (left side) %>
+      <% total_time = (recipe.prep_time || 0) + (recipe.cook_time || 0) %>
+      <% if total_time > 0 %>
+        <div class="flex items-center gap-1 text-xs <%= recipe.cover_image.attached? ? 'text-gray-300' : 'text-text-tertiary dark:text-gray-500' %>">
           <%= lucide_icon "clock", class: "size-3" %>
           <span><%= total_time %>m</span>
         </div>
-      </div>
-    <% end %>
+      <% else %>
+        <div></div>
+      <% end %>
+
+      <%# Tag (right side) %>
+      <% if recipe.tags.any? %>
+        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm <%= recipe.cover_image.attached? ? 'text-amber-400 bg-black/40' : 'text-brand-primary dark:text-amber-500 bg-brand-primary/10 dark:bg-amber-500/10' %>">
+          <%= recipe.tags.first.name %>
+        </span>
+      <% end %>
+    </div>
   </div>
 <% end %>

@@ -65,9 +65,9 @@ RAILS_PID=$!
 # Give Rails a moment to start
 sleep 2
 
-# Start Expo
-echo -e "${GREEN}[expo]${NC} Starting mobile app..."
-cd "$MOBILE_DIR" && npx expo start --tunnel --clear 2>&1 | sed "s/^/$(echo -e "${GREEN}[expo]${NC} ")/" &
+# Start Expo (clear NativeWind cache + Metro cache)
+echo -e "${GREEN}[expo]${NC} Clearing caches and starting mobile app..."
+cd "$MOBILE_DIR" && rm -rf node_modules/.cache && npx expo start --tunnel --clear 2>&1 | sed "s/^/$(echo -e "${GREEN}[expo]${NC} ")/" &
 EXPO_PID=$!
 
 # Wait for any process to exit

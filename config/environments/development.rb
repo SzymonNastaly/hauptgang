@@ -3,7 +3,7 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  # Allow ngrok tunnel for mobile development (set by bin/dev-mobile)
+  # Allow ngrok tunnel for mobile development
   if ENV["NGROK_HOST"].present?
     config.hosts << ENV["NGROK_HOST"]
   end

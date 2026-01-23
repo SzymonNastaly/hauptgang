@@ -18,12 +18,8 @@ struct LoginView: View {
                 VStack(spacing: Theme.Spacing.xl) {
                     // Logo and title
                     VStack(spacing: Theme.Spacing.md) {
-                        Image(systemName: "fork.knife")
-                            .font(.system(size: 48))
-                            .foregroundColor(.hauptgangPrimary)
-
                         Text("Hauptgang")
-                            .font(.largeTitle)
+                            .font(.system(.largeTitle, design: .serif))
                             .fontWeight(.bold)
                             .foregroundColor(.hauptgangTextPrimary)
 
@@ -38,11 +34,12 @@ struct LoginView: View {
                         // Email field
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                             Text("Email")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.hauptgangTextPrimary)
+                                .font(.footnote)
+                                .foregroundColor(.hauptgangTextSecondary)
+                                .textCase(.uppercase)
+                                .tracking(0.5)
 
-                            TextField("you@example.com", text: $viewModel.email)
+                            TextField("Enter your email", text: $viewModel.email)
                                 .themeTextField(isError: viewModel.emailError != nil)
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
@@ -62,9 +59,10 @@ struct LoginView: View {
                         // Password field
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                             Text("Password")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.hauptgangTextPrimary)
+                                .font(.footnote)
+                                .foregroundColor(.hauptgangTextSecondary)
+                                .textCase(.uppercase)
+                                .tracking(0.5)
 
                             SecureField("Enter your password", text: $viewModel.password)
                                 .themeTextField()
@@ -76,16 +74,10 @@ struct LoginView: View {
 
                         // Error message
                         if let errorMessage = viewModel.errorMessage {
-                            HStack(spacing: Theme.Spacing.sm) {
-                                Image(systemName: "exclamationmark.circle.fill")
-                                Text(errorMessage)
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.hauptgangError)
-                            .padding(Theme.Spacing.md)
-                            .frame(maxWidth: .infinity)
-                            .background(Color.hauptgangError.opacity(0.1))
-                            .cornerRadius(Theme.CornerRadius.md)
+                            Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                                .font(.subheadline)
+                                .foregroundColor(.hauptgangError)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
                         // Sign in button
@@ -95,20 +87,12 @@ struct LoginView: View {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 }
-                                Text(viewModel.isLoading ? "Signing in..." : "Sign in")
+                                Text(viewModel.isLoading ? "Signing in…" : "Sign In")
                             }
                         }
                         .primaryButton()
                         .disabled(!viewModel.isFormValid || viewModel.isLoading)
                     }
-                    .padding(Theme.Spacing.lg)
-                    .background(Color.hauptgangCard)
-                    .cornerRadius(Theme.CornerRadius.lg)
-                    .shadow(
-                        color: Theme.Shadow.md.color,
-                        radius: Theme.Shadow.md.radius,
-                        y: Theme.Shadow.md.y
-                    )
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
             }

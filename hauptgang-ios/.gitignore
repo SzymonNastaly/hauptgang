@@ -1,0 +1,33 @@
+# Generated Xcode project (reproducible via xcodegen)
+*.xcodeproj
+
+# Xcode
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# DerivedData
+DerivedData/
+
+# CocoaPods (if used later)
+Pods/
+Podfile.lock
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Fastlane (if used later)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# macOS
+.DS_Store

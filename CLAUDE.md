@@ -14,116 +14,31 @@ When assisting with this project:
 
 ## Project Overview
 
-Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails features including Hotwire (Turbo and Stimulus), SQLite databases, and the Solid suite (Solid Cache, Solid Queue, Solid Cable) for caching, background jobs, and Action Cable.
+Hauptgang is a Rails 8.1 application using Ruby 3.4.7. It follows Rails conventions and uses modern Rails 8+ features including:
 
-## Development Commands
-
-### Initial Setup
-
-```bash
-bin/setup                    # Install dependencies, prepare database, start server
-bin/setup --skip-server     # Setup without starting server
-bin/setup --reset           # Reset database during setup
-```
-
-### Running the Application
-
-```bash
-bin/dev                     # Start development server (Rails server)
-bin/rails server            # Alternative way to start server
-```
-
-### Database Operations
-
-```bash
-bin/rails db:prepare        # Create and migrate database
-bin/rails db:migrate        # Run pending migrations
-bin/rails db:rollback       # Rollback last migration
-bin/rails db:seed           # Load seed data
-bin/rails db:reset          # Drop, create, migrate, and seed database
-bin/rails dbconsole         # Open database console
-```
-
-### Testing
-
-```bash
-bin/rails test              # Run all tests
-bin/rails test:system       # Run system tests only
-bin/rails test test/models/your_model_test.rb  # Run a single test file
-bin/rails test test/models/your_model_test.rb:10  # Run test at specific line
-```
-
-### Code Quality & Security
-
-```bash
-bin/rubocop                 # Run Ruby style checker (Omakase Ruby styling)
-bin/rubocop -a              # Auto-fix safe offenses
-bin/brakeman                # Run security code analysis
-bin/bundler-audit           # Audit gems for security vulnerabilities
-bin/importmap audit         # Audit importmap dependencies
-bin/ci                      # Run full CI suite (setup, style, security, tests)
-```
-
-### Asset Management
-
-```bash
-bin/importmap               # Manage JavaScript dependencies via importmap
-bin/rails assets:precompile # Precompile assets for production
-```
-
-### Deployment (Kamal)
-
-```bash
-bin/kamal console           # Open Rails console on deployed server
-bin/kamal shell             # SSH into deployed container
-bin/kamal logs              # Tail application logs
-bin/kamal dbc               # Open database console on deployed server
-```
-
-## Architecture
-
-### Database Configuration
-
-- **Development/Test**: SQLite3 databases in `storage/` directory
-- **Production**: Multi-database setup with separate SQLite databases for:
+- **Hotwire** (Turbo and Stimulus) for SPA-like interactions
+- **SQLite multi-database setup** - Rails 8+ approach using separate SQLite databases for:
   - `primary`: Main application data
   - `cache`: Solid Cache storage (migrations in `db/cache_migrate`)
   - `queue`: Solid Queue storage (migrations in `db/queue_migrate`)
   - `cable`: Solid Cable storage (migrations in `db/cable_migrate`)
+- **Solid suite** (Solid Cache, Solid Queue, Solid Cable) for caching, background jobs, and WebSockets
+- **Tailwind CSS v4** via `tailwindcss-rails` gem
+- **Importmap** for JavaScript (no Node.js/npm required)
 
-### Background Jobs
+## Essential Commands
 
-- Uses **Solid Queue** for background job processing
-- In production, `SOLID_QUEUE_IN_PUMA=true` runs queue supervisor inside Puma process
-- For multi-server setups, dedicated job servers should be configured
+```bash
+# Setup & Development
+bin/setup                    # Install dependencies, prepare database, start server
+bin/dev                      # Start development server
 
-### Caching
+# Quality Checks
+bin/ci                       # Run full CI suite (style, security, tests)
+bin/rubocop -a               # Auto-fix Ruby style issues
 
-- Uses **Solid Cache** for database-backed caching in production
-- Configuration in `config/cache.yml`
-
-### Real-time Features
-
-- Uses **Solid Cable** for Action Cable WebSocket connections
-- Database-backed adapter for production
-
-### Frontend Stack
-
-- **Tailwind CSS v4** via `tailwindcss-rails` gem (media query-based dark mode)
-- **SVG icon partials** in `app/views/icons/` (no external icon library)
-- **Importmap** for JavaScript dependencies (no Node.js/npm required)
-- **Turbo** for SPA-like page navigation
-- **Stimulus** for JavaScript behavior
-- **Propshaft** for asset pipeline
-- Assets served from `app/assets` and `app/javascript`
-
-### Deployment
-
-- Configured for **Kamal** deployment
-- Docker-based deployment with Thruster as the HTTP server
-- Deployment config in `config/deploy.yml`
-- Server configured at `192.168.0.1` (update for your environment)
-- Persistent storage volume: `hauptgang_storage:/rails/storage`
+# Standard Rails commands for database, testing, etc. work as expected
+```
 
 ## Code Style
 
@@ -137,24 +52,6 @@ When creating git commits:
 - Keep commit messages clear and focused on what changed and why
 - Follow conventional commit message format when appropriate
 
-## CI Pipeline
+## CI Requirements
 
-The CI pipeline (`bin/ci`) runs:
-
-1. Setup (dependencies and database)
-2. Ruby style checks (RuboCop)
-3. Security audits (bundler-audit, importmap audit, Brakeman)
-4. Rails unit/integration tests
-5. System tests
-6. Database seed validation
-
-All checks must pass before merging.
-
-## Key Files
-
-- `config/application.rb`: Main application configuration (module: `Hauptgang`)
-- `config/routes.rb`: Route definitions
-- `config/database.yml`: Multi-database configuration
-- `config/deploy.yml`: Kamal deployment settings
-- `Dockerfile`: Production container image definition
-- `.rubocop.yml`: Ruby style configuration
+Run `bin/ci` before committing. All checks (style, security audits, tests) must pass before merging.

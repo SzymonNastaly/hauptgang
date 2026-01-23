@@ -3,6 +3,8 @@ import SwiftUI
 
 @main
 struct HauptgangApp: App {
+    @StateObject private var authManager = AuthManager()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -17,6 +19,7 @@ struct HauptgangApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authManager)
         }
         .modelContainer(sharedModelContainer)
     }

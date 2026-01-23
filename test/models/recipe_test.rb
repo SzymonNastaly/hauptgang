@@ -98,6 +98,63 @@ class RecipeTest < ActiveSupport::TestCase
   end
 
   # ===================
+  # COVER IMAGE TESTS
+  # ===================
+
+  test "can attach a cover image" do
+    recipe = recipes(:one)
+
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "test_image.png",
+      content_type: "image/png"
+    )
+
+    assert recipe.cover_image.attached?
+  end
+
+  test "cover image is purged when recipe is destroyed" do
+    recipe = recipes(:one)
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "test_image.png",
+      content_type: "image/png"
+    )
+    recipe.save!
+
+    blob_id = recipe.cover_image.blob.id
+
+    # purge_later enqueues a job, so we need to perform it
+    perform_enqueued_jobs do
+      recipe.destroy
+    end
+
+    assert_nil ActiveStorage::Blob.find_by(id: blob_id)
+  end
+
+  test "cover image has thumbnail variant" do
+    recipe = recipes(:one)
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "test_image.png",
+      content_type: "image/png"
+    )
+
+    assert recipe.cover_image.variant(:thumbnail).present?
+  end
+
+  test "cover image has display variant" do
+    recipe = recipes(:one)
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "test_image.png",
+      content_type: "image/png"
+    )
+
+    assert recipe.cover_image.variant(:display).present?
+  end
+
+  # ===================
   # DEPENDENT DESTROY TEST
   # ===================
 

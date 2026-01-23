@@ -4,6 +4,8 @@ class RecipesController < ApplicationController
   # GET /recipes or /recipes.json
   def index
     @recipes = Current.user.recipes
+      .with_attached_cover_image
+      .includes(:tags)
 
     # Filter by favorites if requested
     @recipes = @recipes.favorited if params[:view] == "favorites"

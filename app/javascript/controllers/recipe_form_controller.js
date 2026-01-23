@@ -7,9 +7,7 @@ export default class extends Controller {
     "ingredientTemplate",
     "instructionsList",
     "instructionTemplate",
-    "imagePreview",
-    "imageInput",
-    "coverImageField"
+    "imagePreview"
   ]
 
   static values = {
@@ -170,10 +168,5 @@ export default class extends Controller {
       }
       reader.readAsDataURL(file)
     }
-  }
-
-  triggerImageUpload(event) {
-    event.preventDefault()
-    this.imageInputTarget.click()
   }
 }

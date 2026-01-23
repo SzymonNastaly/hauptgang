@@ -7,10 +7,12 @@
   <%= render "recipes/favorite_button", recipe: recipe, context: :card %>
 
   <%# Image Area - Only render if image exists %>
-  <%# TODO: Add image_url field to recipes table %>
-  <% if false %>
+  <% if recipe.cover_image.attached? %>
     <div class="h-48 md:h-40 bg-gray-100 dark:bg-gray-700 relative overflow-hidden rounded-t-lg">
-      <%# <%= image_tag recipe.image_url, alt: recipe.name, class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" %>
+      <%= image_tag recipe.cover_image.variant(:thumbnail),
+          alt: recipe.name,
+          class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500",
+          loading: "lazy" %>
     </div>
   <% end %>
 

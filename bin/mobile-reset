@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-# Reset mobile config for local development
-> hauptgang-mobile/.env
-echo "Cleared .env - mobile app will use localhost:3000"

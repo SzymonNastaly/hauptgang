@@ -7,9 +7,11 @@ import SwiftUI
 final class AuthManager: ObservableObject {
     @Published private(set) var authState: AuthState = .unknown
 
-    private let authService = AuthService.shared
+    private let authService: AuthServiceProtocol
 
-    init() {}
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        self.authService = authService
+    }
 
     // MARK: - Auth State
 

@@ -26,6 +26,7 @@ bin/dev                      # Start development server
 # Quality Checks
 bin/ci                       # Run full CI suite (style, security, tests)
 bin/rubocop -a               # Auto-fix Ruby style issues
+bin/ios-test                 # Run iOS tests (auto-finds simulator, macOS only)
 
 # Standard Rails commands for database, testing, etc. work as expected
 ```
@@ -59,13 +60,11 @@ This project uses **XcodeGen** to generate the Xcode project from `project.yml`.
 ### iOS Development Commands
 
 ```bash
-cd hauptgang-ios
+# Run iOS tests (from project root)
+bin/ios-test
 
-# Regenerate Xcode project (run after adding/removing files)
-xcodegen generate
-
-# Build from command line
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+# Regenerate Xcode project (from hauptgang-ios/)
+cd hauptgang-ios && xcodegen generate
 ```
 
 ### Adding New Swift Files

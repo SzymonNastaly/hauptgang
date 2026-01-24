@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/../hauptgang-ios"
+
+echo "==> Finding available iPhone simulator..."
+SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -oE "[A-F0-9-]{36}")
+
+if [ -z "$SIMULATOR_ID" ]; then
+  echo "Error: No iPhone simulator found. Install one via Xcode."
+  exit 1
+fi
+
+SIMULATOR_NAME=$(xcrun simctl list devices available | grep "$SIMULATOR_ID" | sed 's/.*\(iPhone[^(]*\).*/\1/' | xargs)
+echo "    Using: $SIMULATOR_NAME ($SIMULATOR_ID)"
+
+echo "==> Regenerating Xcode project..."
+xcodegen generate
+
+echo "==> Running iOS tests..."
+xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
+  -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+  test 2>&1 | grep -E "(Test Suite|passed|failed|BUILD|TEST)"
+
+echo "==> Done!"

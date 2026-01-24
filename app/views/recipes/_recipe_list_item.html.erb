@@ -4,9 +4,8 @@
 
   <%# Thumbnail - Fixed size with placeholder %>
   <div class="w-16 h-16 shrink-0 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden relative border border-gray-100 dark:border-gray-700">
-    <%# TODO: Add image_url field to recipes table %>
-    <% if false %>
-      <%# <%= image_tag recipe.image_url, alt: recipe.name, class: "w-full h-full object-cover" %>
+    <% if recipe.cover_image.attached? %>
+      <%= image_tag recipe.cover_image.variant(:thumbnail), alt: recipe.name, class: "w-full h-full object-cover", loading: "lazy" %>
     <% else %>
       <%# No Image Placeholder %>
       <div class="w-full h-full flex items-center justify-center bg-surface-base dark:bg-gray-800 text-gray-300 dark:text-gray-600">

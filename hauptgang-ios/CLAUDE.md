@@ -9,10 +9,24 @@ Native SwiftUI app for iOS 17+ that communicates with the Rails backend API. Use
 ## Essential Commands
 
 ```bash
+# From project root (hauptgang/):
+bin/ios-test         # Run all iOS tests (auto-finds simulator)
+
 # From hauptgang-ios directory:
 xcodegen generate    # Regenerate Xcode project after adding/removing files
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+```
+
+### Manual xcodebuild (if needed)
+
+```bash
+# List available simulators to find a UUID
+xcrun simctl list devices available | grep iPhone
+
+# Build/test using a specific simulator ID
+xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
+  -destination 'platform=iOS Simulator,id=SIMULATOR_ID' build
+xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
+  -destination 'platform=iOS Simulator,id=SIMULATOR_ID' test
 ```
 
 ## XcodeGen Rules

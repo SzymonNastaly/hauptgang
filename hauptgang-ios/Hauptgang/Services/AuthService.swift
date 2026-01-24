@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 
 /// Coordinates authentication operations between API and Keychain
-final class AuthService {
+final class AuthService: AuthServiceProtocol {
     static let shared = AuthService()
 
     private let keychain = KeychainService.shared

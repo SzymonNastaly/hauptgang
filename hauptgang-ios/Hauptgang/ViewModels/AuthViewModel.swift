@@ -9,14 +9,19 @@ final class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let authService = AuthService.shared
+    private let authService: AuthServiceProtocol
+
+    init(authService: AuthServiceProtocol = AuthService.shared) {
+        self.authService = authService
+    }
 
     // MARK: - Validation
 
     var isFormValid: Bool {
-        !email.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !password.isEmpty &&
-        isValidEmail(email)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+        return !trimmedEmail.isEmpty &&
+            !password.isEmpty &&
+            isValidEmail(trimmedEmail)
     }
 
     var emailError: String? {

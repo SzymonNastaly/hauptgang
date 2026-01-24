@@ -1,13 +1,13 @@
 // Service Worker for Hauptgang PWA
 // Implements cache-first strategy for offline recipe access
 
-const CACHE_VERSION = "v6"
+const CACHE_VERSION = "v9"
 const CACHE_NAME = `hauptgang-${CACHE_VERSION}`
 
 // Static assets to cache on install
-// These are the core files needed for the app shell
+// Only include assets that don't require authentication
+// /recipes requires auth, so it gets cached dynamically after login instead
 const STATIC_ASSETS = [
-  "/",
   "/manifest.json"
 ]
 
@@ -56,11 +56,21 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
+  // Skip root URL - it's a server redirect to /recipes
+  // Service workers can't cache/serve redirect responses for navigation requests
+  if (url.pathname === "/") return
+
   // Use URL string for cache matching (ignores headers that differ on reload)
   const cacheKey = request.url
 
   event.respondWith(
     caches.match(cacheKey).then((cachedResponse) => {
+      // Don't use cached response if it resulted from a redirect
+      // Safari blocks serving redirected responses for navigation requests
+      const validCachedResponse = cachedResponse && !cachedResponse.redirected
+        ? cachedResponse
+        : null
+
       // Build fetch options with conditional headers (Safari-compatible)
       const fetchOptions = {
         method: request.method,
@@ -69,10 +79,10 @@ self.addEventListener("fetch", (event) => {
         cache: "no-cache"  // Ensure we actually hit the server
       }
 
-      // Add conditional headers if we have a cached response
-      if (cachedResponse) {
-        const etag = cachedResponse.headers.get("ETag")
-        const lastModified = cachedResponse.headers.get("Last-Modified")
+      // Add conditional headers if we have a valid cached response
+      if (validCachedResponse) {
+        const etag = validCachedResponse.headers.get("ETag")
+        const lastModified = validCachedResponse.headers.get("Last-Modified")
         if (etag) fetchOptions.headers.set("If-None-Match", etag)
         if (lastModified) fetchOptions.headers.set("If-Modified-Since", lastModified)
       }
@@ -83,11 +93,12 @@ self.addEventListener("fetch", (event) => {
         .then((networkResponse) => {
           // 304 Not Modified = cache is still valid, no update needed
           if (networkResponse.status === 304) {
-            return cachedResponse
+            return validCachedResponse
           }
 
-          // 200 OK = content changed, update cache for next visit
-          if (networkResponse.status === 200) {
+          // Only cache 200 responses that aren't redirects
+          // Redirected responses can't be served from cache for navigation (Safari restriction)
+          if (networkResponse.status === 200 && !networkResponse.redirected) {
             const responseToCache = networkResponse.clone()
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(cacheKey, responseToCache)
@@ -100,12 +111,12 @@ self.addEventListener("fetch", (event) => {
           return null
         })
 
-      // Return cached response immediately if available (fast!)
-      if (cachedResponse) {
-        return cachedResponse
+      // Return cached response immediately if available and valid (fast!)
+      if (validCachedResponse) {
+        return validCachedResponse
       }
 
-      // No cache - must wait for network
+      // No valid cache - must wait for network
       return fetchPromise.then((networkResponse) => {
         if (networkResponse) {
           return networkResponse

@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Hides toolbar background on iOS 18+ to avoid Liquid Glass effect
+struct HiddenToolbarBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        } else {
+            content
+        }
+    }
+}
+
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var showingLogoutConfirmation = false
@@ -73,10 +84,12 @@ struct MainView: View {
                         showingLogoutConfirmation = true
                     } label: {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.hauptgangPrimary)
+                            .foregroundStyle(Color.hauptgangPrimary)
                     }
+                    .buttonStyle(.plain)
                 }
             }
+            .modifier(HiddenToolbarBackgroundModifier())
             .confirmationDialog(
                 "Sign out?",
                 isPresented: $showingLogoutConfirmation,

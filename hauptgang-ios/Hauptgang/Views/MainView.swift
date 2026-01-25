@@ -1,4 +1,8 @@
+import os
+import SwiftData
 import SwiftUI
+
+private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MainView")
 
 /// Hides toolbar background on iOS 18+ to avoid Liquid Glass effect
 struct HiddenToolbarBackgroundModifier: ViewModifier {
@@ -13,6 +17,8 @@ struct HiddenToolbarBackgroundModifier: ViewModifier {
 
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(\.modelContext) private var modelContext
+    @State private var recipeViewModel = RecipeViewModel()
     @State private var showingLogoutConfirmation = false
 
     var body: some View {
@@ -21,60 +27,19 @@ struct MainView: View {
                 Color.hauptgangBackground
                     .ignoresSafeArea()
 
-                VStack(spacing: Theme.Spacing.xl) {
-                    Spacer()
-
-                    // Welcome section
-                    VStack(spacing: Theme.Spacing.md) {
-                        Image(systemName: "fork.knife")
-                            .font(.system(size: 60))
-                            .foregroundColor(.hauptgangPrimary)
-
-                        Text("Welcome!")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.hauptgangTextPrimary)
-
-                        if let user = authManager.authState.user {
-                            Text(user.email)
-                                .font(.subheadline)
-                                .foregroundColor(.hauptgangTextSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // User info card
-                    if let user = authManager.authState.user {
-                        VStack(spacing: Theme.Spacing.md) {
-                            HStack {
-                                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                                    Text("Signed in as")
-                                        .font(.caption)
-                                        .foregroundColor(.hauptgangTextMuted)
-                                    Text(user.email)
-                                        .font(.body)
-                                        .foregroundColor(.hauptgangTextPrimary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.hauptgangSuccess)
-                            }
-                        }
-                        .padding(Theme.Spacing.lg)
-                        .background(Color.hauptgangCard)
-                        .cornerRadius(Theme.CornerRadius.lg)
-                        .shadow(
-                            color: Theme.Shadow.sm.color,
-                            radius: Theme.Shadow.sm.radius,
-                            y: Theme.Shadow.sm.y
-                        )
+                VStack(spacing: 0) {
+                    // Header with user info
+                    headerView
                         .padding(.horizontal, Theme.Spacing.lg)
-                    }
+                        .padding(.top, Theme.Spacing.md)
+                        .padding(.bottom, Theme.Spacing.sm)
 
-                    Spacer()
+                    // Recipe list or empty state
+                    if recipeViewModel.recipes.isEmpty && !recipeViewModel.isLoading {
+                        emptyStateView
+                    } else {
+                        recipeListView
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -97,6 +62,7 @@ struct MainView: View {
             ) {
                 Button("Sign out", role: .destructive) {
                     Task {
+                        recipeViewModel.clearData()
                         await authManager.signOut()
                     }
                 }
@@ -104,7 +70,111 @@ struct MainView: View {
             } message: {
                 Text("You'll need to sign in again to access your account.")
             }
+            .task {
+                logger.info("MainView appeared, configuring recipe view model")
+                recipeViewModel.configure(modelContext: modelContext)
+                await recipeViewModel.refreshRecipes()
+            }
         }
+    }
+
+    // MARK: - Subviews
+
+    private var headerView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                Text("Your Recipes")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.hauptgangTextPrimary)
+
+                if let user = authManager.authState.user {
+                    Text(user.email)
+                        .font(.caption)
+                        .foregroundColor(.hauptgangTextSecondary)
+                }
+            }
+
+            Spacer()
+
+            // Recipe count badge
+            if !recipeViewModel.recipes.isEmpty {
+                Text("\(recipeViewModel.recipes.count)")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.hauptgangPrimary)
+                    .padding(.horizontal, Theme.Spacing.sm)
+                    .padding(.vertical, Theme.Spacing.xs)
+                    .background(Color.hauptgangPrimary.opacity(0.1))
+                    .cornerRadius(Theme.CornerRadius.sm)
+            }
+        }
+    }
+
+    private var recipeListView: some View {
+        ScrollView {
+            LazyVStack(spacing: Theme.Spacing.sm) {
+                // Error message if present
+                if let error = recipeViewModel.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.hauptgangError)
+                        .padding(.horizontal, Theme.Spacing.lg)
+                        .padding(.bottom, Theme.Spacing.sm)
+                }
+
+                ForEach(recipeViewModel.recipes) { recipe in
+                    RecipeRowView(recipe: recipe)
+                        .padding(.horizontal, Theme.Spacing.lg)
+                }
+            }
+            .padding(.vertical, Theme.Spacing.sm)
+        }
+        .refreshable {
+            await recipeViewModel.refreshRecipes()
+        }
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            Spacer()
+
+            Image(systemName: "fork.knife")
+                .font(.system(size: 60))
+                .foregroundColor(.hauptgangTextMuted)
+
+            VStack(spacing: Theme.Spacing.sm) {
+                Text("No recipes yet")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.hauptgangTextPrimary)
+
+                Text("Your recipes will appear here")
+                    .font(.subheadline)
+                    .foregroundColor(.hauptgangTextSecondary)
+
+                if let error = recipeViewModel.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.hauptgangError)
+                        .padding(.top, Theme.Spacing.xs)
+                }
+            }
+
+            Button {
+                Task {
+                    await recipeViewModel.refreshRecipes()
+                }
+            } label: {
+                Label("Refresh", systemImage: "arrow.clockwise")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.bordered)
+            .tint(.hauptgangPrimary)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -112,8 +182,8 @@ struct MainView: View {
     let authManager = AuthManager()
     return MainView()
         .environmentObject(authManager)
+        .modelContainer(for: PersistedRecipe.self, inMemory: true)
         .onAppear {
-            // Simulate authenticated state for preview
             authManager.signIn(user: User(id: 1, email: "test@example.com"))
         }
 }

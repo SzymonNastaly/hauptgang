@@ -6,7 +6,9 @@ struct HauptgangApp: App {
     @StateObject private var authManager = AuthManager()
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([])
+        let schema = Schema([
+            PersistedRecipe.self
+        ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {

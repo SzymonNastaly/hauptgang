@@ -17,6 +17,9 @@ extension Color {
     /// Card background - #FFFFFF
     static let hauptgangCard = Color.white
 
+    /// Raised surface background - #F5F2EA (for cards without images, sidebars)
+    static let hauptgangSurfaceRaised = Color(red: 245/255, green: 242/255, blue: 234/255)
+
     /// Subtle border - #E5E0D5
     static let hauptgangBorderSubtle = Color(red: 229/255, green: 224/255, blue: 213/255)
 
@@ -38,6 +41,9 @@ extension Color {
 
     /// Success green - #16A34A
     static let hauptgangSuccess = Color(red: 22/255, green: 163/255, blue: 74/255)
+
+    /// Amber for favorites on dark backgrounds - #FBB424 (Tailwind amber-400)
+    static let hauptgangAmber = Color(red: 251/255, green: 191/255, blue: 36/255)
 }
 
 // MARK: - Design Tokens

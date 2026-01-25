@@ -113,20 +113,22 @@ struct MainView: View {
 
     private var recipeListView: some View {
         ScrollView {
-            LazyVStack(spacing: Theme.Spacing.sm) {
+            VStack(spacing: Theme.Spacing.sm) {
                 // Error message if present
                 if let error = recipeViewModel.errorMessage {
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.hauptgangError)
                         .padding(.horizontal, Theme.Spacing.lg)
-                        .padding(.bottom, Theme.Spacing.sm)
                 }
 
-                ForEach(recipeViewModel.recipes) { recipe in
-                    RecipeRowView(recipe: recipe)
-                        .padding(.horizontal, Theme.Spacing.lg)
+                // Recipe cards
+                LazyVStack(spacing: Theme.Spacing.md) {
+                    ForEach(recipeViewModel.recipes) { recipe in
+                        RecipeCardView(recipe: recipe)
+                    }
                 }
+                .padding(.horizontal, Theme.Spacing.lg)
             }
             .padding(.vertical, Theme.Spacing.sm)
         }

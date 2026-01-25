@@ -28,8 +28,8 @@ final class AuthService: AuthServiceProtocol {
         )
 
         // Store credentials securely
-        try keychain.saveToken(response.token, expiresAt: response.expiresAt)
-        try keychain.saveUser(response.user)
+        try await keychain.saveToken(response.token, expiresAt: response.expiresAt)
+        try await keychain.saveUser(response.user)
 
         return response.user
     }
@@ -50,24 +50,24 @@ final class AuthService: AuthServiceProtocol {
         }
 
         // Always clear local credentials
-        keychain.clearAll()
+        await keychain.clearAll()
     }
 
     // MARK: - Session Check
 
-    func getCurrentUser() -> User? {
+    func getCurrentUser() async -> User? {
         // Token validity is checked in getToken()
-        guard keychain.getToken() != nil else {
+        guard await keychain.getToken() != nil else {
             // Token missing or expired, clear user data
-            keychain.clearAll()
+            await keychain.clearAll()
             return nil
         }
 
-        return keychain.getUser()
+        return await keychain.getUser()
     }
 
-    func isAuthenticated() -> Bool {
-        return getCurrentUser() != nil
+    func isAuthenticated() async -> Bool {
+        return await getCurrentUser() != nil
     }
 
     // MARK: - Private

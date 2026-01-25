@@ -26,21 +26,21 @@ final class AuthManagerTests: XCTestCase {
 
     // MARK: - Check Auth Status Tests
 
-    func testCheckAuthStatus_withUser_becomesAuthenticated() {
+    func testCheckAuthStatus_withUser_becomesAuthenticated() async {
         let user = User(id: 1, email: "user@example.com")
         mockAuthService.currentUser = user
 
-        sut.checkAuthStatus()
+        await sut.checkAuthStatus()
 
         XCTAssertEqual(sut.authState, .authenticated(user))
         XCTAssertTrue(sut.authState.isAuthenticated)
         XCTAssertEqual(sut.authState.user, user)
     }
 
-    func testCheckAuthStatus_noUser_becomesUnauthenticated() {
+    func testCheckAuthStatus_noUser_becomesUnauthenticated() async {
         mockAuthService.currentUser = nil
 
-        sut.checkAuthStatus()
+        await sut.checkAuthStatus()
 
         XCTAssertEqual(sut.authState, .unauthenticated)
         XCTAssertFalse(sut.authState.isAuthenticated)
@@ -60,8 +60,8 @@ final class AuthManagerTests: XCTestCase {
         XCTAssertEqual(sut.authState.user?.email, "newuser@example.com")
     }
 
-    func testSignIn_fromUnauthenticated_becomesAuthenticated() {
-        sut.checkAuthStatus() // Sets to .unauthenticated
+    func testSignIn_fromUnauthenticated_becomesAuthenticated() async {
+        await sut.checkAuthStatus() // Sets to .unauthenticated
         XCTAssertEqual(sut.authState, .unauthenticated)
 
         let user = User(id: 1, email: "user@example.com")

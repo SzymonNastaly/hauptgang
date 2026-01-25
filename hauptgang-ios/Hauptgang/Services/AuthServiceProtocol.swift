@@ -5,6 +5,6 @@ import Foundation
 protocol AuthServiceProtocol: Sendable {
     func login(email: String, password: String) async throws -> User
     func logout() async
-    func getCurrentUser() -> User?
-    func isAuthenticated() -> Bool
+    func getCurrentUser() async -> User?
+    func isAuthenticated() async -> Bool
 }

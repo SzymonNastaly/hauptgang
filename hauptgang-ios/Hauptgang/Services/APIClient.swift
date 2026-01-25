@@ -54,7 +54,7 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         // Add auth header if needed
-        if authenticated, let token = KeychainService.shared.getToken() {
+        if authenticated, let token = await KeychainService.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -96,7 +96,7 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        if authenticated, let token = KeychainService.shared.getToken() {
+        if authenticated, let token = await KeychainService.shared.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 

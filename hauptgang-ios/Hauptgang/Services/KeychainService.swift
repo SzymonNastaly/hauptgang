@@ -2,12 +2,10 @@ import Foundation
 import Security
 
 /// Secure storage for authentication tokens using iOS Keychain
-final class KeychainService {
+actor KeychainService {
     static let shared = KeychainService()
 
     private let service = Constants.Keychain.service
-
-    private init() {}
 
     // MARK: - Token Storage
 

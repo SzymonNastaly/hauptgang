@@ -4,17 +4,6 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MainView")
 
-/// Hides toolbar background on iOS 18+ to avoid Liquid Glass effect
-struct HiddenToolbarBackgroundModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 18.0, *) {
-            content.toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-        } else {
-            content
-        }
-    }
-}
-
 struct MainView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(\.modelContext) private var modelContext
@@ -23,38 +12,26 @@ struct MainView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.hauptgangBackground
-                    .ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    // Header with user info
-                    headerView
-                        .padding(.horizontal, Theme.Spacing.lg)
-                        .padding(.top, Theme.Spacing.md)
-                        .padding(.bottom, Theme.Spacing.sm)
-
-                    // Recipe list or empty state
-                    if recipeViewModel.recipes.isEmpty && !recipeViewModel.isLoading {
-                        emptyStateView
-                    } else {
-                        recipeListView
-                    }
+            Group {
+                if recipeViewModel.recipes.isEmpty && !recipeViewModel.isLoading {
+                    emptyStateView
+                } else {
+                    recipeListView
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
+            .background(Color.hauptgangBackground)
+            .navigationTitle("Your Recipes")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingLogoutConfirmation = true
                     } label: {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundStyle(Color.hauptgangPrimary)
                     }
-                    .buttonStyle(.plain)
+                    .tint(.hauptgangPrimary)
                 }
             }
-            .modifier(HiddenToolbarBackgroundModifier())
             .confirmationDialog(
                 "Sign out?",
                 isPresented: $showingLogoutConfirmation,
@@ -79,37 +56,6 @@ struct MainView: View {
     }
 
     // MARK: - Subviews
-
-    private var headerView: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                Text("Your Recipes")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.hauptgangTextPrimary)
-
-                if let user = authManager.authState.user {
-                    Text(user.email)
-                        .font(.caption)
-                        .foregroundColor(.hauptgangTextSecondary)
-                }
-            }
-
-            Spacer()
-
-            // Recipe count badge
-            if !recipeViewModel.recipes.isEmpty {
-                Text("\(recipeViewModel.recipes.count)")
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.hauptgangPrimary)
-                    .padding(.horizontal, Theme.Spacing.sm)
-                    .padding(.vertical, Theme.Spacing.xs)
-                    .background(Color.hauptgangPrimary.opacity(0.1))
-                    .cornerRadius(Theme.CornerRadius.sm)
-            }
-        }
-    }
 
     private var recipeListView: some View {
         ScrollView {

@@ -17,11 +17,11 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         currentUser = nil
     }
 
-    func getCurrentUser() -> User? {
+    func getCurrentUser() async -> User? {
         currentUser
     }
 
-    func isAuthenticated() -> Bool {
+    func isAuthenticated() async -> Bool {
         currentUser != nil
     }
 }

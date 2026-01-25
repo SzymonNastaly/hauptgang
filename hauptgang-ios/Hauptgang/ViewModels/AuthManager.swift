@@ -47,8 +47,8 @@ final class AuthManager: ObservableObject {
     // MARK: - Public Methods
 
     /// Check authentication status on app launch
-    func checkAuthStatus() {
-        if let user = authService.getCurrentUser() {
+    func checkAuthStatus() async {
+        if let user = await authService.getCurrentUser() {
             authState = .authenticated(user)
         } else {
             authState = .unauthenticated

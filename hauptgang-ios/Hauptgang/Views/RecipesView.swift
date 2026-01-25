@@ -2,13 +2,12 @@ import os
 import SwiftData
 import SwiftUI
 
-private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MainView")
+private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesView")
 
-struct MainView: View {
+struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(\.modelContext) private var modelContext
     @State private var recipeViewModel = RecipeViewModel()
-    @State private var showingLogoutConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -22,35 +21,15 @@ struct MainView: View {
             .background(Color.hauptgangBackground)
             .navigationTitle("Your Recipes")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingLogoutConfirmation = true
-                    } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                    }
-                    .tint(.hauptgangPrimary)
-                }
-            }
-            .confirmationDialog(
-                "Sign out?",
-                isPresented: $showingLogoutConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Sign out", role: .destructive) {
-                    Task {
-                        recipeViewModel.clearData()
-                        await authManager.signOut()
-                    }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("You'll need to sign in again to access your account.")
-            }
             .task {
-                logger.info("MainView appeared, configuring recipe view model")
+                logger.info("RecipesView appeared, configuring recipe view model")
                 recipeViewModel.configure(modelContext: modelContext)
                 await recipeViewModel.refreshRecipes()
+            }
+            .onChange(of: authManager.authState) { _, newValue in
+                if case .unauthenticated = newValue {
+                    recipeViewModel.clearData()
+                }
             }
         }
     }
@@ -128,7 +107,7 @@ struct MainView: View {
 
 #Preview {
     let authManager = AuthManager()
-    return MainView()
+    return RecipesView()
         .environmentObject(authManager)
         .modelContainer(for: PersistedRecipe.self, inMemory: true)
         .onAppear {

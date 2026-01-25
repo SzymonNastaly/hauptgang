@@ -12,7 +12,7 @@ struct RootView: View {
             case .unauthenticated:
                 LoginView()
             case .authenticated:
-                MainView()
+                MainTabView()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: authManager.authState)

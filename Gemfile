@@ -74,6 +74,9 @@ group :test do
 
   # HTTP request stubbing for testing [https://github.com/bblimke/webmock]
   gem "webmock"
+
+  # Minitest mocking (extracted from minitest 6.0+)
+  gem "minitest-mock"
 end
 
 gem "tailwindcss-rails", "~> 4.4"

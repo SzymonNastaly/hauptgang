@@ -50,7 +50,10 @@ struct RecipesView: View {
                 // Recipe cards
                 LazyVStack(spacing: Theme.Spacing.md) {
                     ForEach(recipeViewModel.recipes) { recipe in
-                        RecipeCardView(recipe: recipe)
+                        NavigationLink(value: recipe.id) {
+                            RecipeCardView(recipe: recipe)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
@@ -59,6 +62,9 @@ struct RecipesView: View {
         }
         .refreshable {
             await recipeViewModel.refreshRecipes()
+        }
+        .navigationDestination(for: Int.self) { recipeId in
+            RecipeDetailView(recipeId: recipeId)
         }
     }
 

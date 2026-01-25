@@ -3,11 +3,13 @@ import SwiftUI
 extension Color {
     // MARK: - Brand Colors
 
-    /// Primary warm brown - #8B5E34
-    static let hauptgangPrimary = Color(red: 139/255, green: 94/255, blue: 52/255)
+    /// Primary brand color - adaptive for light/dark mode
+    /// Light: #8B5E34 (warm brown), Dark: #B45309 (amber-700)
+    static let hauptgangPrimary = Color("HauptgangPrimary")
 
-    /// Primary hover state - #7A5230
-    static let hauptgangPrimaryHover = Color(red: 122/255, green: 82/255, blue: 48/255)
+    /// Primary hover/pressed state - adaptive for light/dark mode
+    /// Light: #7A5230, Dark: #92400E (amber-800)
+    static let hauptgangPrimaryHover = Color("HauptgangPrimaryHover")
 
     // MARK: - Backgrounds
 

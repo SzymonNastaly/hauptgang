@@ -2,7 +2,7 @@ name: Hauptgang
 options:
   bundleIdPrefix: app.hauptgang
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.0"
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 

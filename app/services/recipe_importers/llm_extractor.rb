@@ -50,7 +50,7 @@ module RecipeImporters
 
       # Extract text and normalize whitespace
       text = doc.text.gsub(/\s+/, " ").strip
-      text.truncate(MAX_TEXT_LENGTH)
+      text[0, MAX_TEXT_LENGTH]
     end
 
     def call_llm(text)

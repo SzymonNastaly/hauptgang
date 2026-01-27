@@ -25,6 +25,9 @@ gem "lucide-rails"
 gem "faraday"
 gem "faraday-follow_redirects", require: "faraday/follow_redirects"
 
+# LLM client for AI-powered recipe extraction [https://github.com/crmne/ruby_llm]
+gem "ruby_llm"
+
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 

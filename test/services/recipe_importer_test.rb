@@ -143,6 +143,9 @@ class RecipeImporterTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/page")
       .to_return(status: 200, body: html, headers: { "Content-Type" => "text/html" })
 
+    # LLM fallback returns empty name = no recipe found
+    stub_llm_no_recipe_found
+
     result = RecipeImporter.new("https://example.com/page").import
 
     assert_not result.success?

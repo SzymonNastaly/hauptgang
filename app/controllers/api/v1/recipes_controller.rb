@@ -16,6 +16,28 @@ module Api
         render json: { error: "Recipe not found" }, status: :not_found
       end
 
+      def import
+        url = params[:url].to_s.strip
+        if url.blank?
+          return render json: { error: "URL is required" }, status: :unprocessable_entity
+        end
+
+        validation = RecipeImporters::UrlValidator.new(url).validate
+        unless validation.success?
+          return render json: { error: validation.error }, status: :unprocessable_entity
+        end
+
+        recipe = current_user.recipes.create!(
+          name: "Importing...",
+          source_url: url,
+          import_status: :pending
+        )
+
+        RecipeImportJob.perform_later(current_user.id, recipe.id, url)
+
+        render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
+      end
+
       private
 
       def recipe_list_json(recipe)

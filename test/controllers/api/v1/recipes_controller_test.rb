@@ -128,4 +128,62 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "import creates recipe and enqueues job" do
+    assert_enqueued_with(job: RecipeImportJob) do
+      post import_api_v1_recipes_url,
+        params: { url: "https://example.com/recipe" },
+        headers: @auth_headers,
+        as: :json
+    end
+
+    assert_response :accepted
+    json = response.parsed_body
+    assert json["id"].present?
+    assert_equal "pending", json["import_status"]
+
+    recipe = Recipe.find(json["id"])
+    assert_equal "Importing...", recipe.name
+    assert_equal "https://example.com/recipe", recipe.source_url
+    assert_equal @user.id, recipe.user_id
+  end
+
+  test "import returns error for blank URL" do
+    post import_api_v1_recipes_url,
+      params: { url: "" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "URL is required", json["error"]
+  end
+
+  test "import returns error for invalid URL" do
+    post import_api_v1_recipes_url,
+      params: { url: "not-a-url" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert json["error"].present?
+  end
+
+  test "import returns error for localhost URL" do
+    post import_api_v1_recipes_url,
+      params: { url: "http://localhost/recipe" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "import requires authentication" do
+    post import_api_v1_recipes_url,
+      params: { url: "https://example.com/recipe" },
+      as: :json
+
+    assert_response :unauthorized
+  end
 end

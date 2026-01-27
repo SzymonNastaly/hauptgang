@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_19_002702) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_27_105314) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -66,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_002702) do
     t.integer "cook_time"
     t.datetime "created_at", null: false
     t.boolean "favorite", default: false
+    t.integer "import_status", default: 1, null: false
     t.json "ingredients", default: []
     t.json "instructions", default: []
     t.string "name"

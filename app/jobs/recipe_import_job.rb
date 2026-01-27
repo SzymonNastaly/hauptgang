@@ -7,6 +7,7 @@ class RecipeImportJob < ApplicationJob
 
     recipe = user.recipes.find_by(id: recipe_id)
     return unless recipe
+    return if recipe.completed?
 
     result = RecipeImporter.new(source_url).import
 

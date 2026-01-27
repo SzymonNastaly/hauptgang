@@ -353,6 +353,9 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     stub_request(:get, "https://example.com/page")
       .to_return(status: 200, body: "<html><body>No recipe</body></html>", headers: { "Content-Type" => "text/html" })
 
+    # LLM fallback returns empty name = no recipe found
+    stub_llm_no_recipe_found
+
     post import_recipes_url, params: { url: "https://example.com/page" }
 
     assert_response :unprocessable_entity

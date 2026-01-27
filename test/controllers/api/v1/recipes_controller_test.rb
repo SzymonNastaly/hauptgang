@@ -186,4 +186,59 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  # extract_from_text tests
+
+  test "extract_from_text creates recipe and enqueues job" do
+    text = "Chocolate Cake\n\nIngredients:\n- 2 cups flour"
+
+    assert_enqueued_with(job: RecipeTextExtractJob) do
+      post extract_from_text_api_v1_recipes_url,
+        params: { text: text },
+        headers: @auth_headers,
+        as: :json
+    end
+
+    assert_response :accepted
+    json = response.parsed_body
+    assert json["id"].present?
+    assert_equal "pending", json["import_status"]
+
+    recipe = Recipe.find(json["id"])
+    assert_equal "Importing...", recipe.name
+    assert_nil recipe.source_url
+    assert_equal @user.id, recipe.user_id
+  end
+
+  test "extract_from_text returns error for blank text" do
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: "" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Text is required", json["error"]
+  end
+
+  test "extract_from_text returns error for text too long" do
+    long_text = "a" * 50_001
+
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: long_text },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Text too long (max 50,000 chars)", json["error"]
+  end
+
+  test "extract_from_text requires authentication" do
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: "Some recipe text" },
+      as: :json
+
+    assert_response :unauthorized
+  end
 end

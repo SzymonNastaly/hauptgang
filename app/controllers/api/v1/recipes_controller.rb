@@ -38,6 +38,25 @@ module Api
         render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
       end
 
+      def extract_from_text
+        text = params[:text].to_s.strip
+        if text.blank?
+          return render json: { error: "Text is required" }, status: :unprocessable_entity
+        end
+        if text.length > 50_000
+          return render json: { error: "Text too long (max 50,000 chars)" }, status: :unprocessable_entity
+        end
+
+        recipe = current_user.recipes.create!(
+          name: "Importing...",
+          import_status: :pending
+        )
+
+        RecipeTextExtractJob.perform_later(current_user.id, recipe.id, text)
+
+        render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
+      end
+
       private
 
       def recipe_list_json(recipe)

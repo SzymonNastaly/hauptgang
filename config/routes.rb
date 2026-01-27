@@ -6,6 +6,7 @@ Rails.application.routes.draw do
         resource :favorite, only: [ :update, :destroy ]
         collection do
           post :import
+          post :extract_from_text
         end
       end
     end

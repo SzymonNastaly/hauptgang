@@ -47,6 +47,10 @@ When creating git commits:
 
 Run `bin/ci` before committing. All checks (style, security audits, tests) must pass before merging.
 
+## Task Management
+
+Use `/dex` to break down complex work, track progress across sessions, and coordinate multi-step implementations.
+
 ## iOS App (hauptgang-ios)
 
 The iOS app is a native SwiftUI application located in `hauptgang-ios/`.

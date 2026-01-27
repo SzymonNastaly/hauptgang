@@ -86,3 +86,7 @@ The iOS app consumes the Rails JSON API at `/api/v1/`. When working on iOS featu
 - Unit tests go in `HauptgangTests/`
 - Test ViewModels by mocking Services
 - Run tests: `xcodebuild test` or Cmd+U in Xcode
+
+## Task Management
+
+Use `/dex` to break down complex work, track progress across sessions, and coordinate multi-step implementations.

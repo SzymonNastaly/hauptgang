@@ -1,4 +1,7 @@
 class Recipe < ApplicationRecord
+  # Enums
+  enum :import_status, { pending: 0, completed: 1, failed: 2 }
+
   # Associations
   belongs_to :user
   has_many :recipe_tags, dependent: :destroy

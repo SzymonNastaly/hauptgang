@@ -39,4 +39,7 @@
 
 # Ignore macOS system files
 .DS_Store
+
+# Ignore tool state directories
 .playwright-mcp/
+.dex/

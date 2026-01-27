@@ -4,6 +4,9 @@ Rails.application.routes.draw do
       resource :session, only: [ :create, :destroy ]
       resources :recipes, only: [ :index, :show ] do
         resource :favorite, only: [ :update, :destroy ]
+        collection do
+          post :import
+        end
       end
     end
   end

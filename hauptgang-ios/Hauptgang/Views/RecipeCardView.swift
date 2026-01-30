@@ -19,6 +19,11 @@ struct RecipeCardView: View {
 
             // Content overlay
             contentView
+
+            // Import status overlay
+            if let status = recipe.importStatus {
+                importStatusOverlay(status: status)
+            }
         }
         .frame(height: cardHeight)
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
@@ -40,11 +45,7 @@ struct RecipeCardView: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
-                        Color.gray.opacity(0.2)
-                            .overlay {
-                                ProgressView()
-                                    .tint(.hauptgangTextMuted)
-                            }
+                        Color.hauptgangSurfaceRaised
                     case .success(let image):
                         image
                             .resizable()
@@ -111,6 +112,56 @@ struct RecipeCardView: View {
         .padding(Theme.Spacing.md)
     }
 
+    // MARK: - Import Status Overlay
+
+    @ViewBuilder
+    private func importStatusOverlay(status: String) -> some View {
+        switch status {
+        case "pending":
+            ZStack {
+                // Semi-transparent overlay
+                Color.black.opacity(0.5)
+
+                VStack(spacing: Theme.Spacing.sm) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(1.2)
+
+                    Text("Importing...")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                }
+            }
+
+        case "failed":
+            ZStack {
+                // Semi-transparent red overlay
+                Color.hauptgangError.opacity(0.8)
+
+                VStack(spacing: Theme.Spacing.sm) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.title2)
+                        .foregroundColor(.white)
+
+                    Text("Import failed")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Text("We couldn't find a recipe on this page, or this website isn't supported yet.")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Theme.Spacing.md)
+                }
+            }
+
+        default:
+            EmptyView()
+        }
+    }
+
     // MARK: - Helpers
 
     private var hasImage: Bool {
@@ -123,6 +174,16 @@ struct RecipeCardView: View {
         let cook = recipe.cookTime ?? 0
         let total = prep + cook
         return total > 0 ? total : nil
+    }
+
+    /// Whether the recipe is currently being imported
+    var isPending: Bool {
+        recipe.importStatus == "pending"
+    }
+
+    /// Whether the recipe import failed
+    var isFailed: Bool {
+        recipe.importStatus == "failed"
     }
 }
 

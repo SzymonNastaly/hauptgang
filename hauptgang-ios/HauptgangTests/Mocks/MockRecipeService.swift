@@ -34,6 +34,30 @@ enum MockRecipeError: Error, LocalizedError {
     }
 }
 
+extension RecipeListItem {
+    static func mock(
+        id: Int = 1,
+        name: String = "Test Recipe",
+        prepTime: Int? = 15,
+        cookTime: Int? = 30,
+        favorite: Bool = false,
+        coverImageUrl: String? = nil,
+        importStatus: String? = nil,
+        updatedAt: Date = Date()
+    ) -> RecipeListItem {
+        RecipeListItem(
+            id: id,
+            name: name,
+            prepTime: prepTime,
+            cookTime: cookTime,
+            favorite: favorite,
+            coverImageUrl: coverImageUrl,
+            importStatus: importStatus,
+            updatedAt: updatedAt
+        )
+    }
+}
+
 extension RecipeDetail {
     static func mock(
         id: Int = 1,

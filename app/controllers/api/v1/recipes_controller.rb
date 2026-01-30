@@ -67,6 +67,7 @@ module Api
           cook_time: recipe.cook_time,
           favorite: recipe.favorite,
           cover_image_url: cover_image_url(recipe, :thumbnail),
+          import_status: recipe.import_status,
           updated_at: recipe.updated_at
         }
       end

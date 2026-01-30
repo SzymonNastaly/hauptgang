@@ -19,5 +19,11 @@ enum Constants {
         static let tokenKey = "auth_token"
         static let tokenExpiryKey = "auth_token_expiry"
         static let userKey = "current_user"
+        /// Shared access group for Keychain sharing between app and extensions.
+        /// Read from Info.plist where $(AppIdentifierPrefix) is expanded at build time.
+        /// Returns nil if not configured, which uses the app's default access group.
+        static var accessGroup: String? {
+            Bundle.main.object(forInfoDictionaryKey: "KeychainAccessGroup") as? String
+        }
     }
 }

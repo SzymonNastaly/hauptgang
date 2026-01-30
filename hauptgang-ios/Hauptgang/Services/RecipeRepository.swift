@@ -66,7 +66,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         logger.info("Successfully saved \(recipes.count) recipes")
     }
 
-    /// Retrieve all cached recipes, sorted by name
+    /// Retrieve all cached recipes, sorted by most recent update
     func getAllRecipes() throws -> [PersistedRecipe] {
         guard let modelContext else {
             logger.error("Attempted to fetch recipes without model context")
@@ -74,7 +74,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         }
 
         let descriptor = FetchDescriptor<PersistedRecipe>(
-            sortBy: [SortDescriptor(\.name)]
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
 
         let recipes = try modelContext.fetch(descriptor)

@@ -7,6 +7,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesVi
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var recipeViewModel = RecipeViewModel()
 
     var body: some View {
@@ -31,6 +32,17 @@ struct RecipesView: View {
                     recipeViewModel.clearData()
                 }
             }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if oldPhase == .background && newPhase == .active {
+                    logger.info("App became active, refreshing recipes")
+                    Task {
+                        await recipeViewModel.refreshRecipes()
+                    }
+                }
+            }
+            .onDisappear {
+                recipeViewModel.stopPolling()
+            }
         }
     }
 
@@ -50,10 +62,17 @@ struct RecipesView: View {
                 // Recipe cards
                 LazyVStack(spacing: Theme.Spacing.md) {
                     ForEach(recipeViewModel.recipes) { recipe in
-                        NavigationLink(value: recipe.id) {
-                            RecipeCardView(recipe: recipe)
+                        let cardView = RecipeCardView(recipe: recipe)
+
+                        if cardView.isPending || cardView.isFailed {
+                            // Pending and failed recipes are not tappable
+                            cardView
+                        } else {
+                            NavigationLink(value: recipe.id) {
+                                cardView
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)

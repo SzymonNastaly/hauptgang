@@ -774,7 +774,7 @@ func testPollingDoesNotTriggerForFailedRecipes() {
 - [x] Update `RecipesController#index`: Add `track_failed_recipe_fetches` call
 - [x] Update `RecipesController`: Add `after_action :cleanup_old_failed_recipes`
 - [x] Update `RecipesController#recipe_list_json`: Include `error_message` field
-- [ ] Create data migration: Clean up existing failed recipes
+- [x] Create data migration: Clean up existing failed recipes
 - [x] Write backend tests for error message storage
 - [x] Write backend tests for fetch tracking
 - [x] Write backend tests for cleanup timing
@@ -783,10 +783,10 @@ func testPollingDoesNotTriggerForFailedRecipes() {
 
 ### iOS Tasks
 
-- [ ] Update `Recipe.swift`: Add `errorMessage: String?` to `RecipeListItem`
-- [ ] Update `PersistedRecipe.swift`: Add `errorMessage` field
-- [ ] Update `PersistedRecipe.swift`: Update convenience initializers
-- [ ] Update `PersistedRecipe.swift`: Update `update(from:)` method
+- [x] Update `Recipe.swift`: Add `errorMessage: String?` to `RecipeListItem`
+- [x] Update `PersistedRecipe.swift`: Add `errorMessage` field
+- [x] Update `PersistedRecipe.swift`: Update convenience initializers
+- [x] Update `PersistedRecipe.swift`: Update `update(from:)` method
 - [ ] Create `ErrorBannerView.swift`: Implement banner component
 - [ ] Add SwiftUI previews to `ErrorBannerView.swift` (single + multiple errors)
 - [ ] Update `RecipesView.swift`: Add failed recipe banners to layout

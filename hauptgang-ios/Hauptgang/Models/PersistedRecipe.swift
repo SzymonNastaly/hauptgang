@@ -13,6 +13,7 @@ final class PersistedRecipe {
     var favorite: Bool
     var coverImageUrl: String?
     var importStatus: String?
+    var errorMessage: String?
     var updatedAt: Date
 
     /// Tracks when this record was last synced from the API
@@ -82,6 +83,7 @@ final class PersistedRecipe {
         favorite: Bool = false,
         coverImageUrl: String? = nil,
         importStatus: String? = nil,
+        errorMessage: String? = nil,
         updatedAt: Date,
         lastFetchedAt: Date = Date()
     ) {
@@ -92,6 +94,7 @@ final class PersistedRecipe {
         self.favorite = favorite
         self.coverImageUrl = coverImageUrl
         self.importStatus = importStatus
+        self.errorMessage = errorMessage
         self.updatedAt = updatedAt
         self.lastFetchedAt = lastFetchedAt
     }
@@ -106,6 +109,7 @@ final class PersistedRecipe {
             favorite: listItem.favorite,
             coverImageUrl: listItem.coverImageUrl,
             importStatus: listItem.importStatus,
+            errorMessage: listItem.errorMessage,
             updatedAt: listItem.updatedAt
         )
     }
@@ -134,6 +138,7 @@ final class PersistedRecipe {
         favorite = listItem.favorite
         coverImageUrl = listItem.coverImageUrl
         importStatus = listItem.importStatus
+        errorMessage = listItem.errorMessage
         updatedAt = listItem.updatedAt
         lastFetchedAt = Date()
     }

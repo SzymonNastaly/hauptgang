@@ -11,6 +11,7 @@ struct RecipeListItem: Codable, Identifiable, Sendable {
     let favorite: Bool
     let coverImageUrl: String?
     let importStatus: String?
+    let errorMessage: String?
     let updatedAt: Date
 }
 

@@ -1,10 +1,15 @@
 module Api
   module V1
     class RecipesController < BaseController
+      after_action :cleanup_old_failed_recipes, only: [:index]
+
       def index
         recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
         recipes = recipes.favorited if params[:favorites] == "true"
         recipes = recipes.order(updated_at: :desc)
+
+        # Track first fetch of failed recipes (before rendering)
+        track_failed_recipe_fetches(recipes)
 
         render json: recipes.map { |recipe| recipe_list_json(recipe) }
       end
@@ -68,6 +73,7 @@ module Api
           favorite: recipe.favorite,
           cover_image_url: cover_image_url(recipe, :thumbnail),
           import_status: recipe.import_status,
+          error_message: recipe.error_message,
           updated_at: recipe.updated_at
         }
       end
@@ -97,6 +103,26 @@ module Api
           recipe.cover_image.variant(variant),
           host: request.base_url
         )
+      end
+
+      def track_failed_recipe_fetches(recipes)
+        # Find failed recipes that haven't been fetched yet
+        unfetched_failed = recipes.select do |recipe|
+          recipe.failed? && recipe.failed_recipe_fetched_at.nil?
+        end
+
+        # Mark them as fetched now
+        unfetched_failed.each do |recipe|
+          recipe.update_column(:failed_recipe_fetched_at, Time.current)
+        end
+      end
+
+      def cleanup_old_failed_recipes
+        # Delete failed recipes that were fetched more than 1 minute ago
+        current_user.recipes
+          .where(import_status: :failed)
+          .where("failed_recipe_fetched_at < ?", 1.minute.ago)
+          .destroy_all
       end
     end
   end

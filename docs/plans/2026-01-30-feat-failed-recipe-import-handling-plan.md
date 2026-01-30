@@ -766,18 +766,18 @@ func testPollingDoesNotTriggerForFailedRecipes() {
 
 ### Backend Tasks
 
-- [ ] Create migration: Add `error_message` and `failed_recipe_fetched_at` columns
-- [ ] Run migration: `bin/rails db:migrate`
-- [ ] Update `RecipeImportJob`: Add `build_error_message` and `extract_domain` methods
-- [ ] Update `RecipeImportJob`: Store error message on failure
-- [ ] Update `RecipeTextExtractJob`: Store error message on text import failure
-- [ ] Update `RecipesController#index`: Add `track_failed_recipe_fetches` call
-- [ ] Update `RecipesController`: Add `after_action :cleanup_old_failed_recipes`
-- [ ] Update `RecipesController#recipe_list_json`: Include `error_message` field
+- [x] Create migration: Add `error_message` and `failed_recipe_fetched_at` columns
+- [x] Run migration: `bin/rails db:migrate`
+- [x] Update `RecipeImportJob`: Add `build_error_message` and `extract_domain` methods
+- [x] Update `RecipeImportJob`: Store error message on failure
+- [x] Update `RecipeTextExtractJob`: Store error message on text import failure
+- [x] Update `RecipesController#index`: Add `track_failed_recipe_fetches` call
+- [x] Update `RecipesController`: Add `after_action :cleanup_old_failed_recipes`
+- [x] Update `RecipesController#recipe_list_json`: Include `error_message` field
 - [ ] Create data migration: Clean up existing failed recipes
-- [ ] Write backend tests for error message storage
-- [ ] Write backend tests for fetch tracking
-- [ ] Write backend tests for cleanup timing
+- [x] Write backend tests for error message storage
+- [x] Write backend tests for fetch tracking
+- [x] Write backend tests for cleanup timing
 - [ ] Run `bin/rubocop -a` to fix style issues
 - [ ] Run `bin/ci` to verify all checks pass
 

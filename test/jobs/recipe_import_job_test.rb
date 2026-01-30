@@ -50,6 +50,9 @@ class RecipeImportJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_not_nil @recipe.error_message
+    assert_includes @recipe.error_message, "example.com"
+    assert_includes @recipe.error_message, "not supported"
   end
 
   test "marks recipe as failed when no recipe data found" do
@@ -64,6 +67,9 @@ class RecipeImportJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_not_nil @recipe.error_message
+    assert_includes @recipe.error_message, "example.com"
+    assert_includes @recipe.error_message, "not supported"
   end
 
   test "does nothing when recipe no longer exists" do
@@ -94,5 +100,7 @@ class RecipeImportJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_not_nil @recipe.error_message
+    assert_includes @recipe.error_message, "example.com"
   end
 end

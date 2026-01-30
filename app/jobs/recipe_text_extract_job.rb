@@ -14,11 +14,17 @@ class RecipeTextExtractJob < ApplicationJob
     if result.success?
       recipe.update!(result.recipe_attributes.merge(import_status: :completed))
     else
-      recipe.update!(import_status: :failed)
+      recipe.update!(
+        import_status: :failed,
+        error_message: "Import failed - text doesn't contain a recipe"
+      )
       Rails.logger.error "[RecipeTextExtractJob] Extraction failed for recipe #{recipe_id}: #{result.error}"
     end
   rescue => e
-    recipe&.update(import_status: :failed)
+    recipe&.update(
+      import_status: :failed,
+      error_message: "Import failed - text doesn't contain a recipe"
+    )
     Rails.logger.error "[RecipeTextExtractJob] Unexpected error for recipe #{recipe_id}: #{e.class} - #{e.message}"
     raise
   end

@@ -241,4 +241,69 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  # Failed recipe handling tests
+
+  test "index tracks first fetch of failed recipes" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed - page is not supported or doesn't contain a recipe"
+    )
+    assert_nil recipe.failed_recipe_fetched_at
+
+    get api_v1_recipes_url, headers: @auth_headers, as: :json
+
+    recipe.reload
+    assert_not_nil recipe.failed_recipe_fetched_at
+    assert_in_delta Time.current, recipe.failed_recipe_fetched_at, 2.seconds
+  end
+
+  test "index deletes failed recipes after 1 minute" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed",
+      failed_recipe_fetched_at: 2.minutes.ago
+    )
+
+    assert_difference "@user.recipes.count", -1 do
+      get api_v1_recipes_url, headers: @auth_headers, as: :json
+    end
+
+    assert_raises(ActiveRecord::RecordNotFound) { recipe.reload }
+  end
+
+  test "index does not delete recently fetched failed recipes" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed",
+      failed_recipe_fetched_at: 30.seconds.ago
+    )
+
+    assert_no_difference "@user.recipes.count" do
+      get api_v1_recipes_url, headers: @auth_headers, as: :json
+    end
+
+    assert_nothing_raised { recipe.reload }
+  end
+
+  test "index includes error_message in recipe list JSON" do
+    @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from test.com failed - page is not supported or doesn't contain a recipe"
+    )
+
+    get api_v1_recipes_url, headers: @auth_headers, as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    failed_recipe = json.find { |r| r["name"] == "Failed Import" }
+
+    assert_not_nil failed_recipe
+    assert_equal "Import from test.com failed - page is not supported or doesn't contain a recipe", failed_recipe["error_message"]
+    assert_equal "failed", failed_recipe["import_status"]
+  end
 end

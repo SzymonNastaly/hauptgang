@@ -57,6 +57,7 @@ class RecipeTextExtractJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_equal "Import failed - text doesn't contain a recipe", @recipe.error_message
   end
 
   test "marks recipe as failed when LLM times out" do
@@ -67,6 +68,7 @@ class RecipeTextExtractJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_equal "Import failed - text doesn't contain a recipe", @recipe.error_message
   end
 
   test "does nothing when recipe no longer exists" do
@@ -109,5 +111,6 @@ class RecipeTextExtractJobTest < ActiveSupport::TestCase
 
     @recipe.reload
     assert_equal :failed, @recipe.import_status.to_sym
+    assert_equal "Import failed - text doesn't contain a recipe", @recipe.error_message
   end
 end

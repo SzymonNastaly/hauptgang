@@ -248,7 +248,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = @user.recipes.create!(
       name: "Failed Import",
       import_status: :failed,
-      error_message: "Import from example.com failed - page is not supported or doesn't contain a recipe"
+      error_message: "Import from example.com failed."
     )
     assert_nil recipe.failed_recipe_fetched_at
 
@@ -263,7 +263,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = @user.recipes.create!(
       name: "Failed Import",
       import_status: :failed,
-      error_message: "Import from example.com failed",
+      error_message: "Import from example.com failed.",
       failed_recipe_fetched_at: 2.minutes.ago
     )
 
@@ -278,7 +278,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = @user.recipes.create!(
       name: "Failed Import",
       import_status: :failed,
-      error_message: "Import from example.com failed",
+      error_message: "Import from example.com failed.",
       failed_recipe_fetched_at: 30.seconds.ago
     )
 
@@ -293,7 +293,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     @user.recipes.create!(
       name: "Failed Import",
       import_status: :failed,
-      error_message: "Import from test.com failed - page is not supported or doesn't contain a recipe"
+      error_message: "Import from test.com failed."
     )
 
     get api_v1_recipes_url, headers: @auth_headers, as: :json
@@ -303,7 +303,44 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     failed_recipe = json.find { |r| r["name"] == "Failed Import" }
 
     assert_not_nil failed_recipe
-    assert_equal "Import from test.com failed - page is not supported or doesn't contain a recipe", failed_recipe["error_message"]
+    assert_equal "Import from test.com failed.", failed_recipe["error_message"]
     assert_equal "failed", failed_recipe["import_status"]
+  end
+
+  # MARK: - Destroy Tests
+
+  test "destroy returns 204 on successful deletion" do
+    recipe = @user.recipes.create!(name: "To Delete")
+
+    delete api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :no_content
+    assert_nil Recipe.find_by(id: recipe.id)
+  end
+
+  test "destroy returns 404 for non-existent recipe" do
+    delete api_v1_recipe_url(id: 999999), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+    json = response.parsed_body
+    assert_equal "Recipe not found", json["error"]
+  end
+
+  test "destroy returns 404 when trying to delete another user's recipe" do
+    other_recipe = @other_user.recipes.create!(name: "Other User's Recipe")
+
+    delete api_v1_recipe_url(other_recipe), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+    assert Recipe.exists?(other_recipe.id)
+  end
+
+  test "destroy requires authentication" do
+    recipe = @user.recipes.create!(name: "Protected Recipe")
+
+    delete api_v1_recipe_url(recipe), as: :json
+
+    assert_response :unauthorized
+    assert Recipe.exists?(recipe.id)
   end
 end

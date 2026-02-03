@@ -14,6 +14,16 @@ final class RecipeViewModel {
         recipes.contains { $0.importStatus == "pending" }
     }
 
+    /// Failed recipes for display as error banners
+    var failedRecipes: [PersistedRecipe] {
+        recipes.filter { $0.importStatus == "failed" }
+    }
+
+    /// Successful recipes (excluding failed ones)
+    var successfulRecipes: [PersistedRecipe] {
+        recipes.filter { $0.importStatus != "failed" }
+    }
+
     private let repository: RecipeRepositoryProtocol
     private let recipeService: RecipeServiceProtocol
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipeViewModel")
@@ -54,6 +64,11 @@ final class RecipeViewModel {
 
     /// Fetch fresh recipes from API and update local cache
     func refreshRecipes() async {
+        guard !isLoading else {
+            logger.info("Refresh already in progress, skipping")
+            return
+        }
+
         logger.info("Starting recipe refresh")
         isLoading = true
         errorMessage = nil
@@ -100,7 +115,7 @@ final class RecipeViewModel {
             while !Task.isCancelled {
                 let elapsed = DispatchTime.now().uptimeNanoseconds - startTime
                 if elapsed > maxDuration {
-                    await self.logger.info("Polling timeout reached, stopping")
+                    await MainActor.run { self.logger.info("Polling timeout reached, stopping") }
                     break
                 }
 
@@ -112,7 +127,7 @@ final class RecipeViewModel {
 
                 if Task.isCancelled { break }
 
-                await self.logger.info("Polling: refreshing recipes")
+                await MainActor.run { self.logger.info("Polling: refreshing recipes") }
                 do {
                     let apiRecipes = try await self.recipeService.fetchRecipes()
 
@@ -127,11 +142,11 @@ final class RecipeViewModel {
                     }
 
                     if !stillPending {
-                        await self.logger.info("No more pending imports, stopping polling")
+                        await MainActor.run { self.logger.info("No more pending imports, stopping polling") }
                         break
                     }
                 } catch {
-                    await self.logger.error("Polling refresh failed: \(error.localizedDescription)")
+                    await MainActor.run { self.logger.error("Polling refresh failed: \(error.localizedDescription)") }
                 }
             }
         }
@@ -152,6 +167,30 @@ final class RecipeViewModel {
             recipes = []
         } catch {
             logger.error("Failed to clear recipe data: \(error.localizedDescription)")
+        }
+    }
+
+    /// Dismiss a failed recipe (optimistic delete)
+    func dismissFailedRecipe(_ recipe: PersistedRecipe) async {
+        let recipeId = recipe.id
+        logger.info("Dismissing failed recipe: \(recipeId)")
+
+        // Optimistic: delete from local cache immediately
+        do {
+            try repository.deleteRecipe(id: recipeId)
+            loadCachedRecipes()
+        } catch {
+            logger.error("Failed to delete recipe locally: \(error.localizedDescription)")
+        }
+
+        // Background: delete from server
+        do {
+            try await recipeService.deleteRecipe(id: recipeId)
+            logger.info("Deleted recipe from server: \(recipeId)")
+        } catch {
+            // Server delete failed, but local is already removed
+            // Next refresh will re-sync if needed (or auto-cleanup handles it)
+            logger.error("Failed to delete recipe from server: \(error.localizedDescription)")
         }
     }
 }

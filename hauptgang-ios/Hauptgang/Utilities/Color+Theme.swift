@@ -41,6 +41,9 @@ extension Color {
     /// Error red - #DC2626
     static let hauptgangError = Color(red: 220/255, green: 38/255, blue: 38/255)
 
+    /// Soft error red - #EF4444 (for banners/toasts)
+    static let hauptgangErrorSoft = Color(red: 239/255, green: 68/255, blue: 68/255)
+
     /// Success green - #16A34A
     static let hauptgangSuccess = Color(red: 22/255, green: 163/255, blue: 74/255)
 

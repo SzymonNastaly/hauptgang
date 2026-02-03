@@ -1,7 +1,7 @@
 module Api
   module V1
     class RecipesController < BaseController
-      after_action :cleanup_old_failed_recipes, only: [:index]
+      after_action :cleanup_old_failed_recipes, only: [ :index ]
 
       def index
         recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
@@ -19,6 +19,16 @@ module Api
         render json: recipe_detail_json(recipe)
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Recipe not found" }, status: :not_found
+      end
+
+      def destroy
+        recipe = current_user.recipes.find(params[:id])
+        recipe.destroy!
+        head :no_content
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Recipe not found" }, status: :not_found
+      rescue ActiveRecord::RecordNotDestroyed
+        render json: { error: "Could not delete recipe" }, status: :unprocessable_entity
       end
 
       def import
@@ -99,22 +109,17 @@ module Api
 
       def cover_image_url(recipe, variant)
         return nil unless recipe.cover_image.attached?
-        Rails.application.routes.url_helpers.rails_blob_url(
+        Rails.application.routes.url_helpers.rails_blob_path(
           recipe.cover_image.variant(variant),
-          host: request.base_url
+          only_path: true
         )
       end
 
       def track_failed_recipe_fetches(recipes)
-        # Find failed recipes that haven't been fetched yet
-        unfetched_failed = recipes.select do |recipe|
-          recipe.failed? && recipe.failed_recipe_fetched_at.nil?
-        end
-
-        # Mark them as fetched now
-        unfetched_failed.each do |recipe|
-          recipe.update_column(:failed_recipe_fetched_at, Time.current)
-        end
+        current_user.recipes
+          .where(id: recipes.select(:id))
+          .where(import_status: :failed, failed_recipe_fetched_at: nil)
+          .update_all(failed_recipe_fetched_at: Time.current)
       end
 
       def cleanup_old_failed_recipes

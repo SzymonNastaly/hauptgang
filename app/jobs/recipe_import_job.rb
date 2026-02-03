@@ -37,17 +37,15 @@ class RecipeImportJob < ApplicationJob
 
   def build_error_message(url, error_code)
     domain = extract_domain(url)
-
-    # Generic message covers all failure types
-    # (no JSON-LD, LLM timeout, fetch errors, etc.)
-    "Import from #{domain} failed - page is not supported or doesn't contain a recipe"
+    "Import from #{domain} failed."
   end
 
   def extract_domain(url)
     return "unknown source" if url.blank?
 
     uri = URI.parse(url)
-    uri.host || "unknown source"
+    host = uri.host || "unknown source"
+    host.delete_prefix("www.")
   rescue URI::InvalidURIError
     "unknown source"
   end

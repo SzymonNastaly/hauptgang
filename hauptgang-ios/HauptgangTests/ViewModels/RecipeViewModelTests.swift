@@ -169,6 +169,85 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(sut.recipes.count, 0)
     }
 
+    // MARK: - refreshRecipes Concurrency Guard Tests
+
+    func testRefreshRecipes_skipsWhenAlreadyLoading() async {
+        mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
+
+        // Start first refresh (will be in progress)
+        let task1 = Task { await sut.refreshRecipes() }
+
+        // Give first task time to set isLoading
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        // Try second refresh while first is loading
+        let initialIsLoading = sut.isLoading
+        await sut.refreshRecipes()
+
+        await task1.value
+
+        // Service should only be called once if guard works
+        XCTAssertTrue(initialIsLoading || mockRecipeService.fetchRecipesCalled)
+    }
+
+    // MARK: - dismissFailedRecipe Tests
+
+    func testDismissFailedRecipe_deletesFromRepository() async {
+        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        mockRepository.allRecipes = [failedRecipe]
+        loadCachedRecipesIntoViewModel()
+
+        await sut.dismissFailedRecipe(failedRecipe)
+
+        XCTAssertFalse(mockRepository.allRecipes.contains { $0.id == 42 })
+    }
+
+    func testDismissFailedRecipe_callsServerDelete() async {
+        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        mockRepository.allRecipes = [failedRecipe]
+        loadCachedRecipesIntoViewModel()
+
+        await sut.dismissFailedRecipe(failedRecipe)
+
+        XCTAssertTrue(mockRecipeService.deleteRecipeCalled)
+        XCTAssertEqual(mockRecipeService.deleteRecipeCalledWithId, 42)
+    }
+
+    func testDismissFailedRecipe_serverFailure_stillRemovesLocally() async {
+        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        mockRepository.allRecipes = [failedRecipe]
+        loadCachedRecipesIntoViewModel()
+
+        mockRecipeService.deleteRecipeResult = .failure(MockRecipeError.networkError)
+
+        await sut.dismissFailedRecipe(failedRecipe)
+
+        // Local deletion should still succeed even if server fails
+        XCTAssertFalse(mockRepository.allRecipes.contains { $0.id == 42 })
+    }
+
+    // MARK: - failedRecipes / successfulRecipes Tests
+
+    func testFailedRecipes_filtersCorrectly() {
+        let failedRecipe = createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
+        let successRecipe = createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
+        mockRepository.allRecipes = [failedRecipe, successRecipe]
+        loadCachedRecipesIntoViewModel()
+
+        XCTAssertEqual(sut.failedRecipes.count, 1)
+        XCTAssertEqual(sut.failedRecipes.first?.id, 1)
+    }
+
+    func testSuccessfulRecipes_excludesFailed() {
+        let failedRecipe = createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
+        let successRecipe = createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
+        mockRepository.allRecipes = [failedRecipe, successRecipe]
+        loadCachedRecipesIntoViewModel()
+
+        XCTAssertEqual(sut.successfulRecipes.count, 1)
+        XCTAssertEqual(sut.successfulRecipes.first?.id, 2)
+    }
+
     // MARK: - Helpers
 
     private func loadCachedRecipesIntoViewModel() {

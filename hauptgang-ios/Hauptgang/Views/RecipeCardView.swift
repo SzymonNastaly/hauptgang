@@ -11,7 +11,7 @@ struct RecipeCardView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             // Background layer
-            if let imageUrl = recipe.coverImageUrl, let url = URL(string: imageUrl) {
+            if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
                 imageBackgroundView(url: url)
             } else {
                 solidBackgroundView
@@ -134,29 +134,6 @@ struct RecipeCardView: View {
                 }
             }
 
-        case "failed":
-            ZStack {
-                // Semi-transparent red overlay
-                Color.hauptgangError.opacity(0.8)
-
-                VStack(spacing: Theme.Spacing.sm) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.title2)
-                        .foregroundColor(.white)
-
-                    Text("Import failed")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-
-                    Text("We couldn't find a recipe on this page, or this website isn't supported yet.")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.9))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, Theme.Spacing.md)
-                }
-            }
-
         default:
             EmptyView()
         }
@@ -179,11 +156,6 @@ struct RecipeCardView: View {
     /// Whether the recipe is currently being imported
     var isPending: Bool {
         recipe.importStatus == "pending"
-    }
-
-    /// Whether the recipe import failed
-    var isFailed: Bool {
-        recipe.importStatus == "failed"
     }
 }
 

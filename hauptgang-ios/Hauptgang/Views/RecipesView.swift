@@ -51,7 +51,7 @@ struct RecipesView: View {
     private var recipeListView: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
-                // Error message if present
+                // Global error message (API failures)
                 if let error = recipeViewModel.errorMessage {
                     Text(error)
                         .font(.caption)
@@ -59,20 +59,13 @@ struct RecipesView: View {
                         .padding(.horizontal, Theme.Spacing.lg)
                 }
 
-                // Recipe cards
+                // Successful recipe cards
                 LazyVStack(spacing: Theme.Spacing.md) {
-                    ForEach(recipeViewModel.recipes) { recipe in
-                        let cardView = RecipeCardView(recipe: recipe)
-
-                        if cardView.isPending || cardView.isFailed {
-                            // Pending and failed recipes are not tappable
-                            cardView
-                        } else {
-                            NavigationLink(value: recipe.id) {
-                                cardView
-                            }
-                            .buttonStyle(.plain)
+                    ForEach(recipeViewModel.successfulRecipes) { recipe in
+                        NavigationLink(value: recipe.id) {
+                            RecipeCardView(recipe: recipe)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
@@ -85,6 +78,26 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
+        .overlay(alignment: .bottom) {
+            failedRecipeBanners
+        }
+    }
+
+    /// Floating error banners with swipe-to-dismiss
+    private var failedRecipeBanners: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            ForEach(recipeViewModel.failedRecipes) { recipe in
+                ErrorBannerView(recipe: recipe) {
+                    Task {
+                        await recipeViewModel.dismissFailedRecipe(recipe)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .padding(.bottom, Theme.Spacing.sm)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: recipeViewModel.failedRecipes.count)
     }
 
     private var emptyStateView: some View {

@@ -186,4 +186,161 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unauthorized
   end
+
+  # extract_from_text tests
+
+  test "extract_from_text creates recipe and enqueues job" do
+    text = "Chocolate Cake\n\nIngredients:\n- 2 cups flour"
+
+    assert_enqueued_with(job: RecipeTextExtractJob) do
+      post extract_from_text_api_v1_recipes_url,
+        params: { text: text },
+        headers: @auth_headers,
+        as: :json
+    end
+
+    assert_response :accepted
+    json = response.parsed_body
+    assert json["id"].present?
+    assert_equal "pending", json["import_status"]
+
+    recipe = Recipe.find(json["id"])
+    assert_equal "Importing...", recipe.name
+    assert_nil recipe.source_url
+    assert_equal @user.id, recipe.user_id
+  end
+
+  test "extract_from_text returns error for blank text" do
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: "" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Text is required", json["error"]
+  end
+
+  test "extract_from_text returns error for text too long" do
+    long_text = "a" * 50_001
+
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: long_text },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Text too long (max 50,000 chars)", json["error"]
+  end
+
+  test "extract_from_text requires authentication" do
+    post extract_from_text_api_v1_recipes_url,
+      params: { text: "Some recipe text" },
+      as: :json
+
+    assert_response :unauthorized
+  end
+
+  # Failed recipe handling tests
+
+  test "index tracks first fetch of failed recipes" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed."
+    )
+    assert_nil recipe.failed_recipe_fetched_at
+
+    get api_v1_recipes_url, headers: @auth_headers, as: :json
+
+    recipe.reload
+    assert_not_nil recipe.failed_recipe_fetched_at
+    assert_in_delta Time.current, recipe.failed_recipe_fetched_at, 2.seconds
+  end
+
+  test "index deletes failed recipes after 1 minute" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed.",
+      failed_recipe_fetched_at: 2.minutes.ago
+    )
+
+    assert_difference "@user.recipes.count", -1 do
+      get api_v1_recipes_url, headers: @auth_headers, as: :json
+    end
+
+    assert_raises(ActiveRecord::RecordNotFound) { recipe.reload }
+  end
+
+  test "index does not delete recently fetched failed recipes" do
+    recipe = @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from example.com failed.",
+      failed_recipe_fetched_at: 30.seconds.ago
+    )
+
+    assert_no_difference "@user.recipes.count" do
+      get api_v1_recipes_url, headers: @auth_headers, as: :json
+    end
+
+    assert_nothing_raised { recipe.reload }
+  end
+
+  test "index includes error_message in recipe list JSON" do
+    @user.recipes.create!(
+      name: "Failed Import",
+      import_status: :failed,
+      error_message: "Import from test.com failed."
+    )
+
+    get api_v1_recipes_url, headers: @auth_headers, as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    failed_recipe = json.find { |r| r["name"] == "Failed Import" }
+
+    assert_not_nil failed_recipe
+    assert_equal "Import from test.com failed.", failed_recipe["error_message"]
+    assert_equal "failed", failed_recipe["import_status"]
+  end
+
+  # MARK: - Destroy Tests
+
+  test "destroy returns 204 on successful deletion" do
+    recipe = @user.recipes.create!(name: "To Delete")
+
+    delete api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :no_content
+    assert_nil Recipe.find_by(id: recipe.id)
+  end
+
+  test "destroy returns 404 for non-existent recipe" do
+    delete api_v1_recipe_url(id: 999999), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+    json = response.parsed_body
+    assert_equal "Recipe not found", json["error"]
+  end
+
+  test "destroy returns 404 when trying to delete another user's recipe" do
+    other_recipe = @other_user.recipes.create!(name: "Other User's Recipe")
+
+    delete api_v1_recipe_url(other_recipe), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+    assert Recipe.exists?(other_recipe.id)
+  end
+
+  test "destroy requires authentication" do
+    recipe = @user.recipes.create!(name: "Protected Recipe")
+
+    delete api_v1_recipe_url(recipe), as: :json
+
+    assert_response :unauthorized
+    assert Recipe.exists?(recipe.id)
+  end
 end

@@ -145,7 +145,7 @@ struct RecipeDetailView: View {
 
     @ViewBuilder
     private func heroImage(_ recipe: RecipeDetail) -> some View {
-        if let imageUrl = recipe.coverImageUrl, let url = URL(string: imageUrl) {
+        if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .empty:

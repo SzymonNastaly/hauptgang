@@ -5,6 +5,7 @@ import os
 protocol RecipeServiceProtocol: Sendable {
     func fetchRecipes() async throws -> [RecipeListItem]
     func fetchRecipeDetail(id: Int) async throws -> RecipeDetail
+    func deleteRecipe(id: Int) async throws
 }
 
 /// Handles all recipe-related API calls
@@ -42,5 +43,21 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
 
         logger.info("Fetched recipe detail: \(recipe.name)")
         return recipe
+    }
+
+    /// Deletes a recipe by ID
+    func deleteRecipe(id: Int) async throws {
+        logger.info("Deleting recipe with id: \(id)")
+
+        do {
+            try await api.requestVoid(
+                endpoint: "recipes/\(id)",
+                method: .delete,
+                authenticated: true
+            )
+            logger.info("Deleted recipe with id: \(id)")
+        } catch APIError.notFound {
+            logger.info("Recipe \(id) already deleted on server")
+        }
     }
 }

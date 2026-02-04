@@ -191,17 +191,7 @@ final class RecipeDetailViewModelTests: XCTestCase {
     // MARK: - Helpers
 
     private func createMockPersistedRecipe(id: Int, name: String) -> PersistedRecipe {
-        let recipe = PersistedRecipe(
-            from: RecipeListItem(
-                id: id,
-                name: name,
-                prepTime: nil,
-                cookTime: nil,
-                favorite: false,
-                coverImageUrl: nil,
-                updatedAt: Date()
-            )
-        )
+        let recipe = PersistedRecipe(from: RecipeListItem.mock(id: id, name: name))
         recipe.detailLastFetchedAt = Date()
         recipe.ingredientsJson = "[\"Ingredient 1\"]"
         recipe.instructionsJson = "[\"Step 1\"]"

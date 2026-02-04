@@ -23,6 +23,7 @@ protocol RecipeRepositoryProtocol {
     func clearAllRecipes() throws
     func getRecipe(id: Int) throws -> PersistedRecipe?
     func saveRecipeDetail(_ detail: RecipeDetail) throws
+    func deleteRecipe(id: Int) throws
 }
 
 /// Handles local persistence of recipes using SwiftData
@@ -37,36 +38,44 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         logger.info("RecipeRepository configured with model context")
     }
 
-    /// Save recipes from API response, updating existing or inserting new
+    /// Save recipes from API response, updating existing or inserting new, and removing stale entries
     func saveRecipes(_ recipes: [RecipeListItem]) throws {
         guard let modelContext else {
             logger.error("Attempted to save recipes without model context")
             throw RepositoryError.notConfigured
         }
 
-        logger.info("Saving \(recipes.count) recipes to local storage")
+        logger.info("Syncing \(recipes.count) recipes to local storage")
 
+        let apiRecipeIds = Set(recipes.map { $0.id })
+
+        // Remove recipes that are no longer in the API response
+        let allLocalDescriptor = FetchDescriptor<PersistedRecipe>()
+        let allLocal = try modelContext.fetch(allLocalDescriptor)
+        for localRecipe in allLocal where !apiRecipeIds.contains(localRecipe.id) {
+            logger.info("Removing stale recipe: \(localRecipe.id)")
+            modelContext.delete(localRecipe)
+        }
+
+        // Add or update recipes from API
         for apiRecipe in recipes {
-            // Check if recipe already exists
             let descriptor = FetchDescriptor<PersistedRecipe>(
                 predicate: #Predicate { $0.id == apiRecipe.id }
             )
 
             if let existing = try modelContext.fetch(descriptor).first {
-                // Update existing recipe
                 existing.update(from: apiRecipe)
             } else {
-                // Insert new recipe
                 let newRecipe = PersistedRecipe(from: apiRecipe)
                 modelContext.insert(newRecipe)
             }
         }
 
         try modelContext.save()
-        logger.info("Successfully saved \(recipes.count) recipes")
+        logger.info("Successfully synced \(recipes.count) recipes")
     }
 
-    /// Retrieve all cached recipes, sorted by name
+    /// Retrieve all cached recipes, sorted by most recent update
     func getAllRecipes() throws -> [PersistedRecipe] {
         guard let modelContext else {
             logger.error("Attempted to fetch recipes without model context")
@@ -74,7 +83,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         }
 
         let descriptor = FetchDescriptor<PersistedRecipe>(
-            sortBy: [SortDescriptor(\.name)]
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
 
         let recipes = try modelContext.fetch(descriptor)
@@ -138,5 +147,25 @@ final class RecipeRepository: RecipeRepositoryProtocol {
 
         try modelContext.save()
         logger.info("Successfully saved recipe detail for: \(detail.name)")
+    }
+
+    /// Delete a recipe by ID from local cache
+    func deleteRecipe(id: Int) throws {
+        guard let modelContext else {
+            logger.error("Attempted to delete recipe without model context")
+            throw RepositoryError.notConfigured
+        }
+
+        logger.info("Deleting recipe with id: \(id)")
+
+        let descriptor = FetchDescriptor<PersistedRecipe>(
+            predicate: #Predicate { $0.id == id }
+        )
+
+        if let recipe = try modelContext.fetch(descriptor).first {
+            modelContext.delete(recipe)
+            try modelContext.save()
+            logger.info("Deleted recipe with id: \(id)")
+        }
     }
 }

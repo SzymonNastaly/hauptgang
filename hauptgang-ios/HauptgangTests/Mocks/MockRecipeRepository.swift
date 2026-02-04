@@ -51,4 +51,8 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
         }
         savedRecipeDetail = detail
     }
+
+    func deleteRecipe(id: Int) throws {
+        allRecipes.removeAll { $0.id == id }
+    }
 }

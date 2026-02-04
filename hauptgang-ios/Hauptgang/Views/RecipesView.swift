@@ -7,6 +7,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesVi
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var recipeViewModel = RecipeViewModel()
 
     var body: some View {
@@ -31,6 +32,17 @@ struct RecipesView: View {
                     recipeViewModel.clearData()
                 }
             }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if oldPhase == .background && newPhase == .active {
+                    logger.info("App became active, refreshing recipes")
+                    Task {
+                        await recipeViewModel.refreshRecipes()
+                    }
+                }
+            }
+            .onDisappear {
+                recipeViewModel.stopPolling()
+            }
         }
     }
 
@@ -39,7 +51,7 @@ struct RecipesView: View {
     private var recipeListView: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
-                // Error message if present
+                // Global error message (API failures)
                 if let error = recipeViewModel.errorMessage {
                     Text(error)
                         .font(.caption)
@@ -47,9 +59,9 @@ struct RecipesView: View {
                         .padding(.horizontal, Theme.Spacing.lg)
                 }
 
-                // Recipe cards
+                // Successful recipe cards
                 LazyVStack(spacing: Theme.Spacing.md) {
-                    ForEach(recipeViewModel.recipes) { recipe in
+                    ForEach(recipeViewModel.successfulRecipes) { recipe in
                         NavigationLink(value: recipe.id) {
                             RecipeCardView(recipe: recipe)
                         }
@@ -66,6 +78,26 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
+        .overlay(alignment: .bottom) {
+            failedRecipeBanners
+        }
+    }
+
+    /// Floating error banners with swipe-to-dismiss
+    private var failedRecipeBanners: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            ForEach(recipeViewModel.failedRecipes) { recipe in
+                ErrorBannerView(recipe: recipe) {
+                    Task {
+                        await recipeViewModel.dismissFailedRecipe(recipe)
+                    }
+                }
+                .padding(.horizontal, Theme.Spacing.lg)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .padding(.bottom, Theme.Spacing.sm)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: recipeViewModel.failedRecipes.count)
     }
 
     private var emptyStateView: some View {

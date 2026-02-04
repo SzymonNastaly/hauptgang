@@ -24,11 +24,43 @@ targets:
       INFOPLIST_FILE: Hauptgang/Resources/Info.plist
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
       ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+      CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.entitlements
       CODE_SIGN_STYLE: Automatic
       DEVELOPMENT_TEAM: ""
       ENABLE_PREVIEWS: YES
       GENERATE_INFOPLIST_FILE: NO
       SWIFT_EMIT_LOC_STRINGS: YES
+    dependencies:
+      - target: ImportRecipeExtension
+        embed: true
+        codeSign: true
+        copyPhase:
+          destination: plugins
+          subpath: ""
+
+  ImportRecipeExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ImportRecipeExtension
+        excludes:
+          - "**/.DS_Store"
+      # Shared code from main app
+      - path: Hauptgang/Services/APIClient.swift
+      - path: Hauptgang/Services/KeychainService.swift
+      - path: Hauptgang/Models/APIError.swift
+      - path: Hauptgang/Models/User.swift
+      - path: Hauptgang/Utilities/Constants.swift
+      - path: Hauptgang/Models/ImportRecipeResponse.swift
+      - path: Hauptgang/Services/RecipeImportService.swift
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.share-extension
+      INFOPLIST_FILE: ImportRecipeExtension/Info.plist
+      CODE_SIGN_ENTITLEMENTS: ImportRecipeExtension/ImportRecipeExtension.entitlements
+      CODE_SIGN_STYLE: Automatic
+      DEVELOPMENT_TEAM: ""
+      SKIP_INSTALL: YES
+      GENERATE_INFOPLIST_FILE: NO
     dependencies: []
 
   HauptgangTests:

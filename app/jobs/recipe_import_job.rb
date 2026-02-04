@@ -12,25 +12,41 @@ class RecipeImportJob < ApplicationJob
     result = RecipeImporter.new(source_url).import
 
     if result.success?
-      attrs = result.recipe_attributes
-      recipe.update!(
-        name: attrs[:name],
-        ingredients: attrs[:ingredients],
-        instructions: attrs[:instructions],
-        prep_time: attrs[:prep_time],
-        cook_time: attrs[:cook_time],
-        servings: attrs[:servings],
-        notes: attrs[:notes],
-        source_url: attrs[:source_url],
-        import_status: :completed
-      )
+      recipe.update!(result.recipe_attributes.merge(import_status: :completed))
     else
-      recipe.update!(import_status: :failed)
+      error_message = build_error_message(source_url, result.error_code)
+      recipe.update!(
+        import_status: :failed,
+        error_message: error_message
+      )
       Rails.logger.error "[RecipeImportJob] Import failed for recipe #{recipe_id}: #{result.error}"
     end
   rescue => e
-    recipe&.update(import_status: :failed)
+    if recipe
+      error_message = build_error_message(source_url, :unexpected_error)
+      recipe.update(
+        import_status: :failed,
+        error_message: error_message
+      )
+    end
     Rails.logger.error "[RecipeImportJob] Unexpected error for recipe #{recipe_id}: #{e.class} - #{e.message}"
     raise
+  end
+
+  private
+
+  def build_error_message(url, error_code)
+    domain = extract_domain(url)
+    "Import from #{domain} failed."
+  end
+
+  def extract_domain(url)
+    return "unknown source" if url.blank?
+
+    uri = URI.parse(url)
+    host = uri.host || "unknown source"
+    host.delete_prefix("www.")
+  rescue URI::InvalidURIError
+    "unknown source"
   end
 end

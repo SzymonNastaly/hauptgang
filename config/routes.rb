@@ -2,10 +2,11 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resource :session, only: [ :create, :destroy ]
-      resources :recipes, only: [ :index, :show ] do
+      resources :recipes, only: [ :index, :show, :destroy ] do
         resource :favorite, only: [ :update, :destroy ]
         collection do
           post :import
+          post :extract_from_text
         end
       end
     end

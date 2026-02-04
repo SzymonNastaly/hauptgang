@@ -31,50 +31,6 @@ bin/ios-test                 # Run iOS tests (auto-finds simulator, macOS only)
 # Standard Rails commands for database, testing, etc. work as expected
 ```
 
-## Code Style
-
-This project uses **rubocop-rails-omakase** for Ruby styling, which provides standardized Rails conventions from Basecamp/37signals. Follow these standards when writing code.
-
-## Git Commit Messages
-
-When creating git commits:
-
-- **DO NOT** include "Co-Authored-By: Claude" or any similar AI attribution in commit messages
-- Keep commit messages clear and focused on what changed and why
-- Follow conventional commit message format when appropriate
-
-## CI Requirements
-
-Run `bin/ci` before committing. All checks (style, security audits, tests) must pass before merging.
-
 ## Task Management
 
 Use `/dex` to break down complex work, track progress across sessions, and coordinate multi-step implementations.
-
-## iOS App (hauptgang-ios)
-
-The iOS app is a native SwiftUI application located in `hauptgang-ios/`.
-
-### XcodeGen
-
-This project uses **XcodeGen** to generate the Xcode project from `project.yml`. This eliminates manual `project.pbxproj` editing.
-
-**IMPORTANT**: Never manually edit `Hauptgang.xcodeproj/project.pbxproj`. It is generated and will be overwritten.
-
-### iOS Development Commands
-
-```bash
-# Run iOS tests (from project root)
-bin/ios-test
-
-# Regenerate Xcode project (from hauptgang-ios/)
-cd hauptgang-ios && xcodegen generate
-```
-
-### Adding New Swift Files
-
-1. Create the `.swift` file in the appropriate directory under `Hauptgang/`
-2. Run `xcodegen generate` to update the project
-3. Open Xcode or refresh if already open
-
-The `project.yml` auto-discovers all `.swift` files, so no configuration changes are needed.

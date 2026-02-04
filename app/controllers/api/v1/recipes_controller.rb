@@ -123,6 +123,7 @@ module Api
       end
 
       def cleanup_old_failed_recipes
+        # TODO: Consider moving to a recurring background job if performance needs require it
         # Delete failed recipes that were fetched more than 1 minute ago
         current_user.recipes
           .where(import_status: :failed)

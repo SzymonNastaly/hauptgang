@@ -242,6 +242,60 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  # extract_from_image tests
+
+  test "extract_from_image creates recipe and enqueues job" do
+    image = fixture_file_upload("test/fixtures/files/test_image.png", "image/png")
+
+    assert_enqueued_with(job: RecipeImageExtractJob) do
+      post extract_from_image_api_v1_recipes_url,
+        params: { image: image },
+        headers: @auth_headers
+    end
+
+    assert_response :accepted
+    json = response.parsed_body
+    assert json["id"].present?
+    assert_equal "pending", json["import_status"]
+
+    recipe = Recipe.find(json["id"])
+    assert_equal "Importing...", recipe.name
+    assert_equal @user.id, recipe.user_id
+    assert recipe.import_image.attached?
+    assert_not recipe.cover_image.attached?
+  end
+
+  test "extract_from_image returns error for blank image" do
+    post extract_from_image_api_v1_recipes_url,
+      params: { image: nil },
+      headers: @auth_headers
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Image is required", json["error"]
+  end
+
+  test "extract_from_image returns error for non-image upload" do
+    file = fixture_file_upload("test/fixtures/files/test.txt", "text/plain")
+
+    post extract_from_image_api_v1_recipes_url,
+      params: { image: file },
+      headers: @auth_headers
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Image must be an image", json["error"]
+  end
+
+  test "extract_from_image requires authentication" do
+    image = fixture_file_upload("test/fixtures/files/test_image.png", "image/png")
+
+    post extract_from_image_api_v1_recipes_url,
+      params: { image: image }
+
+    assert_response :unauthorized
+  end
+
   # Failed recipe handling tests
 
   test "index tracks first fetch of failed recipes" do

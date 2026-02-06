@@ -7,6 +7,7 @@ Rails.application.routes.draw do
         collection do
           post :import
           post :extract_from_text
+          post :extract_from_image
         end
       end
     end

@@ -1,4 +1,5 @@
 import os
+import PhotosUI
 import SwiftData
 import SwiftUI
 
@@ -9,6 +10,11 @@ struct RecipesView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @State private var recipeViewModel = RecipeViewModel()
+
+    @State private var showingImportOptions = false
+    @State private var showingCamera = false
+    @State private var showingPhotoPicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     var body: some View {
         NavigationStack {
@@ -22,6 +28,26 @@ struct RecipesView: View {
             .background(Color.hauptgangBackground)
             .navigationTitle("Your Recipes")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingImportOptions = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .confirmationDialog("Import Recipe", isPresented: $showingImportOptions) {
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button("Take Photo") {
+                        showingCamera = true
+                    }
+                }
+                Button("Choose from Library") {
+                    showingPhotoPicker = true
+                }
+            }
+            .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
             .task {
                 logger.info("RecipesView appeared, configuring recipe view model")
                 recipeViewModel.configure(modelContext: modelContext)
@@ -40,13 +66,65 @@ struct RecipesView: View {
                     }
                 }
             }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    if let data = try? await newItem.loadTransferable(type: Data.self) {
+                        await recipeViewModel.importRecipeFromImage(data)
+                    }
+                    selectedPhotoItem = nil
+                }
+            }
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraView { imageData in
+                    Task {
+                        await recipeViewModel.importRecipeFromImage(imageData)
+                    }
+                }
+                .ignoresSafeArea()
+            }
             .onDisappear {
                 recipeViewModel.stopPolling()
+            }
+            .overlay {
+                if recipeViewModel.isImporting {
+                    importingOverlay
+                }
+            }
+            .alert(
+                "Import Failed",
+                isPresented: Binding(
+                    get: { recipeViewModel.importError != nil },
+                    set: { if !$0 { recipeViewModel.importError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let error = recipeViewModel.importError {
+                    Text(error)
+                }
             }
         }
     }
 
     // MARK: - Subviews
+
+    private var importingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+            VStack(spacing: Theme.Spacing.md) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+                Text("Importing recipe...")
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+            .padding(Theme.Spacing.xl)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        }
+    }
 
     private var recipeListView: some View {
         ScrollView {

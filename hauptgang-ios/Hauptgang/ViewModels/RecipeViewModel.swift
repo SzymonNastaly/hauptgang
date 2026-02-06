@@ -8,6 +8,8 @@ final class RecipeViewModel {
     private(set) var recipes: [PersistedRecipe] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    private(set) var isImporting = false
+    var importError: String?
 
     /// Whether any recipes are currently being imported
     var hasPendingImports: Bool {
@@ -168,6 +170,36 @@ final class RecipeViewModel {
         } catch {
             logger.error("Failed to clear recipe data: \(error.localizedDescription)")
         }
+    }
+
+    /// Import a recipe from image data (compress, upload, refresh)
+    func importRecipeFromImage(_ imageData: Data) async {
+        isImporting = true
+        importError = nil
+
+        let compressed = await Task.detached {
+            ImageCompressor.compressToJPEG(imageData)
+        }.value
+
+        guard let compressed else {
+            importError = "Could not process image. Please try a different photo."
+            isImporting = false
+            return
+        }
+
+        do {
+            _ = try await RecipeImportService.shared.importRecipe(from: compressed)
+            await refreshRecipes()
+        } catch {
+            if let apiError = error as? APIError {
+                importError = apiError.errorDescription ?? "Failed to import recipe from photo."
+            } else {
+                importError = "Failed to import recipe from photo."
+            }
+            logger.error("Image import failed: \(error.localizedDescription)")
+        }
+
+        isImporting = false
     }
 
     /// Dismiss a failed recipe (optimistic delete)

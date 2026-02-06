@@ -11,7 +11,7 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        extractURL()
+        extractContent()
     }
 
     deinit {
@@ -48,7 +48,7 @@ class ShareViewController: UIViewController {
         )
     }
 
-    private func extractURL() {
+    private func extractContent() {
         guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
               let attachments = extensionItem.attachments else {
             updateState(.failed("No content found"))
@@ -56,74 +56,20 @@ class ShareViewController: UIViewController {
         }
 
         importTask = Task {
-            if let url = await extractURLFromAttachments(attachments) {
+            // Try URL first — URL scraping gives better results than photo OCR
+            if let url = await ShareImportExtractor.extractURL(from: attachments) {
                 await handleExtractedURL(url)
-            } else {
-                await MainActor.run {
-                    updateState(.failed("Could not extract URL"))
-                }
+                return
             }
-        }
-    }
 
-    private func extractURLFromAttachments(_ attachments: [NSItemProvider]) async -> URL? {
-        let urlType = UTType.url.identifier
-        let plainTextType = UTType.plainText.identifier
-
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(urlType) {
-                if let url = await loadURL(from: provider, typeIdentifier: urlType) {
-                    return url
-                }
+            // Fall back to image
+            if let imageFileURL = await ShareImportExtractor.extractImageFileURL(from: attachments) {
+                await handleExtractedImage(imageFileURL)
+                return
             }
-        }
 
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(plainTextType) {
-                if let url = await loadURLFromPlainText(from: provider, typeIdentifier: plainTextType) {
-                    return url
-                }
-            }
-        }
-
-        return nil
-    }
-
-    private func loadURL(from provider: NSItemProvider, typeIdentifier: String) async -> URL? {
-        await withCheckedContinuation { continuation in
-            provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { item, _ in
-                if let url = item as? URL {
-                    continuation.resume(returning: url)
-                } else if let nsurl = item as? NSURL, let url = nsurl as URL? {
-                    continuation.resume(returning: url)
-                } else if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                    continuation.resume(returning: url)
-                } else {
-                    continuation.resume(returning: nil)
-                }
-            }
-        }
-    }
-
-    private func loadURLFromPlainText(from provider: NSItemProvider, typeIdentifier: String) async -> URL? {
-        await withCheckedContinuation { continuation in
-            provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { item, _ in
-                let text: String?
-                if let str = item as? String {
-                    text = str
-                } else if let data = item as? Data {
-                    text = String(data: data, encoding: .utf8)
-                } else {
-                    text = nil
-                }
-
-                if let text = text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   let url = URL(string: text),
-                   url.scheme != nil {
-                    continuation.resume(returning: url)
-                } else {
-                    continuation.resume(returning: nil)
-                }
+            await MainActor.run {
+                updateState(.failed("Could not extract recipe content"))
             }
         }
     }
@@ -142,6 +88,43 @@ class ShareViewController: UIViewController {
 
         do {
             _ = try await RecipeImportService.shared.importRecipe(from: url)
+            await MainActor.run {
+                updateState(.success)
+            }
+            try? await Task.sleep(for: .seconds(2))
+            await MainActor.run {
+                close()
+            }
+        } catch {
+            await MainActor.run {
+                updateState(.failed(error.localizedDescription))
+            }
+        }
+    }
+
+    private func handleExtractedImage(_ fileURL: URL) async {
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        await MainActor.run {
+            updateState(.importing(nil))
+        }
+
+        guard await KeychainService.shared.getToken() != nil else {
+            await MainActor.run {
+                updateState(.notAuthenticated)
+            }
+            return
+        }
+
+        guard let compressed = ImageCompressor.compressToJPEG(from: fileURL) else {
+            await MainActor.run {
+                updateState(.failed("Could not process image"))
+            }
+            return
+        }
+
+        do {
+            _ = try await RecipeImportService.shared.importRecipe(from: compressed)
             await MainActor.run {
                 updateState(.success)
             }

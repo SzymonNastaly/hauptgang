@@ -47,12 +47,14 @@ targets:
           - "**/.DS_Store"
       # Shared code from main app
       - path: Hauptgang/Services/APIClient.swift
+      - path: Hauptgang/Services/APIClientProtocol.swift
       - path: Hauptgang/Services/KeychainService.swift
       - path: Hauptgang/Models/APIError.swift
       - path: Hauptgang/Models/User.swift
       - path: Hauptgang/Utilities/Constants.swift
       - path: Hauptgang/Models/ImportRecipeResponse.swift
       - path: Hauptgang/Services/RecipeImportService.swift
+      - path: Hauptgang/Services/ImageCompressor.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.share-extension
       INFOPLIST_FILE: ImportRecipeExtension/Info.plist
@@ -70,6 +72,8 @@ targets:
       - path: HauptgangTests
         excludes:
           - "**/.DS_Store"
+      # Include ShareImportExtractor for testing
+      - path: ImportRecipeExtension/ShareImportExtractor.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.tests
       GENERATE_INFOPLIST_FILE: YES

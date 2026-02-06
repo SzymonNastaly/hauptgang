@@ -7,6 +7,9 @@ enum APIError: LocalizedError {
     case unauthorized
     case forbidden
     case notFound
+    case payloadTooLarge
+    case unsupportedMediaType
+    case unprocessableEntity(String?)
     case serverError(statusCode: Int)
     case decodingError(Error)
     case invalidCredentials
@@ -26,6 +29,12 @@ enum APIError: LocalizedError {
             return "You don't have permission to perform this action"
         case .notFound:
             return "The requested resource was not found"
+        case .payloadTooLarge:
+            return "Image is too large. Please try a smaller photo."
+        case .unsupportedMediaType:
+            return "Unsupported image format."
+        case .unprocessableEntity(let message):
+            return message ?? "Could not process this image."
         case .serverError(let code):
             return "Server error (\(code)). Please try again later."
         case .decodingError:

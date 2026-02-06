@@ -2,7 +2,7 @@ import SwiftUI
 
 enum ImportState {
     case extracting
-    case importing(URL)
+    case importing(URL?)
     case success
     case failed(String)
     case notAuthenticated
@@ -37,23 +37,29 @@ struct ImportRecipeView: View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.5)
-            Text("Extracting URL...")
+            Text("Processing...")
                 .font(.headline)
                 .foregroundColor(.secondary)
         }
     }
 
-    private func importingView(url: URL) -> some View {
+    private func importingView(url: URL?) -> some View {
         VStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(1.5)
             Text("Importing Recipe")
                 .font(.headline)
-            Text(url.host ?? url.absoluteString)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            if let url {
+                Text(url.host ?? url.absoluteString)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            } else {
+                Text("From photo")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
         }
     }
 

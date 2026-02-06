@@ -1,18 +1,20 @@
 import Foundation
 
 /// Generic HTTP client for API communication
-actor APIClient {
+actor APIClient: APIClientProtocol {
     static let shared = APIClient()
 
     private let session: URLSession
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
+    private let tokenProvider: any TokenProviding
 
     private init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60
         self.session = URLSession(configuration: config)
+        self.tokenProvider = KeychainService.shared
 
         self.decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -26,6 +28,32 @@ actor APIClient {
                 return date
             }
             // Fallback for dates without fractional seconds
+            if let date = try? Date(dateString, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: false)) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Cannot decode date: \(dateString)"
+            )
+        }
+
+        self.encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+    }
+
+    init(session: URLSession, tokenProvider: any TokenProviding) {
+        self.session = session
+        self.tokenProvider = tokenProvider
+
+        self.decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+
+            if let date = try? Date(dateString, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)) {
+                return date
+            }
             if let date = try? Date(dateString, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: false)) {
                 return date
             }
@@ -54,7 +82,7 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         // Add auth header if needed
-        if authenticated, let token = await KeychainService.shared.getToken() {
+        if authenticated, let token = await tokenProvider.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -96,7 +124,7 @@ actor APIClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        if authenticated, let token = await KeychainService.shared.getToken() {
+        if authenticated, let token = await tokenProvider.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
@@ -112,6 +140,54 @@ actor APIClient {
             }
 
             try validateResponse(httpResponse, data: data)
+        } catch let error as APIError {
+            throw error
+        } catch {
+            throw APIError.networkError(error)
+        }
+    }
+
+    func uploadMultipart<T: Decodable>(
+        endpoint: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String,
+        paramName: String,
+        authenticated: Bool = false
+    ) async throws -> T {
+        let url = Constants.API.baseURL.appendingPathComponent(endpoint)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        let boundary = UUID().uuidString
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        if authenticated, let token = await tokenProvider.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(fileData)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+
+        do {
+            let (data, response) = try await session.upload(for: request, from: body)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.invalidResponse
+            }
+
+            try validateResponse(httpResponse, data: data)
+
+            do {
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                throw APIError.decodingError(error)
+            }
         } catch let error as APIError {
             throw error
         } catch {
@@ -137,6 +213,13 @@ actor APIClient {
             throw APIError.forbidden
         case 404:
             throw APIError.notFound
+        case 413:
+            throw APIError.payloadTooLarge
+        case 415:
+            throw APIError.unsupportedMediaType
+        case 422:
+            let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error"] as? String
+            throw APIError.unprocessableEntity(message)
         case 500...599:
             throw APIError.serverError(statusCode: response.statusCode)
         default:

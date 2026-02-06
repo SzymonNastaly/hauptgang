@@ -108,6 +108,10 @@ actor KeychainService {
 
 // MARK: - Keychain Errors
 
+// MARK: - TokenProviding Conformance
+
+extension KeychainService: TokenProviding {}
+
 enum KeychainError: LocalizedError {
     case unableToSave(OSStatus)
     case itemNotFound

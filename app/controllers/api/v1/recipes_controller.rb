@@ -72,6 +72,25 @@ module Api
         render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
       end
 
+      def extract_from_image
+        image = params[:image]
+        validation_error = validate_import_image(image)
+        if validation_error
+          return render json: { error: validation_error }, status: :unprocessable_entity
+        end
+
+        recipe = current_user.recipes.create!(
+          name: "Importing...",
+          import_status: :pending
+        )
+
+        recipe.import_image.attach(image)
+
+        RecipeImageExtractJob.perform_later(current_user.id, recipe.id)
+
+        render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
+      end
+
       private
 
       def recipe_list_json(recipe)
@@ -113,6 +132,17 @@ module Api
           recipe.cover_image.variant(variant),
           only_path: true
         )
+      end
+
+      def validate_import_image(image)
+        return "Image is required" if image.blank?
+        unless image.respond_to?(:content_type) && image.respond_to?(:size)
+          return "Invalid image upload"
+        end
+        return "Image must be an image" unless image.content_type.to_s.start_with?("image/")
+        return "Image is too big (max 15MB)" if image.size > 15.megabytes
+
+        nil
       end
 
       def track_failed_recipe_fetches(recipes)

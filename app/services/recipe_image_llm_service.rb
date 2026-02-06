@@ -1,27 +1,19 @@
 require "ruby_llm/schema"
 
-# Extracts recipe data from text using an LLM.
-# Supports extraction from webpage content or raw recipe text.
-class RecipeLlmService
+# Extracts recipe data from an image using a vision-capable LLM.
+class RecipeImageLlmService
   Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
-  MAX_TEXT_LENGTH = 15_000
-  MODEL = "openai/gpt-oss-20b"
-  PROMPT_TYPES = %i[webpage raw_text].freeze
+  MODEL = "mistralai/mistral-medium-3.1"
 
-  def initialize(text, prompt_type: :webpage, source_url: nil)
-    raise ArgumentError, "Invalid prompt_type: #{prompt_type}" unless PROMPT_TYPES.include?(prompt_type)
-
-    @text = text
-    @prompt_type = prompt_type
-    @source_url = source_url
+  def initialize(image_path)
+    @image_path = image_path
   end
 
   def extract
-    truncated_text = @text.to_s[0, MAX_TEXT_LENGTH]
-    return extraction_failed("No text content provided") if truncated_text.blank?
+    return extraction_failed("No image provided") if @image_path.blank?
 
-    response = call_llm(truncated_text)
+    response = call_llm
     build_result(response.content)
   rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
     error_result("LLM request timed out: #{e.message}", :llm_timeout)
@@ -33,45 +25,17 @@ class RecipeLlmService
 
   private
 
-  def call_llm(text)
+  def call_llm
     chat = RubyLLM.chat(model: MODEL, provider: :openrouter)
-    chat.with_schema(Llm::RecipeSchema).ask(prompt_for(text))
+    chat.with_schema(Llm::RecipeSchema).ask(prompt, with: @image_path)
   end
 
-  def prompt_for(text)
-    case @prompt_type
-    when :webpage
-      webpage_prompt(text)
-    when :raw_text
-      raw_text_prompt(text)
-    end
-  end
-
-  def webpage_prompt(text)
+  def prompt
     <<~PROMPT
-      Extract recipe information from the following webpage content.
-      Find the recipe name, ingredients list, and cooking instructions.
+      Extract recipe information from the image.
+      Identify the recipe name, ingredients list, and cooking instructions.
 
-      If you cannot find recipe content, return an empty name field.
-
-      Webpage content:
-      ---
-      #{text}
-      ---
-    PROMPT
-  end
-
-  def raw_text_prompt(text)
-    <<~PROMPT
-      Extract recipe information from the following text.
-      Parse the recipe name, ingredients list, and cooking instructions.
-
-      If the text does not contain a valid recipe, return an empty name field.
-
-      Recipe text:
-      ---
-      #{text}
-      ---
+      If the image does not contain a valid recipe, return an empty name field.
     PROMPT
   end
 
@@ -90,7 +54,6 @@ class RecipeLlmService
       servings: content["servings"],
       notes: content["notes"].to_s.strip.presence
     }
-    attributes[:source_url] = @source_url if @source_url.present?
 
     Result.new(success?: true, recipe_attributes: attributes, error: nil, error_code: nil)
   end

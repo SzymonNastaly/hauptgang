@@ -30,11 +30,11 @@ module RecipeImporters
     end
 
     def convert_result(service_result)
-      Result.new(**service_result.to_h)
+      Result.new(**service_result.to_h, cover_image_url: nil)
     end
 
     def extraction_failed(message)
-      Result.new(success?: false, recipe_attributes: {}, error: message, error_code: :extraction_failed)
+      Result.new(success?: false, recipe_attributes: {}, cover_image_url: nil, error: message, error_code: :extraction_failed)
     end
   end
 end

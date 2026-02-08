@@ -43,3 +43,4 @@
 # Ignore tool state directories
 .playwright-mcp/
 .dex/
+

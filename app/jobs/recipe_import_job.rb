@@ -1,3 +1,6 @@
+require "faraday"
+require "stringio"
+
 class RecipeImportJob < ApplicationJob
   queue_as :default
 
@@ -13,6 +16,7 @@ class RecipeImportJob < ApplicationJob
 
     if result.success?
       recipe.update!(result.recipe_attributes.merge(import_status: :completed))
+      attach_cover_image(recipe, result.cover_image_url) if result.cover_image_url.present?
     else
       error_message = build_error_message(source_url, result.error_code)
       recipe.update!(
@@ -34,6 +38,51 @@ class RecipeImportJob < ApplicationJob
   end
 
   private
+
+  def attach_cover_image(recipe, image_url)
+    response = cover_image_client.get(image_url)
+
+    unless response.success?
+      Rails.logger.info "[RecipeImportJob] Cover image fetch failed (HTTP #{response.status}) for recipe #{recipe.id}"
+      return
+    end
+
+    content_type = response.headers["content-type"].to_s
+    unless content_type.start_with?("image/")
+      Rails.logger.info "[RecipeImportJob] Cover image invalid content type for recipe #{recipe.id}: #{content_type}"
+      return
+    end
+
+    if response.body.bytesize > 15.megabytes
+      Rails.logger.info "[RecipeImportJob] Cover image too large for recipe #{recipe.id}: #{response.body.bytesize} bytes"
+      return
+    end
+
+    filename = extract_filename(image_url)
+    recipe.cover_image.attach(
+      io: StringIO.new(response.body),
+      filename: filename,
+      content_type: content_type
+    )
+  rescue => e
+    Rails.logger.error "[RecipeImportJob] Cover image attach failed for recipe #{recipe.id}: #{e.class} - #{e.message}"
+  end
+
+  def cover_image_client
+    Faraday.new do |f|
+      f.options.timeout = 10
+      f.options.open_timeout = 5
+      f.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
+    end
+  end
+
+  def extract_filename(url)
+    uri = URI.parse(url)
+    name = File.basename(uri.path.to_s)
+    name.presence || "cover-image"
+  rescue URI::InvalidURIError
+    "cover-image"
+  end
 
   def build_error_message(url, error_code)
     domain = extract_domain(url)

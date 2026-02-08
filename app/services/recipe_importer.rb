@@ -4,7 +4,7 @@ require "faraday/follow_redirects"
 # Imports a recipe from a URL by extracting structured data
 # Tries JSON-LD first, then falls back to LLM extraction
 class RecipeImporter
-  Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
+  Result = Data.define(:success?, :recipe_attributes, :cover_image_url, :error, :error_code)
 
   MAX_RESPONSE_SIZE = 5.megabytes
   MAX_REDIRECTS = 5
@@ -20,6 +20,11 @@ class RecipeImporter
 
     validation = RecipeImporters::UrlValidator.new(@url).validate
     return failure(validation.error, :invalid_url) unless validation.success?
+
+    if RecipeImporters::InstagramReelExtractor.supports_url?(@url)
+      result = RecipeImporters::InstagramReelExtractor.new(@url).extract
+      return result
+    end
 
     fetch_result = fetch_html
     return failure(fetch_result[:error], fetch_result[:error_code]) unless fetch_result[:success]
@@ -95,6 +100,6 @@ class RecipeImporter
   end
 
   def failure(message, code)
-    Result.new(success?: false, recipe_attributes: {}, error: message, error_code: code)
+    Result.new(success?: false, recipe_attributes: {}, cover_image_url: nil, error: message, error_code: code)
   end
 end

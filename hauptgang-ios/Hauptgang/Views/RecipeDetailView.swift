@@ -116,8 +116,14 @@ struct RecipeDetailView: View {
                         .fontWeight(.bold)
                         .foregroundColor(.hauptgangTextPrimary)
 
-                    // Duration card
-                    durationCard(recipe)
+                    // Duration card - only show if any duration data exists
+                    let hasDurationData = (recipe.prepTime ?? 0) > 0
+                        || (recipe.cookTime ?? 0) > 0
+                        || (recipe.servings ?? 0) > 0
+
+                    if hasDurationData {
+                        durationCard(recipe)
+                    }
 
                     // Ingredients section
                     if !recipe.ingredients.isEmpty {

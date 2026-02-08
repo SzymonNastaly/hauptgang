@@ -137,6 +137,80 @@ class RecipeImporterTest < ActiveSupport::TestCase
     assert_equal "https://example.com/recipe", result.recipe_attributes[:source_url]
   end
 
+  test "imports instagram reel via apify" do
+    url = "https://www.instagram.com/p/DRUf_pBiPdh/"
+    previous_key = ENV["APIFY_API_KEY"]
+    ENV["APIFY_API_KEY"] = "test-apify-key"
+
+    response_body = [
+      {
+        "caption" => "Test Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
+        "displayUrl" => "https://cdn.example.com/cover.jpg"
+      }
+    ]
+
+    stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
+      .with(
+        query: { "token" => "test-apify-key" },
+        headers: { "Content-Type" => "application/json" },
+        body: { username: [ url ], resultsLimit: 1 }.to_json
+      )
+      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
+
+    stub_llm_response(name: "Test Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
+
+    result = RecipeImporter.new(url).import
+
+    assert result.success?
+    assert_equal "Test Recipe", result.recipe_attributes[:name]
+    assert_equal "https://cdn.example.com/cover.jpg", result.cover_image_url
+  ensure
+    ENV["APIFY_API_KEY"] = previous_key
+  end
+
+  test "returns error when instagram caption is missing" do
+    url = "https://www.instagram.com/reel/DRUf_pBiPdh/"
+    previous_key = ENV["APIFY_API_KEY"]
+    ENV["APIFY_API_KEY"] = "test-apify-key"
+
+    response_body = [
+      {
+        "caption" => " ",
+        "displayUrl" => "https://cdn.example.com/cover.jpg"
+      }
+    ]
+
+    stub_request(:post, "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/run-sync-get-dataset-items")
+      .with(
+        query: { "token" => "test-apify-key" },
+        headers: { "Content-Type" => "application/json" },
+        body: { username: [ url ], resultsLimit: 1 }.to_json
+      )
+      .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
+
+    result = RecipeImporter.new(url).import
+
+    assert_not result.success?
+    assert_equal :instagram_no_caption, result.error_code
+  ensure
+    ENV["APIFY_API_KEY"] = previous_key
+  end
+
+  test "returns error when apify key is missing for instagram" do
+    url = "https://www.instagram.com/p/DRUf_pBiPdh/"
+    previous_key = ENV["APIFY_API_KEY"]
+    ENV.delete("APIFY_API_KEY")
+
+    Rails.application.credentials.stub(:dig, nil) do
+      result = RecipeImporter.new(url).import
+
+      assert_not result.success?
+      assert_equal :apify_missing_token, result.error_code
+    end
+  ensure
+    ENV["APIFY_API_KEY"] = previous_key
+  end
+
   test "returns error when no extraction method succeeds" do
     html = "<html><body><h1>Just a regular page</h1></body></html>"
 

@@ -26,10 +26,10 @@ module RecipeImporters
         next unless recipe
 
         attributes = extract_attributes(recipe)
-        return Result.new(success?: true, recipe_attributes: attributes, error: nil, error_code: nil) if attributes[:name].present?
+        return Result.new(success?: true, recipe_attributes: attributes, cover_image_url: nil, error: nil, error_code: nil) if attributes[:name].present?
       end
 
-      Result.new(success?: false, recipe_attributes: {}, error: "No JSON-LD recipe data found", error_code: :no_json_ld)
+      Result.new(success?: false, recipe_attributes: {}, cover_image_url: nil, error: "No JSON-LD recipe data found", error_code: :no_json_ld)
     end
 
     private

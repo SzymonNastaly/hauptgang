@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Format iOS code with SwiftFormat
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+if ! command -v swiftformat &> /dev/null; then
+  echo "Error: swiftformat not found. Install with: brew install swiftformat"
+  exit 1
+fi
+
+echo "Formatting Swift code..."
+swiftformat hauptgang-ios/ --config hauptgang-ios/.swiftformat
+
+echo "✓ Swift formatting complete"

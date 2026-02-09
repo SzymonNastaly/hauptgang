@@ -4,6 +4,10 @@ CI.run do
   step "Setup", "bin/setup --skip-server"
 
   step "Style: Ruby", "bin/rubocop"
+  step "Style: iOS Lint", "bin/ios-lint"
+  step "Style: iOS Format", "bin/ios-format --lint"
+
+  step "Quality: Ruby code smells", "bin/reek"
 
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/importmap audit"

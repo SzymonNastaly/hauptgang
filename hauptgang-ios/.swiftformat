@@ -1,0 +1,74 @@
+# SwiftFormat Configuration for Hauptgang iOS
+# https://github.com/nicklockwood/SwiftFormat
+
+# Swift version
+--swiftversion 5.9
+
+# File options
+--exclude Pods,build,.build,DerivedData
+
+# Format options
+--indent 4
+--indentcase false
+--trimwhitespace always
+--linebreaks lf
+--semicolons never
+--commas always
+--decimalgrouping 3,6
+--binarygrouping 4,8
+--octalgrouping 4,8
+--hexgrouping 4,8
+--fractiongrouping disabled
+--exponentgrouping disabled
+--ifdef no-indent
+--xcodeindentation disabled
+--tabwidth unspecified
+--maxwidth 120
+
+# Wrapping
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--closingparen balanced
+--wrapreturntype preserve
+--wrapconditions preserve
+--wraptypealiases preserve
+--wrapternary default
+
+# Rules (alphabetically sorted for clarity)
+--enable isEmpty
+--enable sortedImports
+--enable blankLinesBetweenScopes
+--enable consecutiveSpaces
+--enable duplicateImports
+--enable redundantNilInit
+--enable redundantParens
+--enable redundantReturn
+--enable redundantSelf
+--enable redundantType
+--enable spaceAroundBraces
+--enable spaceAroundBrackets
+--enable spaceAroundComments
+--enable spaceAroundGenerics
+--enable spaceAroundOperators
+--enable spaceInsideBraces
+--enable spaceInsideBrackets
+--enable spaceInsideComments
+--enable spaceInsideGenerics
+--enable spaceInsideParens
+--enable trailingCommas
+--enable trailingSpace
+--enable void
+--enable wrapMultilineStatementBraces
+--enable wrapSingleLineComments
+
+# Self options
+--self insert # Use explicit self for member access
+--selfrequired
+
+# Header
+--header strip
+
+# Disable problematic rules
+--disable andOperator # Don't convert && to ,
+--disable redundantOptionalBinding # if let x = x is clear

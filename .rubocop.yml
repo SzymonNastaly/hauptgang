@@ -15,6 +15,31 @@ Hauptgang/ScopedRecipeQuery:
   Enabled: true
   Description: "Detects unscoped Recipe queries that leak data across users"
 
+# Complexity Metrics
+Metrics/CyclomaticComplexity:
+  Max: 10  # Default is 7, adjust based on your needs
+
+Metrics/PerceivedComplexity:
+  Max: 10  # Accounts for human perception of complexity
+
+Metrics/AbcSize:
+  Max: 20  # Assignment, Branch, Condition size
+
+Metrics/MethodLength:
+  Max: 15
+  CountAsOne: ['array', 'hash', 'heredoc']
+
+Metrics/ClassLength:
+  Max: 150
+
+Metrics/BlockLength:
+  Max: 25
+  CountAsOne: ['array', 'hash', 'heredoc']
+  Exclude:
+    - 'config/**/*'
+    - 'spec/**/*'
+    - 'test/**/*'
+
 # Overwrite or add rules to create your own house style
 #
 # # Use `[a, [b, c]]` not `[ a, [ b, c ] ]`

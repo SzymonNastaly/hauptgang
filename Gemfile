@@ -63,6 +63,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Code smell detector [https://github.com/troessner/reek]
+  gem "reek", require: false
 end
 
 group :development do

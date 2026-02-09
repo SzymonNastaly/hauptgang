@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+cd "$(dirname "$0")/../hauptgang-ios"
+
+# Check if SwiftLint is installed
+if ! command -v swiftlint &> /dev/null; then
+  echo "Error: SwiftLint not found. Install it with:"
+  echo "  brew install swiftlint"
+  echo ""
+  echo "Or via Mint:"
+  echo "  mint install realm/SwiftLint"
+  exit 1
+fi
+
+echo "==> Running SwiftLint..."
+swiftlint lint --strict
+
+echo "==> SwiftLint passed!"

@@ -7,7 +7,8 @@ struct HauptgangApp: App {
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            PersistedRecipe.self
+            PersistedRecipe.self,
+            PersistedShoppingListItem.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

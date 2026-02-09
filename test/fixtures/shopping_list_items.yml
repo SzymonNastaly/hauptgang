@@ -1,0 +1,30 @@
+unchecked_milk:
+  user: one
+  client_id: client-milk
+  name: Milk
+  checked_at: nil
+
+unchecked_bread:
+  user: one
+  client_id: client-bread
+  name: Bread
+  source_recipe: one
+  checked_at: nil
+
+checked_eggs:
+  user: one
+  client_id: client-eggs
+  name: Eggs
+  checked_at: <%= 10.minutes.ago.iso8601 %>
+
+stale_checked_butter:
+  user: one
+  client_id: client-butter
+  name: Butter
+  checked_at: <%= 2.hours.ago.iso8601 %>
+
+other_user_item:
+  user: two
+  client_id: client-rice
+  name: Rice
+  checked_at: nil

@@ -6,6 +6,7 @@ struct MainTabView: View {
 
     enum Tab: Hashable {
         case recipes
+        case shoppingList
         case settings
     }
 
@@ -16,6 +17,12 @@ struct MainTabView: View {
                     Label("Recipes", systemImage: "fork.knife")
                 }
                 .tag(Tab.recipes)
+
+            ShoppingListView()
+                .tabItem {
+                    Label("Shopping List", systemImage: "cart")
+                }
+                .tag(Tab.shoppingList)
 
             SettingsView()
                 .tabItem {
@@ -31,7 +38,7 @@ struct MainTabView: View {
     let authManager = AuthManager()
     return MainTabView()
         .environmentObject(authManager)
-        .modelContainer(for: PersistedRecipe.self, inMemory: true)
+        .modelContainer(for: [PersistedRecipe.self, PersistedShoppingListItem.self], inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))
         }

@@ -39,6 +39,7 @@ actor APIClient: APIClientProtocol {
 
         self.encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
     }
 
     init(session: URLSession, tokenProvider: any TokenProviding) {
@@ -65,6 +66,7 @@ actor APIClient: APIClientProtocol {
 
         self.encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
     }
 
     // MARK: - Public Methods

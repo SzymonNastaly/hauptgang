@@ -26,6 +26,7 @@ struct RecipeCardView: View {
             }
         }
         .frame(height: cardHeight)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .shadow(
             color: Theme.Shadow.sm.color,

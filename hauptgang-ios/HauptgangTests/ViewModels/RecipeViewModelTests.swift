@@ -92,17 +92,16 @@ final class RecipeViewModelTests: XCTestCase {
         await sut.refreshRecipes()
 
         XCTAssertEqual(sut.recipes.count, 2)
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertFalse(sut.isOffline)
         XCTAssertFalse(sut.isLoading)
     }
 
-    func testRefreshRecipes_failure_setsErrorMessage() async {
-        mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
+    func testRefreshRecipes_networkFailure_setsOffline() async {
+        mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
 
         await sut.refreshRecipes()
 
-        XCTAssertNotNil(sut.errorMessage)
-        XCTAssertEqual(sut.errorMessage, "Failed to load recipes. Pull to retry.")
+        XCTAssertTrue(sut.isOffline)
         XCTAssertFalse(sut.isLoading)
     }
 
@@ -129,17 +128,17 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(mockRepository.savedRecipes.first?.name, "New Recipe")
     }
 
-    func testRefreshRecipes_clearsErrorOnSuccess() async {
-        // First, create an error state
-        mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
+    func testRefreshRecipes_clearsOfflineOnSuccess() async {
+        // First, create an offline state
+        mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
         await sut.refreshRecipes()
-        XCTAssertNotNil(sut.errorMessage)
+        XCTAssertTrue(sut.isOffline)
 
         // Then, refresh successfully
         mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
         await sut.refreshRecipes()
 
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertFalse(sut.isOffline)
     }
 
     // MARK: - stopPolling Tests

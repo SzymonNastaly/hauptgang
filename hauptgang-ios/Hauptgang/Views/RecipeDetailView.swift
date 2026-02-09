@@ -8,6 +8,8 @@ struct RecipeDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: RecipeDetailViewModel
+    @State private var shoppingListViewModel = ShoppingListViewModel()
+    @State private var showShoppingListConfirmation = false
 
     init(recipeId: Int, viewModel: RecipeDetailViewModel? = nil) {
         self.recipeId = recipeId
@@ -31,11 +33,6 @@ struct RecipeDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(hasHeroImage ? .hidden : .visible, for: .navigationBar)
         .toolbar {
-            if viewModel.isOffline {
-                ToolbarItem(placement: .principal) {
-                    offlineIndicator
-                }
-            }
             if viewModel.isRefreshing {
                 ToolbarItem(placement: .topBarTrailing) {
                     ProgressView()
@@ -47,6 +44,7 @@ struct RecipeDetailView: View {
         .task(id: recipeId) {
             logger.info("RecipeDetailView appeared for recipe id: \(recipeId)")
             viewModel.configure(modelContext: modelContext)
+            shoppingListViewModel.configure(modelContext: modelContext)
             await viewModel.loadRecipe(id: recipeId)
         }
     }
@@ -261,6 +259,27 @@ struct RecipeDetailView: View {
                     }
                 }
             }
+
+            Button {
+                shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: recipeId)
+                showShoppingListConfirmation = true
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    showShoppingListConfirmation = false
+                }
+            } label: {
+                Label("Add to shopping list", systemImage: "cart.badge.plus")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.bordered)
+            .tint(.hauptgangPrimary)
+
+            if showShoppingListConfirmation {
+                Label("Added to shopping list", systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundColor(.hauptgangSuccess)
+                    .transition(.opacity)
+            }
         }
     }
 
@@ -303,23 +322,6 @@ struct RecipeDetailView: View {
                 .foregroundColor(.hauptgangTextSecondary)
                 .italic()
         }
-    }
-
-    // MARK: - Offline Indicator
-
-    private var offlineIndicator: some View {
-        HStack(spacing: Theme.Spacing.xs) {
-            Image(systemName: "wifi.slash")
-                .font(.caption2)
-            Text("Offline")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .foregroundColor(.hauptgangTextSecondary)
-        .padding(.horizontal, Theme.Spacing.sm)
-        .padding(.vertical, Theme.Spacing.xs)
-        .background(Color.hauptgangSurfaceRaised)
-        .clipShape(Capsule())
     }
 
     // MARK: - Helpers

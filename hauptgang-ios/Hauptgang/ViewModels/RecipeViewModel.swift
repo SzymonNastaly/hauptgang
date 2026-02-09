@@ -7,7 +7,7 @@ import SwiftData
 final class RecipeViewModel {
     private(set) var recipes: [PersistedRecipe] = []
     private(set) var isLoading = false
-    private(set) var errorMessage: String?
+    private(set) var isOffline = false
     private(set) var isImporting = false
     var importError: String?
 
@@ -73,7 +73,7 @@ final class RecipeViewModel {
 
         logger.info("Starting recipe refresh")
         isLoading = true
-        errorMessage = nil
+        isOffline = false
 
         do {
             let apiRecipes = try await recipeService.fetchRecipes()
@@ -87,7 +87,9 @@ final class RecipeViewModel {
             }
         } catch {
             logger.error("Recipe refresh failed: \(error.localizedDescription)")
-            errorMessage = "Failed to load recipes. Pull to retry."
+            if let apiError = error as? APIError, case .networkError = apiError {
+                isOffline = true
+            }
             // Keep showing cached data on error
         }
 

@@ -15,6 +15,7 @@ struct RecipesView: View {
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isScrolledDown = false
 
     var body: some View {
         NavigationStack {
@@ -105,6 +106,7 @@ struct RecipesView: View {
                 }
             }
         }
+        .offlineToast(isOffline: recipeViewModel.isOffline, showToast: !isScrolledDown)
     }
 
     // MARK: - Subviews
@@ -129,15 +131,6 @@ struct RecipesView: View {
     private var recipeListView: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
-                // Global error message (API failures)
-                if let error = recipeViewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.hauptgangError)
-                        .padding(.horizontal, Theme.Spacing.lg)
-                }
-
-                // Successful recipe cards
                 LazyVStack(spacing: Theme.Spacing.md) {
                     ForEach(recipeViewModel.successfulRecipes) { recipe in
                         NavigationLink(value: recipe.id) {
@@ -149,6 +142,11 @@ struct RecipesView: View {
                 .padding(.horizontal, Theme.Spacing.lg)
             }
             .padding(.vertical, Theme.Spacing.sm)
+        }
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y > 10
+        } action: { _, isScrolled in
+            isScrolledDown = isScrolled
         }
         .refreshable {
             await recipeViewModel.refreshRecipes()
@@ -195,13 +193,6 @@ struct RecipesView: View {
                 Text("Your recipes will appear here")
                     .font(.subheadline)
                     .foregroundColor(.hauptgangTextSecondary)
-
-                if let error = recipeViewModel.errorMessage {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.hauptgangError)
-                        .padding(.top, Theme.Spacing.xs)
-                }
             }
 
             Button {

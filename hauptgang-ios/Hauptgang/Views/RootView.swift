@@ -3,10 +3,11 @@ import SwiftUI
 /// Root view that handles authentication routing
 struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
 
     var body: some View {
         Group {
-            switch authManager.authState {
+            switch self.authManager.authState {
             case .unknown:
                 SplashView()
             case .unauthenticated:
@@ -15,9 +16,22 @@ struct RootView: View {
                 MainTabView()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: authManager.authState)
+        // Note: animation removed to prevent iOS 26 Liquid Glass tab bar background initialization bug
+        // .animation(.easeInOut(duration: 0.3), value: self.authManager.authState)
         .task {
-            await authManager.checkAuthStatus()
+            await self.authManager.checkAuthStatus()
+        }
+        .onChange(of: self.authManager.authState) { _, newValue in
+            Task {
+                switch newValue {
+                case .authenticated(let user):
+                    await subscriptionManager.identify(userId: String(user.id))
+                case .unauthenticated:
+                    await subscriptionManager.reset()
+                case .unknown:
+                    break
+                }
+            }
         }
     }
 }
@@ -54,6 +68,8 @@ struct SplashView: View {
 
 #Preview("Root - Authenticated") {
     let authManager = AuthManager()
+    let subscriptionManager = SubscriptionManager()
     return RootView()
         .environmentObject(authManager)
+        .environmentObject(subscriptionManager)
 }

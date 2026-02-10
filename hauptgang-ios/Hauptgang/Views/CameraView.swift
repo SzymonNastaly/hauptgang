@@ -12,10 +12,10 @@ struct CameraView: UIViewControllerRepresentable {
         return picker
     }
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    func updateUIViewController(_: UIImagePickerController, context _: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onImageCaptured: onImageCaptured, dismiss: dismiss)
+        Coordinator(onImageCaptured: self.onImageCaptured, dismiss: self.dismiss)
     }
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
@@ -28,18 +28,19 @@ struct CameraView: UIViewControllerRepresentable {
         }
 
         func imagePickerController(
-            _ picker: UIImagePickerController,
+            _: UIImagePickerController,
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
             if let image = info[.originalImage] as? UIImage,
-               let data = image.jpegData(compressionQuality: 0.9) {
-                onImageCaptured(data)
+               let data = image.jpegData(compressionQuality: 0.9)
+            {
+                self.onImageCaptured(data)
             }
-            dismiss()
+            self.dismiss()
         }
 
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            dismiss()
+        func imagePickerControllerDidCancel(_: UIImagePickerController) {
+            self.dismiss()
         }
     }
 }

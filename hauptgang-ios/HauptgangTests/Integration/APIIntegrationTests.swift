@@ -1,6 +1,6 @@
-import XCTest
-import SwiftData
 @testable import Hauptgang
+import SwiftData
+import XCTest
 
 /// Integration tests that require a running Rails server at localhost:3000
 /// Run with: `bin/ios-test` (after starting Rails server with `bin/dev`)
@@ -9,7 +9,6 @@ import SwiftData
 /// data fetching flow works correctly with the backend.
 @MainActor
 final class APIIntegrationTests: XCTestCase {
-
     private let testEmail = "test@example.com"
     private let testPassword = "password123"
 
@@ -22,7 +21,7 @@ final class APIIntegrationTests: XCTestCase {
         await KeychainService.shared.clearAll()
 
         // Check if server is reachable, skip tests if not
-        try await checkServerReachable()
+        try await self.checkServerReachable()
     }
 
     override func tearDown() async throws {
@@ -44,7 +43,8 @@ final class APIIntegrationTests: XCTestCase {
         do {
             let (_, response) = try await URLSession.shared.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse,
-                  (200...499).contains(httpResponse.statusCode) else {
+                  (200 ... 499).contains(httpResponse.statusCode)
+            else {
                 throw XCTSkip("Rails server not reachable at \(url)")
             }
         } catch is XCTSkip {
@@ -59,12 +59,12 @@ final class APIIntegrationTests: XCTestCase {
     func testLogin_withValidCredentials_succeeds() async throws {
         // When: logging in with valid credentials
         let user = try await AuthService.shared.login(
-            email: testEmail,
-            password: testPassword
+            email: self.testEmail,
+            password: self.testPassword
         )
 
         // Then: user is returned with correct email
-        XCTAssertEqual(user.email, testEmail)
+        XCTAssertEqual(user.email, self.testEmail)
 
         // And: token is stored in keychain
         let storedToken = await KeychainService.shared.getToken()
@@ -73,14 +73,14 @@ final class APIIntegrationTests: XCTestCase {
         // And: user is stored in keychain
         let storedUser = await KeychainService.shared.getUser()
         XCTAssertNotNil(storedUser, "User should be stored after login")
-        XCTAssertEqual(storedUser?.email, testEmail)
+        XCTAssertEqual(storedUser?.email, self.testEmail)
     }
 
     func testLogin_withInvalidCredentials_throwsError() async throws {
         // When: logging in with wrong password
         do {
             _ = try await AuthService.shared.login(
-                email: testEmail,
+                email: self.testEmail,
                 password: "wrong_password"
             )
             XCTFail("Login should have thrown an error")
@@ -99,8 +99,8 @@ final class APIIntegrationTests: XCTestCase {
     func testFetchRecipes_afterLogin_returnsRecipes() async throws {
         // Given: user is logged in
         _ = try await AuthService.shared.login(
-            email: testEmail,
-            password: testPassword
+            email: self.testEmail,
+            password: self.testPassword
         )
 
         // When: fetching recipes
@@ -136,8 +136,8 @@ final class APIIntegrationTests: XCTestCase {
     func testLogout_clearsAuthState() async throws {
         // Given: user is logged in
         _ = try await AuthService.shared.login(
-            email: testEmail,
-            password: testPassword
+            email: self.testEmail,
+            password: self.testPassword
         )
 
         // Verify we're logged in
@@ -165,8 +165,8 @@ final class APIIntegrationTests: XCTestCase {
     func testRecipePersistence_savesAndLoadsRecipes() async throws {
         // Given: user is logged in and we have recipes from API
         _ = try await AuthService.shared.login(
-            email: testEmail,
-            password: testPassword
+            email: self.testEmail,
+            password: self.testPassword
         )
 
         let apiRecipes = try await RecipeService.shared.fetchRecipes()
@@ -204,10 +204,10 @@ final class APIIntegrationTests: XCTestCase {
     func testFullAuthFlow_loginFetchLogout() async throws {
         // Step 1: Login
         let user = try await AuthService.shared.login(
-            email: testEmail,
-            password: testPassword
+            email: self.testEmail,
+            password: self.testPassword
         )
-        XCTAssertEqual(user.email, testEmail)
+        XCTAssertEqual(user.email, self.testEmail)
 
         var isAuth = await AuthService.shared.isAuthenticated()
         XCTAssertTrue(isAuth, "Should be authenticated after login")
@@ -255,15 +255,15 @@ extension APIError: @retroactive Equatable {
              (.notFound, .notFound),
              (.invalidCredentials, .invalidCredentials),
              (.unknown, .unknown):
-            return true
-        case (.serverError(let lhsCode), .serverError(let rhsCode)):
-            return lhsCode == rhsCode
+            true
+        case let (.serverError(lhsCode), .serverError(rhsCode)):
+            lhsCode == rhsCode
         case (.networkError, .networkError),
              (.decodingError, .decodingError):
             // These contain Error which isn't Equatable, so just check type
-            return true
+            true
         default:
-            return false
+            false
         }
     }
 }

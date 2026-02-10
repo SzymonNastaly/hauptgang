@@ -44,7 +44,7 @@ final class PersistedRecipe {
             return (try? JSONDecoder().decode([String].self, from: data)) ?? []
         }
         set {
-            ingredientsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
+            self.ingredientsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
         }
     }
 
@@ -55,7 +55,7 @@ final class PersistedRecipe {
             return (try? JSONDecoder().decode([String].self, from: data)) ?? []
         }
         set {
-            instructionsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
+            self.instructionsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
         }
     }
 
@@ -66,12 +66,14 @@ final class PersistedRecipe {
             return (try? JSONDecoder().decode([RecipeTag].self, from: data)) ?? []
         }
         set {
-            tagsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
+            self.tagsJson = try? String(data: JSONEncoder().encode(newValue), encoding: .utf8)
         }
     }
 
     /// Whether full recipe details have been cached
-    var hasDetailsCached: Bool { detailLastFetchedAt != nil }
+    var hasDetailsCached: Bool {
+        self.detailLastFetchedAt != nil
+    }
 
     // MARK: - Initializers
 
@@ -125,69 +127,69 @@ final class PersistedRecipe {
             coverImageUrl: detail.coverImageUrl,
             updatedAt: detail.updatedAt
         )
-        updateDetails(from: detail)
+        self.updateDetails(from: detail)
     }
 
     // MARK: - Update Methods
 
     /// Update this model from a newer API list response
     func update(from listItem: RecipeListItem) {
-        name = listItem.name
-        prepTime = listItem.prepTime
-        cookTime = listItem.cookTime
-        favorite = listItem.favorite
-        coverImageUrl = listItem.coverImageUrl
-        importStatus = listItem.importStatus
-        errorMessage = listItem.errorMessage
-        updatedAt = listItem.updatedAt
-        lastFetchedAt = Date()
+        self.name = listItem.name
+        self.prepTime = listItem.prepTime
+        self.cookTime = listItem.cookTime
+        self.favorite = listItem.favorite
+        self.coverImageUrl = listItem.coverImageUrl
+        self.importStatus = listItem.importStatus
+        self.errorMessage = listItem.errorMessage
+        self.updatedAt = listItem.updatedAt
+        self.lastFetchedAt = Date()
     }
 
     /// Update this model with full detail data from API
     func update(from detail: RecipeDetail) {
-        name = detail.name
-        prepTime = detail.prepTime
-        cookTime = detail.cookTime
-        favorite = detail.favorite
-        coverImageUrl = detail.coverImageUrl
-        updatedAt = detail.updatedAt
-        lastFetchedAt = Date()
-        updateDetails(from: detail)
+        self.name = detail.name
+        self.prepTime = detail.prepTime
+        self.cookTime = detail.cookTime
+        self.favorite = detail.favorite
+        self.coverImageUrl = detail.coverImageUrl
+        self.updatedAt = detail.updatedAt
+        self.lastFetchedAt = Date()
+        self.updateDetails(from: detail)
     }
 
     /// Helper to update detail-specific fields
     private func updateDetails(from detail: RecipeDetail) {
-        servings = detail.servings
-        notes = detail.notes
-        sourceUrl = detail.sourceUrl
-        createdAt = detail.createdAt
-        ingredients = detail.ingredients
-        instructions = detail.instructions
-        tags = detail.tags
-        detailLastFetchedAt = Date()
+        self.servings = detail.servings
+        self.notes = detail.notes
+        self.sourceUrl = detail.sourceUrl
+        self.createdAt = detail.createdAt
+        self.ingredients = detail.ingredients
+        self.instructions = detail.instructions
+        self.tags = detail.tags
+        self.detailLastFetchedAt = Date()
     }
 
     // MARK: - Conversion
 
     /// Convert to RecipeDetail for use in views (returns nil if details not cached)
     func toRecipeDetail() -> RecipeDetail? {
-        guard hasDetailsCached else { return nil }
+        guard self.hasDetailsCached else { return nil }
 
         return RecipeDetail(
-            id: id,
-            name: name,
-            prepTime: prepTime,
-            cookTime: cookTime,
-            favorite: favorite,
-            coverImageUrl: coverImageUrl,
-            servings: servings,
-            ingredients: ingredients,
-            instructions: instructions,
-            notes: notes,
-            sourceUrl: sourceUrl,
-            tags: tags,
-            createdAt: createdAt ?? updatedAt,
-            updatedAt: updatedAt
+            id: self.id,
+            name: self.name,
+            prepTime: self.prepTime,
+            cookTime: self.cookTime,
+            favorite: self.favorite,
+            coverImageUrl: self.coverImageUrl,
+            servings: self.servings,
+            ingredients: self.ingredients,
+            instructions: self.instructions,
+            notes: self.notes,
+            sourceUrl: self.sourceUrl,
+            tags: self.tags,
+            createdAt: self.createdAt ?? self.updatedAt,
+            updatedAt: self.updatedAt
         )
     }
 }

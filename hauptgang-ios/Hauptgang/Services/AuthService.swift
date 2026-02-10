@@ -28,8 +28,8 @@ final class AuthService: AuthServiceProtocol {
         )
 
         // Store credentials securely
-        try await keychain.saveToken(response.token, expiresAt: response.expiresAt)
-        try await keychain.saveUser(response.user)
+        try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
+        try await self.keychain.saveUser(response.user)
 
         return response.user
     }
@@ -39,7 +39,7 @@ final class AuthService: AuthServiceProtocol {
     func logout() async {
         // Best effort server-side logout
         do {
-            try await api.requestVoid(
+            try await self.api.requestVoid(
                 endpoint: "session",
                 method: .delete,
                 authenticated: true
@@ -50,31 +50,31 @@ final class AuthService: AuthServiceProtocol {
         }
 
         // Always clear local credentials
-        await keychain.clearAll()
+        await self.keychain.clearAll()
     }
 
     // MARK: - Session Check
 
     func getCurrentUser() async -> User? {
         // Token validity is checked in getToken()
-        guard await keychain.getToken() != nil else {
+        guard await self.keychain.getToken() != nil else {
             // Token missing or expired, clear user data
-            await keychain.clearAll()
+            await self.keychain.clearAll()
             return nil
         }
 
-        return await keychain.getUser()
+        return await self.keychain.getUser()
     }
 
     func isAuthenticated() async -> Bool {
-        return await getCurrentUser() != nil
+        await self.getCurrentUser() != nil
     }
 
     // MARK: - Private
 
     @MainActor
     private func getDeviceName() -> String {
-        return UIDevice.current.name
+        UIDevice.current.name
     }
 }
 

@@ -17,9 +17,9 @@ actor APIClient: APIClientProtocol {
         self.tokenProvider = KeychainService.shared
 
         self.decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
         // Use ISO8601FormatStyle for Sendable-safe date parsing
-        decoder.dateDecodingStrategy = .custom { decoder in
+        self.decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
 
@@ -38,8 +38,8 @@ actor APIClient: APIClientProtocol {
         }
 
         self.encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        self.encoder.keyEncodingStrategy = .convertToSnakeCase
+        self.encoder.dateEncodingStrategy = .iso8601
     }
 
     init(session: URLSession, tokenProvider: any TokenProviding) {
@@ -47,8 +47,8 @@ actor APIClient: APIClientProtocol {
         self.tokenProvider = tokenProvider
 
         self.decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom { decoder in
+        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+        self.decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
 
@@ -65,8 +65,8 @@ actor APIClient: APIClientProtocol {
         }
 
         self.encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        encoder.dateEncodingStrategy = .iso8601
+        self.encoder.keyEncodingStrategy = .convertToSnakeCase
+        self.encoder.dateEncodingStrategy = .iso8601
     }
 
     // MARK: - Public Methods
@@ -90,7 +90,7 @@ actor APIClient: APIClientProtocol {
 
         // Encode body if present
         if let body {
-            request.httpBody = try encoder.encode(body)
+            request.httpBody = try self.encoder.encode(body)
         }
 
         do {
@@ -100,10 +100,10 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data)
 
             do {
-                return try decoder.decode(T.self, from: data)
+                return try self.decoder.decode(T.self, from: data)
             } catch {
                 throw APIError.decodingError(error)
             }
@@ -131,7 +131,7 @@ actor APIClient: APIClientProtocol {
         }
 
         if let body {
-            request.httpBody = try encoder.encode(body)
+            request.httpBody = try self.encoder.encode(body)
         }
 
         do {
@@ -141,7 +141,7 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data)
         } catch let error as APIError {
             throw error
         } catch {
@@ -171,7 +171,9 @@ actor APIClient: APIClientProtocol {
 
         var body = Data()
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n".data(using: .utf8)!)
+        body
+            .append("Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n"
+                .data(using: .utf8)!)
         body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
         body.append(fileData)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
@@ -183,10 +185,10 @@ actor APIClient: APIClientProtocol {
                 throw APIError.invalidResponse
             }
 
-            try validateResponse(httpResponse, data: data)
+            try self.validateResponse(httpResponse, data: data)
 
             do {
-                return try decoder.decode(T.self, from: data)
+                return try self.decoder.decode(T.self, from: data)
             } catch {
                 throw APIError.decodingError(error)
             }
@@ -201,17 +203,24 @@ actor APIClient: APIClientProtocol {
 
     private func validateResponse(_ response: HTTPURLResponse, data: Data) throws {
         switch response.statusCode {
-        case 200...299:
+        case 200 ... 299:
             return
         case 401:
             // Check if this is a login failure vs session expiry
             if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let error = json["error"] as? String,
-               error.lowercased().contains("invalid") {
+               error.lowercased().contains("invalid")
+            {
                 throw APIError.invalidCredentials
             }
             throw APIError.unauthorized
         case 403:
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let errorCode = json["error_code"] as? String,
+               errorCode == "import_limit_reached"
+            {
+                throw APIError.importLimitReached
+            }
             throw APIError.forbidden
         case 404:
             throw APIError.notFound
@@ -222,7 +231,7 @@ actor APIClient: APIClientProtocol {
         case 422:
             let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error"] as? String
             throw APIError.unprocessableEntity(message)
-        case 500...599:
+        case 500 ... 599:
             throw APIError.serverError(statusCode: response.statusCode)
         default:
             throw APIError.unknown

@@ -11,11 +11,11 @@ final class ShoppingListViewModel {
     private var recentlyCheckedIds: Set<String> = []
 
     var uncheckedItems: [PersistedShoppingListItem] {
-        items.filter { !$0.isChecked || recentlyCheckedIds.contains($0.clientId) }
+        self.items.filter { !$0.isChecked || self.recentlyCheckedIds.contains($0.clientId) }
     }
 
     var checkedItems: [PersistedShoppingListItem] {
-        items.filter { $0.isChecked && !recentlyCheckedIds.contains($0.clientId) }
+        self.items.filter { $0.isChecked && !self.recentlyCheckedIds.contains($0.clientId) }
     }
 
     private let repository: ShoppingListRepositoryProtocol
@@ -31,31 +31,31 @@ final class ShoppingListViewModel {
     }
 
     func configure(modelContext: ModelContext) {
-        repository.configure(modelContext: modelContext)
-        loadCachedItems()
+        self.repository.configure(modelContext: modelContext)
+        self.loadCachedItems()
     }
 
     func refresh() async {
-        guard !isSyncing else { return }
+        guard !self.isSyncing else { return }
 
-        isSyncing = true
-        isOffline = false
+        self.isSyncing = true
+        self.isOffline = false
 
-        await syncPendingChanges()
+        await self.syncPendingChanges()
 
         do {
             let apiItems = try await service.fetchItems()
-            try repository.saveItems(apiItems)
-            try repository.deleteStaleItems()
-            loadCachedItems()
+            try self.repository.saveItems(apiItems)
+            try self.repository.deleteStaleItems()
+            self.loadCachedItems()
         } catch {
-            logger.error("Failed to refresh shopping list: \(error.localizedDescription)")
+            self.logger.error("Failed to refresh shopping list: \(error.localizedDescription)")
             if let apiError = error as? APIError, case .networkError = apiError {
-                isOffline = true
+                self.isOffline = true
             }
         }
 
-        isSyncing = false
+        self.isSyncing = false
     }
 
     func addIngredientsFromRecipe(_ ingredients: [String], recipeId: Int?) {
@@ -72,11 +72,11 @@ final class ShoppingListViewModel {
         }
 
         do {
-            try repository.addLocalItems(newItems)
-            loadCachedItems()
-            Task { await syncPendingChanges() }
+            try self.repository.addLocalItems(newItems)
+            self.loadCachedItems()
+            Task { await self.syncPendingChanges() }
         } catch {
-            logger.error("Failed to add ingredients: \(error.localizedDescription)")
+            self.logger.error("Failed to add ingredients: \(error.localizedDescription)")
         }
     }
 
@@ -92,11 +92,11 @@ final class ShoppingListViewModel {
         )
 
         do {
-            try repository.addLocalItems([ newItem ])
-            loadCachedItems()
-            Task { await syncPendingChanges() }
+            try self.repository.addLocalItems([newItem])
+            self.loadCachedItems()
+            Task { await self.syncPendingChanges() }
         } catch {
-            logger.error("Failed to add custom item: \(error.localizedDescription)")
+            self.logger.error("Failed to add custom item: \(error.localizedDescription)")
         }
     }
 
@@ -106,27 +106,27 @@ final class ShoppingListViewModel {
         let clientId = item.clientId
 
         do {
-            try repository.updateItem(clientId: clientId, checkedAt: newCheckedAt)
+            try self.repository.updateItem(clientId: clientId, checkedAt: newCheckedAt)
 
             if isChecking {
-                recentlyCheckedIds.insert(clientId)
+                self.recentlyCheckedIds.insert(clientId)
                 Task {
                     try? await Task.sleep(for: .seconds(0.6))
                     guard !Task.isCancelled else { return }
                     withAnimation(.easeInOut(duration: 0.6)) {
-                        recentlyCheckedIds.remove(clientId)
-                        loadCachedItems()
+                        self.recentlyCheckedIds.remove(clientId)
+                        self.loadCachedItems()
                     }
                 }
             } else {
                 withAnimation(.easeInOut(duration: 0.35)) {
-                    loadCachedItems()
+                    self.loadCachedItems()
                 }
             }
 
-            Task { await syncPendingChanges() }
+            Task { await self.syncPendingChanges() }
         } catch {
-            logger.error("Failed to update item: \(error.localizedDescription)")
+            self.logger.error("Failed to update item: \(error.localizedDescription)")
         }
     }
 
@@ -134,28 +134,28 @@ final class ShoppingListViewModel {
         let serverId = item.serverId
 
         do {
-            try repository.deleteItem(clientId: item.clientId)
-            loadCachedItems()
+            try self.repository.deleteItem(clientId: item.clientId)
+            self.loadCachedItems()
         } catch {
-            logger.error("Failed to delete item locally: \(error.localizedDescription)")
+            self.logger.error("Failed to delete item locally: \(error.localizedDescription)")
         }
 
         guard let serverId else { return }
         Task {
             do {
-                try await service.deleteItem(id: serverId)
+                try await self.service.deleteItem(id: serverId)
             } catch {
-                logger.error("Failed to delete item from server: \(error.localizedDescription)")
+                self.logger.error("Failed to delete item from server: \(error.localizedDescription)")
             }
         }
     }
 
     func clearData() {
         do {
-            try repository.clearAll()
-            items = []
+            try self.repository.clearAll()
+            self.items = []
         } catch {
-            logger.error("Failed to clear shopping list data: \(error.localizedDescription)")
+            self.logger.error("Failed to clear shopping list data: \(error.localizedDescription)")
         }
     }
 
@@ -173,7 +173,7 @@ final class ShoppingListViewModel {
                 }
 
                 let created = try await service.createItems(payload)
-                try repository.saveItems(created)
+                try self.repository.saveItems(created)
             }
 
             let pendingUpdates = try repository.getPendingUpdates()
@@ -185,26 +185,26 @@ final class ShoppingListViewModel {
                         checked: item.isChecked,
                         checkedAt: item.checkedAt
                     )
-                    try repository.updateItemFromServer(clientId: item.clientId, response: updated)
+                    try self.repository.updateItemFromServer(clientId: item.clientId, response: updated)
                 } catch APIError.notFound {
                     // Item was deleted on server (e.g., stale cleanup) — remove local copy
-                    logger.info("Item \(serverId) not found on server, removing local copy")
-                    try? repository.deleteItem(clientId: item.clientId)
+                    self.logger.info("Item \(serverId) not found on server, removing local copy")
+                    try? self.repository.deleteItem(clientId: item.clientId)
                 }
             }
         } catch {
-            logger.error("Failed to sync pending changes: \(error.localizedDescription)")
+            self.logger.error("Failed to sync pending changes: \(error.localizedDescription)")
             if let apiError = error as? APIError, case .networkError = apiError {
-                isOffline = true
+                self.isOffline = true
             }
         }
     }
 
     private func loadCachedItems() {
         do {
-            items = try repository.getAllItems()
+            self.items = try self.repository.getAllItems()
         } catch {
-            logger.error("Failed to load cached shopping list items: \(error.localizedDescription)")
+            self.logger.error("Failed to load cached shopping list items: \(error.localizedDescription)")
         }
     }
 }

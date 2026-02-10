@@ -12,52 +12,55 @@ enum APIError: LocalizedError {
     case unprocessableEntity(String?)
     case serverError(statusCode: Int)
     case decodingError(Error)
+    case importLimitReached
     case invalidCredentials
     case unknown
 
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid URL configuration"
+            "Invalid URL configuration"
         case .networkError:
-            return "Unable to connect. Please check your internet connection."
+            "Unable to connect. Please check your internet connection."
         case .invalidResponse:
-            return "Received an invalid response from the server"
+            "Received an invalid response from the server"
         case .unauthorized:
-            return "Your session has expired. Please sign in again."
+            "Your session has expired. Please sign in again."
         case .forbidden:
-            return "You don't have permission to perform this action"
+            "You don't have permission to perform this action"
         case .notFound:
-            return "The requested resource was not found"
+            "The requested resource was not found"
         case .payloadTooLarge:
-            return "Image is too large. Please try a smaller photo."
+            "Image is too large. Please try a smaller photo."
         case .unsupportedMediaType:
-            return "Unsupported image format."
-        case .unprocessableEntity(let message):
-            return message ?? "Could not process this image."
-        case .serverError(let code):
-            return "Server error (\(code)). Please try again later."
+            "Unsupported image format."
+        case let .unprocessableEntity(message):
+            message ?? "Could not process this image."
+        case let .serverError(code):
+            "Server error (\(code)). Please try again later."
         case .decodingError:
-            return "Unable to process the server response"
+            "Unable to process the server response"
+        case .importLimitReached:
+            "You've reached your free limit of 15 imports this month. Upgrade to Pro for unlimited imports."
         case .invalidCredentials:
-            return "Invalid email or password"
+            "Invalid email or password"
         case .unknown:
-            return "An unexpected error occurred"
+            "An unexpected error occurred"
         }
     }
 
     var recoverySuggestion: String? {
         switch self {
         case .networkError:
-            return "Check your Wi-Fi or cellular connection and try again."
+            "Check your Wi-Fi or cellular connection and try again."
         case .unauthorized:
-            return "Please sign in with your credentials."
+            "Please sign in with your credentials."
         case .invalidCredentials:
-            return "Double-check your email and password, then try again."
+            "Double-check your email and password, then try again."
         case .serverError:
-            return "Wait a moment and try again. If the problem persists, contact support."
+            "Wait a moment and try again. If the problem persists, contact support."
         default:
-            return nil
+            nil
         }
     }
 }

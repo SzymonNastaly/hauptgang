@@ -8,21 +8,21 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var logoutCalled = false
     var currentUser: User?
 
-    func login(email: String, password: String) async throws -> User {
-        try loginResult.get()
+    func login(email _: String, password _: String) async throws -> User {
+        try self.loginResult.get()
     }
 
     func logout() async {
-        logoutCalled = true
-        currentUser = nil
+        self.logoutCalled = true
+        self.currentUser = nil
     }
 
     func getCurrentUser() async -> User? {
-        currentUser
+        self.currentUser
     }
 
     func isAuthenticated() async -> Bool {
-        currentUser != nil
+        self.currentUser != nil
     }
 }
 
@@ -34,9 +34,9 @@ enum MockAuthError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidCredentials:
-            return "Invalid email or password"
+            "Invalid email or password"
         case .networkError:
-            return "Network connection failed"
+            "Network connection failed"
         }
     }
 }

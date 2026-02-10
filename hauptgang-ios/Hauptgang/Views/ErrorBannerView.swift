@@ -55,28 +55,28 @@ struct ErrorBannerView: View {
             x: 0,
             y: 2
         )
-        .offset(x: offset, y: verticalOffset)
-        .opacity(dismissOpacity)
+        .offset(x: self.offset, y: self.verticalOffset)
+        .opacity(self.dismissOpacity)
         .gesture(
             DragGesture()
                 .onChanged { value in
-                    offset = value.translation.width
+                    self.offset = value.translation.width
                 }
                 .onEnded { value in
                     let swipeDistance = abs(value.translation.width)
-                    if swipeDistance > dismissThreshold {
-                        dismiss(direction: value.translation.width > 0 ? 1 : -1)
+                    if swipeDistance > self.dismissThreshold {
+                        self.dismiss(direction: value.translation.width > 0 ? 1 : -1)
                     } else {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            offset = 0
+                            self.offset = 0
                         }
                     }
                 }
         )
         .task {
-            try? await Task.sleep(for: .seconds(autoDismissDelay))
-            if !isDismissing {
-                autoDismiss()
+            try? await Task.sleep(for: .seconds(self.autoDismissDelay))
+            if !self.isDismissing {
+                self.autoDismiss()
             }
         }
     }
@@ -84,44 +84,45 @@ struct ErrorBannerView: View {
     /// Opacity decreases as user swipes further or during dismiss
     private var dismissOpacity: Double {
         // During vertical dismiss animation
-        if verticalOffset > 0 {
-            return max(0, 1 - verticalOffset / 40)
+        if self.verticalOffset > 0 {
+            return max(0, 1 - self.verticalOffset / 40)
         }
         // During horizontal swipe
-        let progress = abs(offset) / dismissThreshold
+        let progress = abs(offset) / self.dismissThreshold
         return max(0.3, 1 - progress * 0.5)
     }
 
     /// Animate off screen horizontally (swipe dismiss)
     private func dismiss(direction: CGFloat) {
-        guard !isDismissing else { return }
-        isDismissing = true
+        guard !self.isDismissing else { return }
+        self.isDismissing = true
 
         withAnimation(.easeOut(duration: 0.2)) {
-            offset = direction * 400
+            self.offset = direction * 400
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            onDismiss()
+            self.onDismiss()
         }
     }
 
     /// Animate down gently (auto dismiss)
     private func autoDismiss() {
-        guard !isDismissing else { return }
-        isDismissing = true
+        guard !self.isDismissing else { return }
+        self.isDismissing = true
 
         withAnimation(.easeInOut(duration: 0.3)) {
-            verticalOffset = 100
+            self.verticalOffset = 100
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            onDismiss()
+            self.onDismiss()
         }
     }
 }
 
 // MARK: - Preview
+
 #Preview("Single Error") {
     ErrorBannerView(
         recipe: {

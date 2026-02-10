@@ -39,15 +39,15 @@ struct LoginView: View {
                                 .textCase(.uppercase)
                                 .tracking(0.5)
 
-                            TextField("Enter your email", text: $viewModel.email)
-                                .themeTextField(isError: viewModel.emailError != nil)
+                            TextField("Enter your email", text: self.$viewModel.email)
+                                .themeTextField(isError: self.viewModel.emailError != nil)
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
-                                .focused($focusedField, equals: .email)
+                                .focused(self.$focusedField, equals: .email)
                                 .submitLabel(.next)
-                                .onSubmit { focusedField = .password }
+                                .onSubmit { self.focusedField = .password }
 
                             if let error = viewModel.emailError {
                                 Text(error)
@@ -64,12 +64,12 @@ struct LoginView: View {
                                 .textCase(.uppercase)
                                 .tracking(0.5)
 
-                            SecureField("Enter your password", text: $viewModel.password)
+                            SecureField("Enter your password", text: self.$viewModel.password)
                                 .themeTextField()
                                 .textContentType(.password)
-                                .focused($focusedField, equals: .password)
+                                .focused(self.$focusedField, equals: .password)
                                 .submitLabel(.go)
-                                .onSubmit { submitForm() }
+                                .onSubmit { self.submitForm() }
                         }
 
                         // Error message
@@ -81,33 +81,33 @@ struct LoginView: View {
                         }
 
                         // Sign in button
-                        Button(action: submitForm) {
+                        Button(action: self.submitForm) {
                             HStack(spacing: Theme.Spacing.sm) {
-                                if viewModel.isLoading {
+                                if self.viewModel.isLoading {
                                     ProgressView()
                                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 }
-                                Text(viewModel.isLoading ? "Signing in…" : "Sign In")
+                                Text(self.viewModel.isLoading ? "Signing in…" : "Sign In")
                             }
                         }
                         .primaryButton()
-                        .disabled(!viewModel.isFormValid || viewModel.isLoading)
+                        .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
             }
         }
         .onTapGesture {
-            focusedField = nil
+            self.focusedField = nil
         }
     }
 
     private func submitForm() {
-        guard viewModel.isFormValid, !viewModel.isLoading else { return }
-        focusedField = nil
+        guard self.viewModel.isFormValid, !self.viewModel.isLoading else { return }
+        self.focusedField = nil
 
         Task {
-            await viewModel.login(authManager: authManager)
+            await self.viewModel.login(authManager: self.authManager)
         }
     }
 }

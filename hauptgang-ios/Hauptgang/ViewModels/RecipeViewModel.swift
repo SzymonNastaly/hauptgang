@@ -10,20 +10,21 @@ final class RecipeViewModel {
     private(set) var isOffline = false
     private(set) var isImporting = false
     var importError: String?
+    var shouldShowPaywall: Bool = false
 
     /// Whether any recipes are currently being imported
     var hasPendingImports: Bool {
-        recipes.contains { $0.importStatus == "pending" }
+        self.recipes.contains { $0.importStatus == "pending" }
     }
 
     /// Failed recipes for display as error banners
     var failedRecipes: [PersistedRecipe] {
-        recipes.filter { $0.importStatus == "failed" }
+        self.recipes.filter { $0.importStatus == "failed" }
     }
 
     /// Successful recipes (excluding failed ones)
     var successfulRecipes: [PersistedRecipe] {
-        recipes.filter { $0.importStatus != "failed" }
+        self.recipes.filter { $0.importStatus != "failed" }
     }
 
     private let repository: RecipeRepositoryProtocol
@@ -34,8 +35,8 @@ final class RecipeViewModel {
     private var pollingTask: Task<Void, Never>?
 
     /// Polling configuration
-    private let pollingInterval: UInt64 = 3_000_000_000  // 3 seconds in nanoseconds
-    private let maxPollingDuration: UInt64 = 30_000_000_000  // 30 seconds in nanoseconds
+    private let pollingInterval: UInt64 = 3_000_000_000 // 3 seconds in nanoseconds
+    private let maxPollingDuration: UInt64 = 30_000_000_000 // 30 seconds in nanoseconds
 
     init(
         recipeService: RecipeServiceProtocol = RecipeService.shared,
@@ -47,67 +48,67 @@ final class RecipeViewModel {
 
     /// Configure the view model with a model context for persistence
     func configure(modelContext: ModelContext) {
-        logger.info("RecipeViewModel configuring with model context")
-        repository.configure(modelContext: modelContext)
+        self.logger.info("RecipeViewModel configuring with model context")
+        self.repository.configure(modelContext: modelContext)
 
         // Load cached recipes immediately
-        loadCachedRecipes()
+        self.loadCachedRecipes()
     }
 
     /// Load recipes from local cache
     private func loadCachedRecipes() {
         do {
-            recipes = try repository.getAllRecipes()
-            logger.info("Loaded \(self.recipes.count) recipes from cache")
+            self.recipes = try self.repository.getAllRecipes()
+            self.logger.info("Loaded \(self.recipes.count) recipes from cache")
         } catch {
-            logger.error("Failed to load cached recipes: \(error.localizedDescription)")
+            self.logger.error("Failed to load cached recipes: \(error.localizedDescription)")
         }
     }
 
     /// Fetch fresh recipes from API and update local cache
     func refreshRecipes() async {
-        guard !isLoading else {
-            logger.info("Refresh already in progress, skipping")
+        guard !self.isLoading else {
+            self.logger.info("Refresh already in progress, skipping")
             return
         }
 
-        logger.info("Starting recipe refresh")
-        isLoading = true
-        isOffline = false
+        self.logger.info("Starting recipe refresh")
+        self.isLoading = true
+        self.isOffline = false
 
         do {
             let apiRecipes = try await recipeService.fetchRecipes()
-            try repository.saveRecipes(apiRecipes)
-            loadCachedRecipes()
-            logger.info("Recipe refresh completed successfully")
+            try self.repository.saveRecipes(apiRecipes)
+            self.loadCachedRecipes()
+            self.logger.info("Recipe refresh completed successfully")
 
             // Start polling if there are pending imports
-            if hasPendingImports {
-                startPolling()
+            if self.hasPendingImports {
+                self.startPolling()
             }
         } catch {
-            logger.error("Recipe refresh failed: \(error.localizedDescription)")
+            self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
             if let apiError = error as? APIError, case .networkError = apiError {
-                isOffline = true
+                self.isOffline = true
             }
             // Keep showing cached data on error
         }
 
-        isLoading = false
+        self.isLoading = false
     }
 
     // MARK: - Polling for Pending Imports
 
     /// Start polling for pending import status updates
     private func startPolling() {
-        pollingTask?.cancel()
+        self.pollingTask?.cancel()
 
-        logger.info("Starting polling for pending imports")
+        self.logger.info("Starting polling for pending imports")
         let startTime = DispatchTime.now().uptimeNanoseconds
-        let maxDuration = maxPollingDuration
-        let interval = pollingInterval
+        let maxDuration = self.maxPollingDuration
+        let interval = self.pollingInterval
 
-        pollingTask = Task.detached { [weak self] in
+        self.pollingTask = Task.detached { [weak self] in
             guard let self else { return }
 
             defer {
@@ -158,73 +159,76 @@ final class RecipeViewModel {
 
     /// Stop polling for pending imports
     func stopPolling() {
-        logger.info("Stopping polling")
-        pollingTask?.cancel()
-        pollingTask = nil
+        self.logger.info("Stopping polling")
+        self.pollingTask?.cancel()
+        self.pollingTask = nil
     }
 
     /// Clear all recipe data (call on logout)
     func clearData() {
-        logger.info("Clearing recipe data")
+        self.logger.info("Clearing recipe data")
         do {
-            try repository.clearAllRecipes()
-            recipes = []
+            try self.repository.clearAllRecipes()
+            self.recipes = []
         } catch {
-            logger.error("Failed to clear recipe data: \(error.localizedDescription)")
+            self.logger.error("Failed to clear recipe data: \(error.localizedDescription)")
         }
     }
 
     /// Import a recipe from image data (compress, upload, refresh)
     func importRecipeFromImage(_ imageData: Data) async {
-        isImporting = true
-        importError = nil
+        self.isImporting = true
+        self.importError = nil
 
         let compressed = await Task.detached {
             ImageCompressor.compressToJPEG(imageData)
         }.value
 
         guard let compressed else {
-            importError = "Could not process image. Please try a different photo."
-            isImporting = false
+            self.importError = "Could not process image. Please try a different photo."
+            self.isImporting = false
             return
         }
 
         do {
             _ = try await RecipeImportService.shared.importRecipe(from: compressed)
-            await refreshRecipes()
+            await self.refreshRecipes()
+        } catch APIError.importLimitReached {
+            self.shouldShowPaywall = true
+            self.logger.info("Import limit reached, showing paywall")
         } catch {
             if let apiError = error as? APIError {
-                importError = apiError.errorDescription ?? "Failed to import recipe from photo."
+                self.importError = apiError.errorDescription ?? "Failed to import recipe from photo."
             } else {
-                importError = "Failed to import recipe from photo."
+                self.importError = "Failed to import recipe from photo."
             }
-            logger.error("Image import failed: \(error.localizedDescription)")
+            self.logger.error("Image import failed: \(error.localizedDescription)")
         }
 
-        isImporting = false
+        self.isImporting = false
     }
 
     /// Dismiss a failed recipe (optimistic delete)
     func dismissFailedRecipe(_ recipe: PersistedRecipe) async {
         let recipeId = recipe.id
-        logger.info("Dismissing failed recipe: \(recipeId)")
+        self.logger.info("Dismissing failed recipe: \(recipeId)")
 
         // Optimistic: delete from local cache immediately
         do {
-            try repository.deleteRecipe(id: recipeId)
-            loadCachedRecipes()
+            try self.repository.deleteRecipe(id: recipeId)
+            self.loadCachedRecipes()
         } catch {
-            logger.error("Failed to delete recipe locally: \(error.localizedDescription)")
+            self.logger.error("Failed to delete recipe locally: \(error.localizedDescription)")
         }
 
         // Background: delete from server
         do {
-            try await recipeService.deleteRecipe(id: recipeId)
-            logger.info("Deleted recipe from server: \(recipeId)")
+            try await self.recipeService.deleteRecipe(id: recipeId)
+            self.logger.info("Deleted recipe from server: \(recipeId)")
         } catch {
             // Server delete failed, but local is already removed
             // Next refresh will re-sync if needed (or auto-cleanup handles it)
-            logger.error("Failed to delete recipe from server: \(error.localizedDescription)")
+            self.logger.error("Failed to delete recipe from server: \(error.localizedDescription)")
         }
     }
 }

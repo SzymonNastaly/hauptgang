@@ -12,15 +12,15 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     var fetchRecipeDetailCalledWithId: Int?
 
     func fetchRecipes() async throws -> [RecipeListItem] {
-        fetchRecipesCalled = true
-        fetchRecipesCallCount += 1
-        return try fetchRecipesResult.get()
+        self.fetchRecipesCalled = true
+        self.fetchRecipesCallCount += 1
+        return try self.fetchRecipesResult.get()
     }
 
     func fetchRecipeDetail(id: Int) async throws -> RecipeDetail {
-        fetchRecipeDetailCalled = true
-        fetchRecipeDetailCalledWithId = id
-        return try fetchRecipeDetailResult.get()
+        self.fetchRecipeDetailCalled = true
+        self.fetchRecipeDetailCalledWithId = id
+        return try self.fetchRecipeDetailResult.get()
     }
 
     var deleteRecipeCalled = false
@@ -28,9 +28,9 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     var deleteRecipeResult: Result<Void, Error> = .success(())
 
     func deleteRecipe(id: Int) async throws {
-        deleteRecipeCalled = true
-        deleteRecipeCalledWithId = id
-        try deleteRecipeResult.get()
+        self.deleteRecipeCalled = true
+        self.deleteRecipeCalledWithId = id
+        try self.deleteRecipeResult.get()
     }
 }
 
@@ -41,9 +41,9 @@ enum MockRecipeError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .networkError:
-            return "Network connection failed"
+            "Network connection failed"
         case .notFound:
-            return "Recipe not found"
+            "Recipe not found"
         }
     }
 }

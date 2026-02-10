@@ -15,17 +15,17 @@ struct ImportRecipeView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            switch state {
+            switch self.state {
             case .extracting:
-                extractingView
-            case .importing(let url):
-                importingView(url: url)
+                self.extractingView
+            case let .importing(url):
+                self.importingView(url: url)
             case .success:
-                successView
-            case .failed(let message):
-                failedView(message: message)
+                self.successView
+            case let .failed(message):
+                self.failedView(message: message)
             case .notAuthenticated:
-                notAuthenticatedView
+                self.notAuthenticatedView
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -87,7 +87,7 @@ struct ImportRecipeView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Close", action: onClose)
+            Button("Close", action: self.onClose)
                 .buttonStyle(.borderedProminent)
         }
     }
@@ -104,7 +104,7 @@ struct ImportRecipeView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 12) {
-                Button("Close", action: onClose)
+                Button("Close", action: self.onClose)
                     .buttonStyle(.bordered)
                 if let onOpenApp {
                     Button("Open App", action: onOpenApp)

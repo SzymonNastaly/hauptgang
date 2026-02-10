@@ -14,41 +14,41 @@ extension Color {
     // MARK: - Backgrounds
 
     /// Off-white background - #FDFBF7
-    static let hauptgangBackground = Color(red: 253/255, green: 251/255, blue: 247/255)
+    static let hauptgangBackground = Color(red: 253 / 255, green: 251 / 255, blue: 247 / 255)
 
     /// Card background - #FFFFFF
     static let hauptgangCard = Color.white
 
     /// Raised surface background - #F5F2EA (for cards without images, sidebars)
-    static let hauptgangSurfaceRaised = Color(red: 245/255, green: 242/255, blue: 234/255)
+    static let hauptgangSurfaceRaised = Color(red: 245 / 255, green: 242 / 255, blue: 234 / 255)
 
     /// Subtle border - #E5E0D5
-    static let hauptgangBorderSubtle = Color(red: 229/255, green: 224/255, blue: 213/255)
+    static let hauptgangBorderSubtle = Color(red: 229 / 255, green: 224 / 255, blue: 213 / 255)
 
     // MARK: - Text Colors
 
     /// Primary text - #1F1F1F
-    static let hauptgangTextPrimary = Color(red: 31/255, green: 31/255, blue: 31/255)
+    static let hauptgangTextPrimary = Color(red: 31 / 255, green: 31 / 255, blue: 31 / 255)
 
     /// Secondary text - #6B6B6B
-    static let hauptgangTextSecondary = Color(red: 107/255, green: 107/255, blue: 107/255)
+    static let hauptgangTextSecondary = Color(red: 107 / 255, green: 107 / 255, blue: 107 / 255)
 
     /// Muted text - #9CA3AF
-    static let hauptgangTextMuted = Color(red: 156/255, green: 163/255, blue: 175/255)
+    static let hauptgangTextMuted = Color(red: 156 / 255, green: 163 / 255, blue: 175 / 255)
 
     // MARK: - Semantic Colors
 
     /// Error red - #DC2626
-    static let hauptgangError = Color(red: 220/255, green: 38/255, blue: 38/255)
+    static let hauptgangError = Color(red: 220 / 255, green: 38 / 255, blue: 38 / 255)
 
     /// Soft error red - #EF4444 (for banners/toasts)
-    static let hauptgangErrorSoft = Color(red: 239/255, green: 68/255, blue: 68/255)
+    static let hauptgangErrorSoft = Color(red: 239 / 255, green: 68 / 255, blue: 68 / 255)
 
     /// Success green - #16A34A
-    static let hauptgangSuccess = Color(red: 22/255, green: 163/255, blue: 74/255)
+    static let hauptgangSuccess = Color(red: 22 / 255, green: 163 / 255, blue: 74 / 255)
 
     /// Amber for favorites on dark backgrounds - #FBB424 (Tailwind amber-400)
-    static let hauptgangAmber = Color(red: 251/255, green: 191/255, blue: 36/255)
+    static let hauptgangAmber = Color(red: 251 / 255, green: 191 / 255, blue: 36 / 255)
 }
 
 // MARK: - Design Tokens

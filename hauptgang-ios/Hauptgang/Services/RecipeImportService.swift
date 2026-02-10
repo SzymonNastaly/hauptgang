@@ -17,7 +17,7 @@ actor RecipeImportService {
             let url: String
         }
 
-        return try await apiClient.request(
+        return try await self.apiClient.request(
             endpoint: "recipes/import",
             method: .post,
             body: ImportRequest(url: url.absoluteString),
@@ -27,7 +27,7 @@ actor RecipeImportService {
 
     /// Import a recipe from image data
     func importRecipe(from imageData: Data, mimeType: String = "image/jpeg") async throws -> ImportRecipeResponse {
-        try await apiClient.uploadMultipart(
+        try await self.apiClient.uploadMultipart(
             endpoint: "recipes/extract_from_image",
             fileData: imageData,
             fileName: "recipe.\(mimeType == "image/png" ? "png" : "jpg")",

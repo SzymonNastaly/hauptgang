@@ -6,6 +6,11 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios-spm.git
+    from: 5.0.0
+
 settings:
   SWIFT_VERSION: "5.9"
   MARKETING_VERSION: "1.0.0"
@@ -39,6 +44,10 @@ targets:
         copyPhase:
           destination: plugins
           subpath: ""
+      - package: RevenueCat
+        product: RevenueCat
+      - package: RevenueCat
+        product: RevenueCatUI
 
   ImportRecipeExtension:
     type: app-extension

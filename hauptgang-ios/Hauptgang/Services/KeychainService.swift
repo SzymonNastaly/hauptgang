@@ -10,10 +10,10 @@ actor KeychainService {
     // MARK: - Token Storage
 
     func saveToken(_ token: String, expiresAt: Date) throws {
-        try save(key: Constants.Keychain.tokenKey, data: Data(token.utf8))
+        try self.save(key: Constants.Keychain.tokenKey, data: Data(token.utf8))
 
         let expiryData = try JSONEncoder().encode(expiresAt)
-        try save(key: Constants.Keychain.tokenExpiryKey, data: expiryData)
+        try self.save(key: Constants.Keychain.tokenExpiryKey, data: expiryData)
     }
 
     func getToken() -> String? {
@@ -21,10 +21,11 @@ actor KeychainService {
 
         // Check if token is expired
         if let expiryData = get(key: Constants.Keychain.tokenExpiryKey),
-           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData) {
+           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData)
+        {
             if Date() >= expiresAt {
                 // Token expired, clean up
-                deleteToken()
+                self.deleteToken()
                 return nil
             }
         }
@@ -33,15 +34,15 @@ actor KeychainService {
     }
 
     func deleteToken() {
-        delete(key: Constants.Keychain.tokenKey)
-        delete(key: Constants.Keychain.tokenExpiryKey)
+        self.delete(key: Constants.Keychain.tokenKey)
+        self.delete(key: Constants.Keychain.tokenExpiryKey)
     }
 
     // MARK: - User Storage
 
     func saveUser(_ user: User) throws {
         let data = try JSONEncoder().encode(user)
-        try save(key: Constants.Keychain.userKey, data: data)
+        try self.save(key: Constants.Keychain.userKey, data: data)
     }
 
     func getUser() -> User? {
@@ -50,14 +51,14 @@ actor KeychainService {
     }
 
     func deleteUser() {
-        delete(key: Constants.Keychain.userKey)
+        self.delete(key: Constants.Keychain.userKey)
     }
 
     // MARK: - Clear All
 
     func clearAll() {
-        deleteToken()
-        deleteUser()
+        self.deleteToken()
+        self.deleteUser()
     }
 
     // MARK: - Private Keychain Operations
@@ -65,8 +66,8 @@ actor KeychainService {
     private func baseQuery(for key: String) -> [String: Any] {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: key
+            kSecAttrService as String: self.service,
+            kSecAttrAccount as String: key,
         ]
         if let accessGroup = Constants.Keychain.accessGroup {
             query[kSecAttrAccessGroup as String] = accessGroup
@@ -75,9 +76,9 @@ actor KeychainService {
     }
 
     private func save(key: String, data: Data) throws {
-        delete(key: key)
+        self.delete(key: key)
 
-        var query = baseQuery(for: key)
+        var query = self.baseQuery(for: key)
         query[kSecValueData as String] = data
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
 
@@ -89,7 +90,7 @@ actor KeychainService {
     }
 
     private func get(key: String) -> Data? {
-        var query = baseQuery(for: key)
+        var query = self.baseQuery(for: key)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -102,7 +103,7 @@ actor KeychainService {
     }
 
     private func delete(key: String) {
-        SecItemDelete(baseQuery(for: key) as CFDictionary)
+        SecItemDelete(self.baseQuery(for: key) as CFDictionary)
     }
 }
 
@@ -118,10 +119,10 @@ enum KeychainError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unableToSave(let status):
-            return "Unable to save to Keychain (status: \(status))"
+        case let .unableToSave(status):
+            "Unable to save to Keychain (status: \(status))"
         case .itemNotFound:
-            return "Item not found in Keychain"
+            "Item not found in Keychain"
         }
     }
 }

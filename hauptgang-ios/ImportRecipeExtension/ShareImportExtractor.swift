@@ -68,16 +68,15 @@ enum ShareImportExtractor {
     private static func loadURLFromPlainText(from provider: NSItemProvider, typeIdentifier: String) async -> URL? {
         await withCheckedContinuation { continuation in
             provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil) { item, _ in
-                let text: String?
-                if let str = item as? String {
-                    text = str
+                let text: String? = if let str = item as? String {
+                    str
                 } else if let data = item as? Data {
-                    text = String(data: data, encoding: .utf8)
+                    String(data: data, encoding: .utf8)
                 } else {
-                    text = nil
+                    nil
                 }
 
-                continuation.resume(returning: text.flatMap { urlFromPlainText($0) })
+                continuation.resume(returning: text.flatMap { self.urlFromPlainText($0) })
             }
         }
     }

@@ -9,12 +9,12 @@ struct RecipeRowView: View {
             // Recipe info
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 HStack(spacing: Theme.Spacing.sm) {
-                    Text(recipe.name)
+                    Text(self.recipe.name)
                         .font(.headline)
                         .foregroundColor(.hauptgangTextPrimary)
                         .lineLimit(2)
 
-                    if recipe.favorite {
+                    if self.recipe.favorite {
                         Image(systemName: "heart.fill")
                             .font(.caption)
                             .foregroundColor(.hauptgangPrimary)

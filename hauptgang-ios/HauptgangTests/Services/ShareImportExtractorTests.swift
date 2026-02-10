@@ -1,5 +1,5 @@
-import XCTest
 @testable import Hauptgang
+import XCTest
 
 final class ShareImportExtractorTests: XCTestCase {
     // MARK: - urlFromPlainText Tests
@@ -75,6 +75,7 @@ final class ShareImportExtractorTests: XCTestCase {
     }
 
     // MARK: - extractURL with NSItemProvider Tests
+
     // Note: NSItemProvider-based async tests are unreliable in XCTest because
     // loadItem returns serialized data differently than in the actual share extension context.
     // The pure urlFromPlainText tests above cover the core parsing logic.

@@ -9,10 +9,10 @@ actor MockTokenProvider: TokenProviding {
     }
 
     func getToken() async -> String? {
-        token
+        self.token
     }
 
     func setToken(_ newToken: String?) {
-        token = newToken
+        self.token = newToken
     }
 }

@@ -1,5 +1,5 @@
-import XCTest
 @testable import Hauptgang
+import XCTest
 
 @MainActor
 final class RecipeDetailViewModelTests: XCTestCase {
@@ -9,18 +9,18 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockRecipeService = MockRecipeService()
-        mockRepository = MockRecipeRepository()
-        sut = RecipeDetailViewModel(
-            recipeService: mockRecipeService,
-            repository: mockRepository
+        self.mockRecipeService = MockRecipeService()
+        self.mockRepository = MockRecipeRepository()
+        self.sut = RecipeDetailViewModel(
+            recipeService: self.mockRecipeService,
+            repository: self.mockRepository
         )
     }
 
     override func tearDown() {
-        sut = nil
-        mockRecipeService = nil
-        mockRepository = nil
+        self.sut = nil
+        self.mockRecipeService = nil
+        self.mockRepository = nil
         super.tearDown()
     }
 
@@ -28,164 +28,164 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     func testLoadRecipe_success_updatesRecipe() async {
         let expectedRecipe = RecipeDetail.mock(id: 42, name: "Spaghetti Carbonara")
-        mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
+        self.mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertEqual(sut.recipe?.id, 42)
-        XCTAssertEqual(sut.recipe?.name, "Spaghetti Carbonara")
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isRefreshing)
-        XCTAssertFalse(sut.isOffline)
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertEqual(self.sut.recipe?.id, 42)
+        XCTAssertEqual(self.sut.recipe?.name, "Spaghetti Carbonara")
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.isRefreshing)
+        XCTAssertFalse(self.sut.isOffline)
+        XCTAssertNil(self.sut.errorMessage)
     }
 
     func testLoadRecipe_success_savesToRepository() async {
         let expectedRecipe = RecipeDetail.mock(id: 42, name: "Test Recipe")
-        mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
+        self.mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertEqual(mockRepository.savedRecipeDetail?.id, 42)
-        XCTAssertEqual(mockRepository.savedRecipeDetail?.name, "Test Recipe")
+        XCTAssertEqual(self.mockRepository.savedRecipeDetail?.id, 42)
+        XCTAssertEqual(self.mockRepository.savedRecipeDetail?.name, "Test Recipe")
     }
 
     func testLoadRecipe_callsServiceWithCorrectId() async {
-        await sut.loadRecipe(id: 123)
+        await self.sut.loadRecipe(id: 123)
 
-        XCTAssertTrue(mockRecipeService.fetchRecipeDetailCalled)
-        XCTAssertEqual(mockRecipeService.fetchRecipeDetailCalledWithId, 123)
+        XCTAssertTrue(self.mockRecipeService.fetchRecipeDetailCalled)
+        XCTAssertEqual(self.mockRecipeService.fetchRecipeDetailCalledWithId, 123)
     }
 
     // MARK: - Loading State Tests
 
     func testLoadRecipe_noCache_setsIsLoading() async {
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isRefreshing)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.isRefreshing)
 
-        await sut.loadRecipe(id: 1)
+        await self.sut.loadRecipe(id: 1)
 
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isRefreshing)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.isRefreshing)
     }
 
     // MARK: - Cache Tests
 
     func testLoadRecipe_withCache_showsCachedDataImmediately() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 42, name: "Cached Recipe")
-        mockRepository.cachedRecipe = cachedRecipe
+        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
+        self.mockRepository.cachedRecipe = cachedRecipe
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertNotNil(sut.recipe)
+        XCTAssertNotNil(self.sut.recipe)
     }
 
     func testLoadRecipe_withCache_refreshesFromAPI() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 42, name: "Cached Recipe")
-        mockRepository.cachedRecipe = cachedRecipe
+        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
+        self.mockRepository.cachedRecipe = cachedRecipe
 
         let freshRecipe = RecipeDetail.mock(id: 42, name: "Updated Recipe")
-        mockRecipeService.fetchRecipeDetailResult = .success(freshRecipe)
+        self.mockRecipeService.fetchRecipeDetailResult = .success(freshRecipe)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertEqual(sut.recipe?.name, "Updated Recipe")
+        XCTAssertEqual(self.sut.recipe?.name, "Updated Recipe")
     }
 
     // MARK: - Offline Mode Tests
 
     func testLoadRecipe_apiFailsWithCache_setsOfflineMode() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 42, name: "Cached Recipe")
-        mockRepository.cachedRecipe = cachedRecipe
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
+        self.mockRepository.cachedRecipe = cachedRecipe
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertTrue(sut.isOffline)
-        XCTAssertNotNil(sut.recipe)
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertTrue(self.sut.isOffline)
+        XCTAssertNotNil(self.sut.recipe)
+        XCTAssertNil(self.sut.errorMessage)
     }
 
     func testLoadRecipe_apiFailsNoCache_showsError() async {
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(sut.isOffline)
-        XCTAssertNil(sut.recipe)
-        XCTAssertNotNil(sut.errorMessage)
-        XCTAssertEqual(sut.errorMessage, "Failed to load recipe. Tap to retry.")
+        XCTAssertFalse(self.sut.isOffline)
+        XCTAssertNil(self.sut.recipe)
+        XCTAssertNotNil(self.sut.errorMessage)
+        XCTAssertEqual(self.sut.errorMessage, "Failed to load recipe. Tap to retry.")
     }
 
     func testLoadRecipe_apiSuccess_clearsOfflineMode() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 42, name: "Cached Recipe")
-        mockRepository.cachedRecipe = cachedRecipe
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
-        await sut.loadRecipe(id: 42)
-        XCTAssertTrue(sut.isOffline)
+        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
+        self.mockRepository.cachedRecipe = cachedRecipe
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        await self.sut.loadRecipe(id: 42)
+        XCTAssertTrue(self.sut.isOffline)
 
-        mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
-        await sut.loadRecipe(id: 42)
+        self.mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(sut.isOffline)
+        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - Error Handling Tests
 
     func testLoadRecipe_clearsErrorOnNewLoad() async {
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
-        await sut.loadRecipe(id: 42)
-        XCTAssertNotNil(sut.errorMessage)
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        await self.sut.loadRecipe(id: 42)
+        XCTAssertNotNil(self.sut.errorMessage)
 
-        mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
-        await sut.loadRecipe(id: 42)
+        self.mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertNil(self.sut.errorMessage)
     }
 
     // MARK: - Persistence Error Tests
 
     func testLoadRecipe_persistenceFailure_stillShowsAPIData() async {
         let expectedRecipe = RecipeDetail.mock(id: 42, name: "API Recipe")
-        mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
-        mockRepository.shouldThrowOnSave = true
+        self.mockRecipeService.fetchRecipeDetailResult = .success(expectedRecipe)
+        self.mockRepository.shouldThrowOnSave = true
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertEqual(sut.recipe?.name, "API Recipe")
-        XCTAssertFalse(sut.isOffline)
-        XCTAssertNil(sut.errorMessage)
+        XCTAssertEqual(self.sut.recipe?.name, "API Recipe")
+        XCTAssertFalse(self.sut.isOffline)
+        XCTAssertNil(self.sut.errorMessage)
     }
 
     func testLoadRecipe_persistenceFailure_doesNotSetOfflineMode() async {
-        mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
-        mockRepository.shouldThrowOnSave = true
+        self.mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
+        self.mockRepository.shouldThrowOnSave = true
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(sut.isOffline)
+        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - Loading Flag Cleanup Tests
 
     func testLoadRecipe_alwaysResetsLoadingFlags() async {
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isRefreshing)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.isRefreshing)
     }
 
     func testLoadRecipe_withCache_alwaysResetsRefreshingFlag() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 42, name: "Cached")
-        mockRepository.cachedRecipe = cachedRecipe
-        mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
+        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached")
+        self.mockRepository.cachedRecipe = cachedRecipe
+        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
-        await sut.loadRecipe(id: 42)
+        await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(sut.isLoading)
-        XCTAssertFalse(sut.isRefreshing)
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertFalse(self.sut.isRefreshing)
     }
 
     // MARK: - Helpers

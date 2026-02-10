@@ -7,7 +7,7 @@ struct OfflineToast: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .top) {
-                if isOffline && showToast {
+                if self.isOffline && self.showToast {
                     HStack(spacing: Theme.Spacing.xs) {
                         Image(systemName: "wifi.slash")
                             .font(.caption2)
@@ -25,7 +25,7 @@ struct OfflineToast: ViewModifier {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: isOffline && showToast)
+            .animation(.easeInOut(duration: 0.3), value: self.isOffline && self.showToast)
     }
 }
 

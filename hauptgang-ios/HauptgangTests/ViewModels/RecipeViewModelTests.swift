@@ -1,6 +1,6 @@
+@testable import Hauptgang
 import SwiftData
 import XCTest
-@testable import Hauptgang
 
 @MainActor
 final class RecipeViewModelTests: XCTestCase {
@@ -10,70 +10,70 @@ final class RecipeViewModelTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockRecipeService = MockRecipeService()
-        mockRepository = MockRecipeRepository()
-        sut = RecipeViewModel(
-            recipeService: mockRecipeService,
-            repository: mockRepository
+        self.mockRecipeService = MockRecipeService()
+        self.mockRepository = MockRecipeRepository()
+        self.sut = RecipeViewModel(
+            recipeService: self.mockRecipeService,
+            repository: self.mockRepository
         )
     }
 
     override func tearDown() {
-        sut.stopPolling()
-        sut = nil
-        mockRecipeService = nil
-        mockRepository = nil
+        self.sut.stopPolling()
+        self.sut = nil
+        self.mockRecipeService = nil
+        self.mockRepository = nil
         super.tearDown()
     }
 
     // MARK: - hasPendingImports Tests
 
     func testHasPendingImports_withPendingRecipe_returnsTrue() {
-        let pendingRecipe = createMockPersistedRecipe(id: 1, name: "Pending", importStatus: "pending")
-        mockRepository.allRecipes = [pendingRecipe]
+        let pendingRecipe = self.createMockPersistedRecipe(id: 1, name: "Pending", importStatus: "pending")
+        self.mockRepository.allRecipes = [pendingRecipe]
 
         // Simulate configure() which loads cached recipes
-        loadCachedRecipesIntoViewModel()
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertTrue(sut.hasPendingImports)
+        XCTAssertTrue(self.sut.hasPendingImports)
     }
 
     func testHasPendingImports_withCompletedRecipes_returnsFalse() {
-        let completedRecipe = createMockPersistedRecipe(id: 1, name: "Completed", importStatus: "completed")
-        let noStatusRecipe = createMockPersistedRecipe(id: 2, name: "No Status", importStatus: nil)
-        mockRepository.allRecipes = [completedRecipe, noStatusRecipe]
+        let completedRecipe = self.createMockPersistedRecipe(id: 1, name: "Completed", importStatus: "completed")
+        let noStatusRecipe = self.createMockPersistedRecipe(id: 2, name: "No Status", importStatus: nil)
+        self.mockRepository.allRecipes = [completedRecipe, noStatusRecipe]
 
-        loadCachedRecipesIntoViewModel()
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertFalse(sut.hasPendingImports)
+        XCTAssertFalse(self.sut.hasPendingImports)
     }
 
     func testHasPendingImports_withFailedRecipe_returnsFalse() {
-        let failedRecipe = createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
-        mockRepository.allRecipes = [failedRecipe]
+        let failedRecipe = self.createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
+        self.mockRepository.allRecipes = [failedRecipe]
 
-        loadCachedRecipesIntoViewModel()
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertFalse(sut.hasPendingImports)
+        XCTAssertFalse(self.sut.hasPendingImports)
     }
 
     func testHasPendingImports_withEmptyRecipes_returnsFalse() {
-        mockRepository.allRecipes = []
+        self.mockRepository.allRecipes = []
 
-        loadCachedRecipesIntoViewModel()
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertFalse(sut.hasPendingImports)
+        XCTAssertFalse(self.sut.hasPendingImports)
     }
 
     func testHasPendingImports_withMixedStatuses_returnsTrue() {
-        let pendingRecipe = createMockPersistedRecipe(id: 1, name: "Pending", importStatus: "pending")
-        let completedRecipe = createMockPersistedRecipe(id: 2, name: "Completed", importStatus: "completed")
-        let failedRecipe = createMockPersistedRecipe(id: 3, name: "Failed", importStatus: "failed")
-        mockRepository.allRecipes = [pendingRecipe, completedRecipe, failedRecipe]
+        let pendingRecipe = self.createMockPersistedRecipe(id: 1, name: "Pending", importStatus: "pending")
+        let completedRecipe = self.createMockPersistedRecipe(id: 2, name: "Completed", importStatus: "completed")
+        let failedRecipe = self.createMockPersistedRecipe(id: 3, name: "Failed", importStatus: "failed")
+        self.mockRepository.allRecipes = [pendingRecipe, completedRecipe, failedRecipe]
 
-        loadCachedRecipesIntoViewModel()
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertTrue(sut.hasPendingImports)
+        XCTAssertTrue(self.sut.hasPendingImports)
     }
 
     // MARK: - refreshRecipes Tests
@@ -81,170 +81,170 @@ final class RecipeViewModelTests: XCTestCase {
     func testRefreshRecipes_success_updatesRecipes() async {
         let apiRecipes = [
             RecipeListItem.mock(id: 1, name: "Recipe 1"),
-            RecipeListItem.mock(id: 2, name: "Recipe 2")
+            RecipeListItem.mock(id: 2, name: "Recipe 2"),
         ]
-        mockRecipeService.fetchRecipesResult = .success(apiRecipes)
+        self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
 
         // Set up repository to return persisted versions after save
-        let persistedRecipes = apiRecipes.map { createMockPersistedRecipe(from: $0) }
-        mockRepository.allRecipes = persistedRecipes
+        let persistedRecipes = apiRecipes.map { self.createMockPersistedRecipe(from: $0) }
+        self.mockRepository.allRecipes = persistedRecipes
 
-        await sut.refreshRecipes()
+        await self.sut.refreshRecipes()
 
-        XCTAssertEqual(sut.recipes.count, 2)
-        XCTAssertFalse(sut.isOffline)
-        XCTAssertFalse(sut.isLoading)
+        XCTAssertEqual(self.sut.recipes.count, 2)
+        XCTAssertFalse(self.sut.isOffline)
+        XCTAssertFalse(self.sut.isLoading)
     }
 
     func testRefreshRecipes_networkFailure_setsOffline() async {
-        mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
+        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
 
-        await sut.refreshRecipes()
+        await self.sut.refreshRecipes()
 
-        XCTAssertTrue(sut.isOffline)
-        XCTAssertFalse(sut.isLoading)
+        XCTAssertTrue(self.sut.isOffline)
+        XCTAssertFalse(self.sut.isLoading)
     }
 
     func testRefreshRecipes_failure_keepsCachedData() async {
-        let cachedRecipe = createMockPersistedRecipe(id: 1, name: "Cached Recipe")
-        mockRepository.allRecipes = [cachedRecipe]
-        loadCachedRecipesIntoViewModel()
+        let cachedRecipe = self.createMockPersistedRecipe(id: 1, name: "Cached Recipe")
+        self.mockRepository.allRecipes = [cachedRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
+        self.mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
 
-        await sut.refreshRecipes()
+        await self.sut.refreshRecipes()
 
-        XCTAssertEqual(sut.recipes.count, 1)
-        XCTAssertEqual(sut.recipes.first?.name, "Cached Recipe")
+        XCTAssertEqual(self.sut.recipes.count, 1)
+        XCTAssertEqual(self.sut.recipes.first?.name, "Cached Recipe")
     }
 
     func testRefreshRecipes_savesRecipesToRepository() async {
         let apiRecipes = [RecipeListItem.mock(id: 1, name: "New Recipe")]
-        mockRecipeService.fetchRecipesResult = .success(apiRecipes)
+        self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
 
-        await sut.refreshRecipes()
+        await self.sut.refreshRecipes()
 
-        XCTAssertEqual(mockRepository.savedRecipes.count, 1)
-        XCTAssertEqual(mockRepository.savedRecipes.first?.name, "New Recipe")
+        XCTAssertEqual(self.mockRepository.savedRecipes.count, 1)
+        XCTAssertEqual(self.mockRepository.savedRecipes.first?.name, "New Recipe")
     }
 
     func testRefreshRecipes_clearsOfflineOnSuccess() async {
         // First, create an offline state
-        mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
-        await sut.refreshRecipes()
-        XCTAssertTrue(sut.isOffline)
+        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
+        await self.sut.refreshRecipes()
+        XCTAssertTrue(self.sut.isOffline)
 
         // Then, refresh successfully
-        mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
-        await sut.refreshRecipes()
+        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
+        await self.sut.refreshRecipes()
 
-        XCTAssertFalse(sut.isOffline)
+        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - stopPolling Tests
 
     func testStopPolling_whenNoActivePolling_doesNotCrash() {
-        sut.stopPolling()
+        self.sut.stopPolling()
         // Test passes if no exception is thrown
     }
 
     func testStopPolling_calledMultipleTimes_doesNotCrash() {
-        sut.stopPolling()
-        sut.stopPolling()
-        sut.stopPolling()
+        self.sut.stopPolling()
+        self.sut.stopPolling()
+        self.sut.stopPolling()
         // Test passes if no exception is thrown
     }
 
     // MARK: - clearData Tests
 
     func testClearData_clearsRecipes() {
-        let recipe = createMockPersistedRecipe(id: 1, name: "Recipe")
-        mockRepository.allRecipes = [recipe]
-        loadCachedRecipesIntoViewModel()
-        XCTAssertEqual(sut.recipes.count, 1)
+        let recipe = self.createMockPersistedRecipe(id: 1, name: "Recipe")
+        self.mockRepository.allRecipes = [recipe]
+        self.loadCachedRecipesIntoViewModel()
+        XCTAssertEqual(self.sut.recipes.count, 1)
 
-        sut.clearData()
+        self.sut.clearData()
 
-        XCTAssertEqual(sut.recipes.count, 0)
+        XCTAssertEqual(self.sut.recipes.count, 0)
     }
 
     // MARK: - refreshRecipes Concurrency Guard Tests
 
     func testRefreshRecipes_skipsWhenAlreadyLoading() async {
-        mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
+        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
 
         // Start first refresh (will be in progress)
-        let task1 = Task { await sut.refreshRecipes() }
+        let task1 = Task { await self.sut.refreshRecipes() }
 
         // Give first task time to set isLoading
         try? await Task.sleep(nanoseconds: 10_000_000)
 
         // Try second refresh while first is loading
-        let initialIsLoading = sut.isLoading
-        await sut.refreshRecipes()
+        let initialIsLoading = self.sut.isLoading
+        await self.sut.refreshRecipes()
 
         await task1.value
 
         // Service should only be called once if guard works
-        XCTAssertTrue(initialIsLoading || mockRecipeService.fetchRecipesCalled)
+        XCTAssertTrue(initialIsLoading || self.mockRecipeService.fetchRecipesCalled)
     }
 
     // MARK: - dismissFailedRecipe Tests
 
     func testDismissFailedRecipe_deletesFromRepository() async {
-        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
-        mockRepository.allRecipes = [failedRecipe]
-        loadCachedRecipesIntoViewModel()
+        let failedRecipe = self.createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        self.mockRepository.allRecipes = [failedRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        await sut.dismissFailedRecipe(failedRecipe)
+        await self.sut.dismissFailedRecipe(failedRecipe)
 
-        XCTAssertFalse(mockRepository.allRecipes.contains { $0.id == 42 })
+        XCTAssertFalse(self.mockRepository.allRecipes.contains { $0.id == 42 })
     }
 
     func testDismissFailedRecipe_callsServerDelete() async {
-        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
-        mockRepository.allRecipes = [failedRecipe]
-        loadCachedRecipesIntoViewModel()
+        let failedRecipe = self.createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        self.mockRepository.allRecipes = [failedRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        await sut.dismissFailedRecipe(failedRecipe)
+        await self.sut.dismissFailedRecipe(failedRecipe)
 
-        XCTAssertTrue(mockRecipeService.deleteRecipeCalled)
-        XCTAssertEqual(mockRecipeService.deleteRecipeCalledWithId, 42)
+        XCTAssertTrue(self.mockRecipeService.deleteRecipeCalled)
+        XCTAssertEqual(self.mockRecipeService.deleteRecipeCalledWithId, 42)
     }
 
     func testDismissFailedRecipe_serverFailure_stillRemovesLocally() async {
-        let failedRecipe = createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
-        mockRepository.allRecipes = [failedRecipe]
-        loadCachedRecipesIntoViewModel()
+        let failedRecipe = self.createMockPersistedRecipe(id: 42, name: "Failed", importStatus: "failed")
+        self.mockRepository.allRecipes = [failedRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        mockRecipeService.deleteRecipeResult = .failure(MockRecipeError.networkError)
+        self.mockRecipeService.deleteRecipeResult = .failure(MockRecipeError.networkError)
 
-        await sut.dismissFailedRecipe(failedRecipe)
+        await self.sut.dismissFailedRecipe(failedRecipe)
 
         // Local deletion should still succeed even if server fails
-        XCTAssertFalse(mockRepository.allRecipes.contains { $0.id == 42 })
+        XCTAssertFalse(self.mockRepository.allRecipes.contains { $0.id == 42 })
     }
 
     // MARK: - failedRecipes / successfulRecipes Tests
 
     func testFailedRecipes_filtersCorrectly() {
-        let failedRecipe = createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
-        let successRecipe = createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
-        mockRepository.allRecipes = [failedRecipe, successRecipe]
-        loadCachedRecipesIntoViewModel()
+        let failedRecipe = self.createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
+        let successRecipe = self.createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
+        self.mockRepository.allRecipes = [failedRecipe, successRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertEqual(sut.failedRecipes.count, 1)
-        XCTAssertEqual(sut.failedRecipes.first?.id, 1)
+        XCTAssertEqual(self.sut.failedRecipes.count, 1)
+        XCTAssertEqual(self.sut.failedRecipes.first?.id, 1)
     }
 
     func testSuccessfulRecipes_excludesFailed() {
-        let failedRecipe = createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
-        let successRecipe = createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
-        mockRepository.allRecipes = [failedRecipe, successRecipe]
-        loadCachedRecipesIntoViewModel()
+        let failedRecipe = self.createMockPersistedRecipe(id: 1, name: "Failed", importStatus: "failed")
+        let successRecipe = self.createMockPersistedRecipe(id: 2, name: "Success", importStatus: "completed")
+        self.mockRepository.allRecipes = [failedRecipe, successRecipe]
+        self.loadCachedRecipesIntoViewModel()
 
-        XCTAssertEqual(sut.successfulRecipes.count, 1)
-        XCTAssertEqual(sut.successfulRecipes.first?.id, 2)
+        XCTAssertEqual(self.sut.successfulRecipes.count, 1)
+        XCTAssertEqual(self.sut.successfulRecipes.first?.id, 2)
     }
 
     // MARK: - Helpers
@@ -252,7 +252,7 @@ final class RecipeViewModelTests: XCTestCase {
     private func loadCachedRecipesIntoViewModel() {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: PersistedRecipe.self, configurations: config)
-        sut.configure(modelContext: ModelContext(container))
+        self.sut.configure(modelContext: ModelContext(container))
     }
 
     private func createMockPersistedRecipe(

@@ -26,22 +26,22 @@ final class RecipeDetailViewModel {
 
     /// Configure the repository with a model context
     func configure(modelContext: ModelContext) {
-        repository.configure(modelContext: modelContext)
+        self.repository.configure(modelContext: modelContext)
     }
 
     /// Load recipe details with cache-aside pattern
     func loadRecipe(id: Int) async {
         let loadID = UUID()
-        currentLoadID = loadID
+        self.currentLoadID = loadID
 
-        logger.info("Loading recipe detail for id: \(id)")
-        errorMessage = nil
-        isOffline = false
+        self.logger.info("Loading recipe detail for id: \(id)")
+        self.errorMessage = nil
+        self.isOffline = false
 
-        loadCachedRecipe(id: id)
+        self.loadCachedRecipe(id: id)
 
-        isLoading = (recipe == nil)
-        isRefreshing = (recipe != nil)
+        self.isLoading = (self.recipe == nil)
+        self.isRefreshing = (self.recipe != nil)
 
         defer {
             isLoading = false
@@ -51,32 +51,32 @@ final class RecipeDetailViewModel {
         do {
             let apiRecipe = try await recipeService.fetchRecipeDetail(id: id)
 
-            guard currentLoadID == loadID else {
-                logger.debug("Ignoring stale response for recipe id: \(id)")
+            guard self.currentLoadID == loadID else {
+                self.logger.debug("Ignoring stale response for recipe id: \(id)")
                 return
             }
 
-            recipe = apiRecipe
-            isOffline = false
-            logger.info("Successfully loaded recipe from API: \(apiRecipe.name)")
+            self.recipe = apiRecipe
+            self.isOffline = false
+            self.logger.info("Successfully loaded recipe from API: \(apiRecipe.name)")
 
             do {
-                try repository.saveRecipeDetail(apiRecipe)
+                try self.repository.saveRecipeDetail(apiRecipe)
             } catch {
-                logger.error("Failed to persist recipe detail: \(error.localizedDescription)")
+                self.logger.error("Failed to persist recipe detail: \(error.localizedDescription)")
             }
         } catch is CancellationError {
-            logger.debug("Recipe load cancelled for id: \(id)")
+            self.logger.debug("Recipe load cancelled for id: \(id)")
             return
         } catch {
-            guard currentLoadID == loadID else { return }
+            guard self.currentLoadID == loadID else { return }
 
-            logger.error("Failed to load recipe detail: \(error.localizedDescription)")
-            if recipe != nil {
-                isOffline = true
-                logger.info("Showing cached recipe in offline mode")
+            self.logger.error("Failed to load recipe detail: \(error.localizedDescription)")
+            if self.recipe != nil {
+                self.isOffline = true
+                self.logger.info("Showing cached recipe in offline mode")
             } else {
-                errorMessage = "Failed to load recipe. Tap to retry."
+                self.errorMessage = "Failed to load recipe. Tap to retry."
             }
         }
     }
@@ -85,12 +85,13 @@ final class RecipeDetailViewModel {
     private func loadCachedRecipe(id: Int) {
         do {
             if let persisted = try repository.getRecipe(id: id),
-               let cached = persisted.toRecipeDetail() {
-                recipe = cached
-                logger.info("Loaded cached recipe: \(cached.name)")
+               let cached = persisted.toRecipeDetail()
+            {
+                self.recipe = cached
+                self.logger.info("Loaded cached recipe: \(cached.name)")
             }
         } catch {
-            logger.error("Failed to load cached recipe: \(error.localizedDescription)")
+            self.logger.error("Failed to load cached recipe: \(error.localizedDescription)")
         }
     }
 }

@@ -19,7 +19,7 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
 
     /// Fetches all recipes for the authenticated user
     func fetchRecipes() async throws -> [RecipeListItem] {
-        logger.info("Fetching recipes from API")
+        self.logger.info("Fetching recipes from API")
 
         let recipes: [RecipeListItem] = try await api.request(
             endpoint: "recipes",
@@ -27,13 +27,13 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
             authenticated: true
         )
 
-        logger.info("Fetched \(recipes.count) recipes from API")
+        self.logger.info("Fetched \(recipes.count) recipes from API")
         return recipes
     }
 
     /// Fetches full details for a single recipe
     func fetchRecipeDetail(id: Int) async throws -> RecipeDetail {
-        logger.info("Fetching recipe detail for id: \(id)")
+        self.logger.info("Fetching recipe detail for id: \(id)")
 
         let recipe: RecipeDetail = try await api.request(
             endpoint: "recipes/\(id)",
@@ -41,23 +41,23 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
             authenticated: true
         )
 
-        logger.info("Fetched recipe detail: \(recipe.name)")
+        self.logger.info("Fetched recipe detail: \(recipe.name)")
         return recipe
     }
 
     /// Deletes a recipe by ID
     func deleteRecipe(id: Int) async throws {
-        logger.info("Deleting recipe with id: \(id)")
+        self.logger.info("Deleting recipe with id: \(id)")
 
         do {
-            try await api.requestVoid(
+            try await self.api.requestVoid(
                 endpoint: "recipes/\(id)",
                 method: .delete,
                 authenticated: true
             )
-            logger.info("Deleted recipe with id: \(id)")
+            self.logger.info("Deleted recipe with id: \(id)")
         } catch APIError.notFound {
-            logger.info("Recipe \(id) already deleted on server")
+            self.logger.info("Recipe \(id) already deleted on server")
         }
     }
 }

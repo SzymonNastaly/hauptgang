@@ -1,5 +1,6 @@
 import os
 import PhotosUI
+import RevenueCatUI
 import SwiftData
 import SwiftUI
 
@@ -20,83 +21,83 @@ struct RecipesView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if recipeViewModel.recipes.isEmpty && !recipeViewModel.isLoading {
-                    emptyStateView
+                if self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading {
+                    self.emptyStateView
                 } else {
-                    recipeListView
+                    self.recipeListView
                 }
             }
-            .background(Color.hauptgangBackground)
+            .background(Color.hauptgangBackground.ignoresSafeArea())
             .navigationTitle("Your Recipes")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showingImportOptions = true
+                        self.showingImportOptions = true
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
-            .confirmationDialog("Import Recipe", isPresented: $showingImportOptions) {
+            .confirmationDialog("Import Recipe", isPresented: self.$showingImportOptions) {
                 if UIImagePickerController.isSourceTypeAvailable(.camera) {
                     Button("Take Photo") {
-                        showingCamera = true
+                        self.showingCamera = true
                     }
                 }
                 Button("Choose from Library") {
-                    showingPhotoPicker = true
+                    self.showingPhotoPicker = true
                 }
             }
-            .photosPicker(isPresented: $showingPhotoPicker, selection: $selectedPhotoItem, matching: .images)
+            .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)
             .task {
                 logger.info("RecipesView appeared, configuring recipe view model")
-                recipeViewModel.configure(modelContext: modelContext)
-                await recipeViewModel.refreshRecipes()
+                self.recipeViewModel.configure(modelContext: self.modelContext)
+                await self.recipeViewModel.refreshRecipes()
             }
-            .onChange(of: authManager.authState) { _, newValue in
+            .onChange(of: self.authManager.authState) { _, newValue in
                 if case .unauthenticated = newValue {
-                    recipeViewModel.clearData()
+                    self.recipeViewModel.clearData()
                 }
             }
-            .onChange(of: scenePhase) { oldPhase, newPhase in
+            .onChange(of: self.scenePhase) { oldPhase, newPhase in
                 if oldPhase == .background && newPhase == .active {
                     logger.info("App became active, refreshing recipes")
                     Task {
-                        await recipeViewModel.refreshRecipes()
+                        await self.recipeViewModel.refreshRecipes()
                     }
                 }
             }
-            .onChange(of: selectedPhotoItem) { _, newItem in
+            .onChange(of: self.selectedPhotoItem) { _, newItem in
                 guard let newItem else { return }
                 Task {
                     if let data = try? await newItem.loadTransferable(type: Data.self) {
-                        await recipeViewModel.importRecipeFromImage(data)
+                        await self.recipeViewModel.importRecipeFromImage(data)
                     }
-                    selectedPhotoItem = nil
+                    self.selectedPhotoItem = nil
                 }
             }
-            .fullScreenCover(isPresented: $showingCamera) {
+            .fullScreenCover(isPresented: self.$showingCamera) {
                 CameraView { imageData in
                     Task {
-                        await recipeViewModel.importRecipeFromImage(imageData)
+                        await self.recipeViewModel.importRecipeFromImage(imageData)
                     }
                 }
                 .ignoresSafeArea()
             }
             .onDisappear {
-                recipeViewModel.stopPolling()
+                self.recipeViewModel.stopPolling()
             }
             .overlay {
-                if recipeViewModel.isImporting {
-                    importingOverlay
+                if self.recipeViewModel.isImporting {
+                    self.importingOverlay
                 }
             }
             .alert(
                 "Import Failed",
                 isPresented: Binding(
-                    get: { recipeViewModel.importError != nil },
-                    set: { if !$0 { recipeViewModel.importError = nil } }
+                    get: { self.recipeViewModel.importError != nil },
+                    set: { if !$0 { self.recipeViewModel.importError = nil } }
                 )
             ) {
                 Button("OK", role: .cancel) {}
@@ -105,8 +106,14 @@ struct RecipesView: View {
                     Text(error)
                 }
             }
+            .sheet(isPresented: Binding(
+                get: { self.recipeViewModel.shouldShowPaywall },
+                set: { self.recipeViewModel.shouldShowPaywall = $0 }
+            )) {
+                PaywallView()
+            }
         }
-        .offlineToast(isOffline: recipeViewModel.isOffline, showToast: !isScrolledDown)
+        .offlineToast(isOffline: self.recipeViewModel.isOffline, showToast: !self.isScrolledDown)
     }
 
     // MARK: - Subviews
@@ -132,7 +139,7 @@ struct RecipesView: View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
                 LazyVStack(spacing: Theme.Spacing.md) {
-                    ForEach(recipeViewModel.successfulRecipes) { recipe in
+                    ForEach(self.recipeViewModel.successfulRecipes) { recipe in
                         NavigationLink(value: recipe.id) {
                             RecipeCardView(recipe: recipe)
                         }
@@ -146,26 +153,26 @@ struct RecipesView: View {
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y > 10
         } action: { _, isScrolled in
-            isScrolledDown = isScrolled
+            self.isScrolledDown = isScrolled
         }
         .refreshable {
-            await recipeViewModel.refreshRecipes()
+            await self.recipeViewModel.refreshRecipes()
         }
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
         .overlay(alignment: .bottom) {
-            failedRecipeBanners
+            self.failedRecipeBanners
         }
     }
 
     /// Floating error banners with swipe-to-dismiss
     private var failedRecipeBanners: some View {
         VStack(spacing: Theme.Spacing.sm) {
-            ForEach(recipeViewModel.failedRecipes) { recipe in
+            ForEach(self.recipeViewModel.failedRecipes) { recipe in
                 ErrorBannerView(recipe: recipe) {
                     Task {
-                        await recipeViewModel.dismissFailedRecipe(recipe)
+                        await self.recipeViewModel.dismissFailedRecipe(recipe)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
@@ -173,7 +180,7 @@ struct RecipesView: View {
             }
         }
         .padding(.bottom, Theme.Spacing.sm)
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: recipeViewModel.failedRecipes.count)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: self.recipeViewModel.failedRecipes.count)
     }
 
     private var emptyStateView: some View {
@@ -197,7 +204,7 @@ struct RecipesView: View {
 
             Button {
                 Task {
-                    await recipeViewModel.refreshRecipes()
+                    await self.recipeViewModel.refreshRecipes()
                 }
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")

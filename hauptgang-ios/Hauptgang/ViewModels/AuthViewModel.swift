@@ -18,44 +18,44 @@ final class AuthViewModel: ObservableObject {
     // MARK: - Validation
 
     var isFormValid: Bool {
-        let trimmedEmail = email.trimmingCharacters(in: .whitespaces)
+        let trimmedEmail = self.email.trimmingCharacters(in: .whitespaces)
         return !trimmedEmail.isEmpty &&
-            !password.isEmpty &&
-            isValidEmail(trimmedEmail)
+            !self.password.isEmpty &&
+            self.isValidEmail(trimmedEmail)
     }
 
     var emailError: String? {
-        let trimmed = email.trimmingCharacters(in: .whitespaces)
+        let trimmed = self.email.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return nil }
-        if !isValidEmail(trimmed) { return "Please enter a valid email" }
+        if !self.isValidEmail(trimmed) { return "Please enter a valid email" }
         return nil
     }
 
     // MARK: - Login
 
     func login(authManager: AuthManager) async {
-        guard isFormValid else { return }
+        guard self.isFormValid else { return }
 
-        isLoading = true
-        errorMessage = nil
+        self.isLoading = true
+        self.errorMessage = nil
 
         do {
             let user = try await authService.login(
-                email: email.trimmingCharacters(in: .whitespaces).lowercased(),
-                password: password
+                email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
+                password: self.password
             )
 
             // Clear sensitive data from memory
-            password = ""
+            self.password = ""
 
             authManager.signIn(user: user)
         } catch let error as APIError {
             errorMessage = error.localizedDescription
         } catch {
-            errorMessage = "An unexpected error occurred. Please try again."
+            self.errorMessage = "An unexpected error occurred. Please try again."
         }
 
-        isLoading = false
+        self.isLoading = false
     }
 
     // MARK: - Private

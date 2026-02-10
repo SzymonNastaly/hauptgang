@@ -1,9 +1,13 @@
+import RevenueCatUI
 import SwiftUI
 
 /// Settings screen with user info and sign out
 struct SettingsView: View {
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @State private var showingLogoutConfirmation = false
+    @State private var showingPaywall = false
+    @State private var showingCustomerCenter = false
 
     var body: some View {
         NavigationStack {
@@ -26,6 +30,41 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.vertical, Theme.Spacing.xs)
+                    }
+                }
+
+                // Subscription section
+                Section("Subscription") {
+                    if subscriptionManager.isPro {
+                        HStack {
+                            Image(systemName: "crown.fill")
+                                .foregroundColor(.yellow)
+                            Text("Hauptgang Pro")
+                                .fontWeight(.semibold)
+                        }
+                        Button {
+                            showingCustomerCenter = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "gearshape")
+                                Text("Manage Subscription")
+                            }
+                        }
+                    } else {
+                        HStack {
+                            Image(systemName: "person")
+                                .foregroundColor(.hauptgangTextSecondary)
+                            Text("Free Plan")
+                        }
+                        Button {
+                            showingPaywall = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                                Text("Upgrade to Pro")
+                            }
+                        }
                     }
                 }
 
@@ -57,14 +96,22 @@ struct SettingsView: View {
             } message: {
                 Text("You'll need to sign in again to access your account.")
             }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
+            .sheet(isPresented: $showingCustomerCenter) {
+                CustomerCenterView()
+            }
         }
-    }   
+    }
 }
 
 #Preview {
     let authManager = AuthManager()
+    let subscriptionManager = SubscriptionManager()
     return SettingsView()
         .environmentObject(authManager)
+        .environmentObject(subscriptionManager)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))
         }

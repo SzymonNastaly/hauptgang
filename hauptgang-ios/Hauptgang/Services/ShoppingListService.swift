@@ -17,7 +17,7 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
     private init() {}
 
     func fetchItems() async throws -> [ShoppingListItemResponse] {
-        logger.info("Fetching shopping list items from API")
+        self.logger.info("Fetching shopping list items from API")
 
         let items: [ShoppingListItemResponse] = try await api.request(
             endpoint: "shopping_list_items",
@@ -25,12 +25,12 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
             authenticated: true
         )
 
-        logger.info("Fetched \(items.count) shopping list items from API")
+        self.logger.info("Fetched \(items.count) shopping list items from API")
         return items
     }
 
     func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse] {
-        logger.info("Creating \(items.count) shopping list items")
+        self.logger.info("Creating \(items.count) shopping list items")
 
         let request = BulkCreateShoppingListItemsRequest(items: items)
         let created: [ShoppingListItemResponse] = try await api.request(
@@ -40,7 +40,7 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
             authenticated: true
         )
 
-        logger.info("Created \(created.count) shopping list items")
+        self.logger.info("Created \(created.count) shopping list items")
         return created
     }
 
@@ -53,14 +53,14 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
             authenticated: true
         )
 
-        logger.info("Updated shopping list item \(id)")
+        self.logger.info("Updated shopping list item \(id)")
         return item
     }
 
     func deleteItem(id: Int) async throws {
-        logger.info("Deleting shopping list item \(id)")
+        self.logger.info("Deleting shopping list item \(id)")
 
-        try await api.requestVoid(
+        try await self.api.requestVoid(
             endpoint: "shopping_list_items/\(id)",
             method: .delete,
             authenticated: true

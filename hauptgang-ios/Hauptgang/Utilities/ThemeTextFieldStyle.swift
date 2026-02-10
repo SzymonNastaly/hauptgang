@@ -11,7 +11,7 @@ struct ThemeTextFieldStyle: TextFieldStyle {
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
                     .stroke(
-                        isError ? Color.hauptgangError : Color.hauptgangBorderSubtle,
+                        self.isError ? Color.hauptgangError : Color.hauptgangBorderSubtle,
                         lineWidth: 1
                     )
             )
@@ -30,7 +30,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .padding(Theme.Spacing.md)
             .background(
-                isEnabled
+                self.isEnabled
                     ? (configuration.isPressed ? Color.hauptgangPrimaryHover : Color.hauptgangPrimary)
                     : Color.hauptgangTextMuted
             )

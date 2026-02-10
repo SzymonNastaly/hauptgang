@@ -9,8 +9,8 @@ enum Constants {
         static let baseURL = URL(string: "http://127.0.0.1:3000/api/v1")!
         #else
         // Production URL - update when deploying
-        static let host = URL(string: "https://hauptgang.example.com")!
-        static let baseURL = URL(string: "https://hauptgang.example.com/api/v1")!
+        static let host = URL(string: "https://cook.hauptgang.app")!
+        static let baseURL = URL(string: "https://cook.hauptgang.app/api/v1")!
         #endif
 
         static let sessionPath = "/session"
@@ -21,8 +21,17 @@ enum Constants {
             if path.hasPrefix("http://") || path.hasPrefix("https://") {
                 return URL(string: path)
             }
-            return URL(string: path, relativeTo: host)
+            return URL(string: path, relativeTo: self.host)
         }
+    }
+
+    enum RevenueCat {
+        #if DEBUG
+        static let apiKey = "test_JMMvmVnASkOxcTiywZWGOyDZhMK"
+        #else
+        static let apiKey = "appl_cXUmnxvvORXplHaLebPtFzfKEhC"
+        #endif
+        static let entitlementID = "Hauptgang Pro"
     }
 
     enum Keychain {

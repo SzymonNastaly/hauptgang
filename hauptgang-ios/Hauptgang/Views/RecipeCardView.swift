@@ -12,20 +12,20 @@ struct RecipeCardView: View {
         ZStack(alignment: .bottom) {
             // Background layer
             if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-                imageBackgroundView(url: url)
+                self.imageBackgroundView(url: url)
             } else {
-                solidBackgroundView
+                self.solidBackgroundView
             }
 
             // Content overlay
-            contentView
+            self.contentView
 
             // Import status overlay
             if let status = recipe.importStatus {
-                importStatusOverlay(status: status)
+                self.importStatusOverlay(status: status)
             }
         }
-        .frame(height: cardHeight)
+        .frame(height: self.cardHeight)
         .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
         .shadow(
@@ -37,7 +37,6 @@ struct RecipeCardView: View {
 
     // MARK: - Background Views
 
-    @ViewBuilder
     private func imageBackgroundView(url: URL) -> some View {
         // Use Color.clear as sizing anchor - it fills exactly the proposed size (like Shape)
         // AsyncImage in .background doesn't affect layout, .clipped clips overflow
@@ -47,7 +46,7 @@ struct RecipeCardView: View {
                     switch phase {
                     case .empty:
                         Color.hauptgangSurfaceRaised
-                    case .success(let image):
+                    case let .success(image):
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
@@ -67,7 +66,7 @@ struct RecipeCardView: View {
                     stops: [
                         .init(color: .black.opacity(0.6), location: 0),
                         .init(color: .black.opacity(0.35), location: 0.4),
-                        .init(color: .clear, location: 0.7)
+                        .init(color: .clear, location: 0.7),
                     ],
                     startPoint: .bottom,
                     endPoint: .top
@@ -91,10 +90,10 @@ struct RecipeCardView: View {
             Spacer()
 
             // Recipe name
-            Text(recipe.name)
+            Text(self.recipe.name)
                 .font(.system(.headline, design: .serif))
                 .fontWeight(.bold)
-                .foregroundColor(hasImage ? .white : .hauptgangTextPrimary)
+                .foregroundColor(self.hasImage ? .white : .hauptgangTextPrimary)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
 
@@ -106,7 +105,7 @@ struct RecipeCardView: View {
                     Text("\(totalTime)m")
                         .font(.caption)
                 }
-                .foregroundColor(hasImage ? .white.opacity(0.8) : .hauptgangTextSecondary)
+                .foregroundColor(self.hasImage ? .white.opacity(0.8) : .hauptgangTextSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
@@ -143,20 +142,20 @@ struct RecipeCardView: View {
     // MARK: - Helpers
 
     private var hasImage: Bool {
-        recipe.coverImageUrl != nil
+        self.recipe.coverImageUrl != nil
     }
 
     /// Combined prep + cook time
     private var totalTimeMinutes: Int? {
-        let prep = recipe.prepTime ?? 0
-        let cook = recipe.cookTime ?? 0
+        let prep = self.recipe.prepTime ?? 0
+        let cook = self.recipe.cookTime ?? 0
         let total = prep + cook
         return total > 0 ? total : nil
     }
 
     /// Whether the recipe is currently being imported
     var isPending: Bool {
-        recipe.importStatus == "pending"
+        self.recipe.importStatus == "pending"
     }
 }
 
@@ -197,7 +196,7 @@ struct RecipeCardView: View {
 #Preview("Grid layout") {
     let columns = [
         GridItem(.flexible(), spacing: Theme.Spacing.md),
-        GridItem(.flexible(), spacing: Theme.Spacing.md)
+        GridItem(.flexible(), spacing: Theme.Spacing.md),
     ]
 
     ScrollView {

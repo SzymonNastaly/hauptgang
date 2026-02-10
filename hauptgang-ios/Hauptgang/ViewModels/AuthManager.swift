@@ -26,20 +26,20 @@ final class AuthManager: ObservableObject {
         }
 
         var user: User? {
-            if case .authenticated(let user) = self { return user }
+            if case let .authenticated(user) = self { return user }
             return nil
         }
 
         static func == (lhs: AuthState, rhs: AuthState) -> Bool {
             switch (lhs, rhs) {
             case (.unknown, .unknown):
-                return true
+                true
             case (.unauthenticated, .unauthenticated):
-                return true
-            case (.authenticated(let lhsUser), .authenticated(let rhsUser)):
-                return lhsUser == rhsUser
+                true
+            case let (.authenticated(lhsUser), .authenticated(rhsUser)):
+                lhsUser == rhsUser
             default:
-                return false
+                false
             }
         }
     }
@@ -49,20 +49,20 @@ final class AuthManager: ObservableObject {
     /// Check authentication status on app launch
     func checkAuthStatus() async {
         if let user = await authService.getCurrentUser() {
-            authState = .authenticated(user)
+            self.authState = .authenticated(user)
         } else {
-            authState = .unauthenticated
+            self.authState = .unauthenticated
         }
     }
 
     /// Update state after successful login
     func signIn(user: User) {
-        authState = .authenticated(user)
+        self.authState = .authenticated(user)
     }
 
     /// Sign out and clear credentials
     func signOut() async {
-        await authService.logout()
-        authState = .unauthenticated
+        await self.authService.logout()
+        self.authState = .unauthenticated
     }
 }

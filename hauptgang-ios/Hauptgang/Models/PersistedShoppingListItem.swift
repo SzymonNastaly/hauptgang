@@ -4,7 +4,7 @@ import SwiftData
 enum ShoppingListSyncState: String, Codable {
     case pendingCreate = "pending_create"
     case pendingUpdate = "pending_update"
-    case synced = "synced"
+    case synced
 }
 
 @Model
@@ -19,11 +19,13 @@ final class PersistedShoppingListItem {
     var syncStateRaw: String
 
     var syncState: ShoppingListSyncState {
-        get { ShoppingListSyncState(rawValue: syncStateRaw) ?? .synced }
-        set { syncStateRaw = newValue.rawValue }
+        get { ShoppingListSyncState(rawValue: self.syncStateRaw) ?? .synced }
+        set { self.syncStateRaw = newValue.rawValue }
     }
 
-    var isChecked: Bool { checkedAt != nil }
+    var isChecked: Bool {
+        self.checkedAt != nil
+    }
 
     var isStale: Bool {
         guard let checkedAt else { return false }
@@ -64,12 +66,12 @@ final class PersistedShoppingListItem {
     }
 
     func update(from response: ShoppingListItemResponse) {
-        serverId = response.id
-        name = response.name
-        checkedAt = response.checkedAt
-        sourceRecipeId = response.sourceRecipeId
-        createdAt = response.createdAt
-        updatedAt = response.updatedAt
-        syncState = .synced
+        self.serverId = response.id
+        self.name = response.name
+        self.checkedAt = response.checkedAt
+        self.sourceRecipeId = response.sourceRecipeId
+        self.createdAt = response.createdAt
+        self.updatedAt = response.updatedAt
+        self.syncState = .synced
     }
 }

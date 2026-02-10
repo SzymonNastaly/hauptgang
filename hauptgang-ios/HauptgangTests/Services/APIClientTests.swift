@@ -1,5 +1,5 @@
-import XCTest
 @testable import Hauptgang
+import XCTest
 
 final class APIClientTests: XCTestCase {
     private var sut: APIClient!
@@ -11,24 +11,24 @@ final class APIClientTests: XCTestCase {
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
-        urlSession = URLSession(configuration: config)
+        self.urlSession = URLSession(configuration: config)
 
-        mockTokenProvider = MockTokenProvider()
-        sut = APIClient(session: urlSession, tokenProvider: mockTokenProvider)
+        self.mockTokenProvider = MockTokenProvider()
+        self.sut = APIClient(session: self.urlSession, tokenProvider: self.mockTokenProvider)
     }
 
     override func tearDown() async throws {
         MockURLProtocol.reset()
-        sut = nil
-        mockTokenProvider = nil
-        urlSession = nil
+        self.sut = nil
+        self.mockTokenProvider = nil
+        self.urlSession = nil
         try await super.tearDown()
     }
 
     // MARK: - Auth Header Tests
 
     func testRequest_whenAuthenticatedWithToken_includesAuthHeader() async throws {
-        await mockTokenProvider.setToken("test-token-123")
+        await self.mockTokenProvider.setToken("test-token-123")
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token-123")
@@ -50,7 +50,7 @@ final class APIClientTests: XCTestCase {
     }
 
     func testRequest_whenAuthenticatedWithoutToken_noAuthHeader() async throws {
-        await mockTokenProvider.setToken(nil)
+        await self.mockTokenProvider.setToken(nil)
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
@@ -72,7 +72,7 @@ final class APIClientTests: XCTestCase {
     }
 
     func testRequest_whenNotAuthenticated_noAuthHeader() async throws {
-        await mockTokenProvider.setToken("should-not-be-used")
+        await self.mockTokenProvider.setToken("should-not-be-used")
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
@@ -174,7 +174,7 @@ final class APIClientTests: XCTestCase {
             )
             XCTFail("Expected unprocessableEntity error")
         } catch let error as APIError {
-            if case .unprocessableEntity(let message) = error {
+            if case let .unprocessableEntity(message) = error {
                 XCTAssertEqual(message, "Recipe URL is invalid")
             } else {
                 XCTFail("Expected unprocessableEntity, got \(error)")
@@ -202,7 +202,7 @@ final class APIClientTests: XCTestCase {
             )
             XCTFail("Expected serverError")
         } catch let error as APIError {
-            if case .serverError(let statusCode) = error {
+            if case let .serverError(statusCode) = error {
                 XCTAssertEqual(statusCode, 503)
             } else {
                 XCTFail("Expected serverError, got \(error)")
@@ -283,7 +283,6 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertNotNil(result.createdAt)
     }
-
 }
 
 // MARK: - Test Helpers
@@ -301,11 +300,11 @@ final class MockURLProtocol: URLProtocol {
     nonisolated(unsafe) static var uploadHandler: ((URLRequest, Data) throws -> (HTTPURLResponse, Data))?
 
     static func reset() {
-        requestHandler = nil
-        uploadHandler = nil
+        self.requestHandler = nil
+        self.uploadHandler = nil
     }
 
-    override class func canInit(with request: URLRequest) -> Bool {
+    override class func canInit(with _: URLRequest) -> Bool {
         true
     }
 
@@ -318,7 +317,8 @@ final class MockURLProtocol: URLProtocol {
             let (response, data): (HTTPURLResponse, Data)
 
             if let uploadHandler = MockURLProtocol.uploadHandler,
-               let bodyData = request.httpBody ?? request.httpBodyStream?.readAllData() {
+               let bodyData = request.httpBody ?? request.httpBodyStream?.readAllData()
+            {
                 (response, data) = try uploadHandler(request, bodyData)
             } else if let handler = MockURLProtocol.requestHandler {
                 (response, data) = try handler(request)

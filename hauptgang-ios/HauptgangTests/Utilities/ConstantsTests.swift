@@ -1,5 +1,5 @@
-import XCTest
 @testable import Hauptgang
+import XCTest
 
 final class ConstantsTests: XCTestCase {
     // MARK: - resolveURL Tests
@@ -12,12 +12,12 @@ final class ConstantsTests: XCTestCase {
         XCTAssertNil(Constants.API.resolveURL(""))
     }
 
-    func testResolveURL_withRelativePath_resolvesAgainstHost() {
+    func testResolveURL_withRelativePath_resolvesAgainstHost() throws {
         let result = Constants.API.resolveURL("/rails/active_storage/blobs/123")
 
         XCTAssertNotNil(result)
-        XCTAssertTrue(result!.absoluteString.contains("127.0.0.1:3000"))
-        XCTAssertTrue(result!.absoluteString.contains("/rails/active_storage/blobs/123"))
+        XCTAssertTrue(try XCTUnwrap(result?.absoluteString.contains("127.0.0.1:3000")))
+        XCTAssertTrue(try XCTUnwrap(result?.absoluteString.contains("/rails/active_storage/blobs/123")))
     }
 
     func testResolveURL_withAbsoluteHttpUrl_returnsAsIs() {
@@ -25,7 +25,7 @@ final class ConstantsTests: XCTestCase {
         let result = Constants.API.resolveURL(absoluteUrl)
 
         XCTAssertNotNil(result)
-        XCTAssertEqual(result!.absoluteString, absoluteUrl)
+        XCTAssertEqual(result?.absoluteString, absoluteUrl)
     }
 
     func testResolveURL_withAbsoluteHttpsUrl_returnsAsIs() {
@@ -33,6 +33,6 @@ final class ConstantsTests: XCTestCase {
         let result = Constants.API.resolveURL(absoluteUrl)
 
         XCTAssertNotNil(result)
-        XCTAssertEqual(result!.absoluteString, absoluteUrl)
+        XCTAssertEqual(result?.absoluteString, absoluteUrl)
     }
 }

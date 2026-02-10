@@ -1,5 +1,5 @@
-import ImageIO
 import CoreGraphics
+import ImageIO
 import UniformTypeIdentifiers
 
 enum ImageCompressor {
@@ -10,14 +10,14 @@ enum ImageCompressor {
     /// Returns nil if compression is impossible.
     static func compressToJPEG(_ data: Data, maxBytes: Int = 15_000_000) -> Data? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-        return compressSource(source, maxBytes: maxBytes)
+        return self.compressSource(source, maxBytes: maxBytes)
     }
 
     /// Compress image from a file URL to JPEG within a size limit.
     /// Preferred for extension use — avoids loading full image into memory.
     static func compressToJPEG(from fileURL: URL, maxBytes: Int = 15_000_000) -> Data? {
         guard let source = CGImageSourceCreateWithURL(fileURL as CFURL, nil) else { return nil }
-        return compressSource(source, maxBytes: maxBytes)
+        return self.compressSource(source, maxBytes: maxBytes)
     }
 
     // MARK: - Private
@@ -29,7 +29,7 @@ enum ImageCompressor {
         }
 
         // Downsample to maxDimension and retry
-        return tryCompress(source: source, maxPixelSize: maxDimension, maxBytes: maxBytes)
+        return self.tryCompress(source: source, maxPixelSize: self.maxDimension, maxBytes: maxBytes)
     }
 
     private static func tryCompress(
@@ -43,7 +43,7 @@ enum ImageCompressor {
             let options: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
             ]
             guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
                 return nil
@@ -52,15 +52,16 @@ enum ImageCompressor {
         } else {
             let transformOptions: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceCreateThumbnailWithTransform: true
+                kCGImageSourceCreateThumbnailWithTransform: true,
             ]
-            guard let fullImage = CGImageSourceCreateThumbnailAtIndex(source, 0, transformOptions as CFDictionary) else {
+            guard let fullImage = CGImageSourceCreateThumbnailAtIndex(source, 0, transformOptions as CFDictionary)
+            else {
                 return nil
             }
             image = fullImage
         }
 
-        for quality in qualityLevels {
+        for quality in self.qualityLevels {
             if let data = jpegData(from: image, quality: quality), data.count <= maxBytes {
                 return data
             }
@@ -79,7 +80,7 @@ enum ImageCompressor {
         ) else { return nil }
 
         let options: [CFString: Any] = [
-            kCGImageDestinationLossyCompressionQuality: quality
+            kCGImageDestinationLossyCompressionQuality: quality,
         ]
         CGImageDestinationAddImage(destination, image, options as CFDictionary)
 

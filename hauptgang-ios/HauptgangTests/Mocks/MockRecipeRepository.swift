@@ -1,6 +1,6 @@
 import Foundation
-import SwiftData
 @testable import Hauptgang
+import SwiftData
 
 @MainActor
 final class MockRecipeRepository: RecipeRepositoryProtocol {
@@ -12,47 +12,47 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
     var shouldThrowOnSave = false
     var shouldThrowOnGet = false
 
-    func configure(modelContext: ModelContext) {
-        configuredCalled = true
+    func configure(modelContext _: ModelContext) {
+        self.configuredCalled = true
     }
 
     func saveRecipes(_ recipes: [RecipeListItem]) throws {
-        if shouldThrowOnSave {
+        if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }
-        savedRecipes = recipes
+        self.savedRecipes = recipes
     }
 
     func getAllRecipes() throws -> [PersistedRecipe] {
-        if shouldThrowOnGet {
+        if self.shouldThrowOnGet {
             throw MockRecipeError.networkError
         }
-        return allRecipes
+        return self.allRecipes
     }
 
     func clearAllRecipes() throws {
-        allRecipes = []
-        cachedRecipe = nil
+        self.allRecipes = []
+        self.cachedRecipe = nil
     }
 
     func getRecipe(id: Int) throws -> PersistedRecipe? {
-        if shouldThrowOnGet {
+        if self.shouldThrowOnGet {
             throw MockRecipeError.networkError
         }
-        if cachedRecipe?.id == id {
-            return cachedRecipe
+        if self.cachedRecipe?.id == id {
+            return self.cachedRecipe
         }
         return nil
     }
 
     func saveRecipeDetail(_ detail: RecipeDetail) throws {
-        if shouldThrowOnSave {
+        if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }
-        savedRecipeDetail = detail
+        self.savedRecipeDetail = detail
     }
 
     func deleteRecipe(id: Int) throws {
-        allRecipes.removeAll { $0.id == id }
+        self.allRecipes.removeAll { $0.id == id }
     }
 }

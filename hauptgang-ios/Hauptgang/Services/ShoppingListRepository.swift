@@ -8,7 +8,7 @@ enum ShoppingListRepositoryError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Repository not configured with model context"
+            "Repository not configured with model context"
         }
     }
 }
@@ -35,7 +35,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
 
     func configure(modelContext: ModelContext) {
         self.modelContext = modelContext
-        logger.info("ShoppingListRepository configured with model context")
+        self.logger.info("ShoppingListRepository configured with model context")
     }
 
     func getAllItems() throws -> [PersistedShoppingListItem] {
@@ -49,13 +49,13 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
         return items.sorted { lhs, rhs in
             switch (lhs.checkedAt, rhs.checkedAt) {
             case (nil, nil):
-                return lhs.createdAt > rhs.createdAt
+                lhs.createdAt > rhs.createdAt
             case (nil, _):
-                return true
+                true
             case (_, nil):
-                return false
-            case (let left?, let right?):
-                return left < right
+                false
+            case let (left?, right?):
+                left < right
             }
         }
     }
@@ -65,7 +65,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             throw ShoppingListRepositoryError.notConfigured
         }
 
-        let serverClientIds = Set(items.map { $0.clientId })
+        let serverClientIds = Set(items.map(\.clientId))
 
         let allDescriptor = FetchDescriptor<PersistedShoppingListItem>()
         let localItems = try modelContext.fetch(allDescriptor)

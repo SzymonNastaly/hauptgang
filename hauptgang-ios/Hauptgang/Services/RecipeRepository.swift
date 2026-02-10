@@ -9,7 +9,7 @@ enum RepositoryError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "Repository not configured with model context"
+            "Repository not configured with model context"
         }
     }
 }
@@ -35,19 +35,19 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     /// Configure the repository with a model context
     func configure(modelContext: ModelContext) {
         self.modelContext = modelContext
-        logger.info("RecipeRepository configured with model context")
+        self.logger.info("RecipeRepository configured with model context")
     }
 
     /// Save recipes from API response, updating existing or inserting new, and removing stale entries
     func saveRecipes(_ recipes: [RecipeListItem]) throws {
         guard let modelContext else {
-            logger.error("Attempted to save recipes without model context")
+            self.logger.error("Attempted to save recipes without model context")
             throw RepositoryError.notConfigured
         }
 
-        logger.info("Syncing \(recipes.count) recipes to local storage")
+        self.logger.info("Syncing \(recipes.count) recipes to local storage")
 
-        let apiRecipeIds = Set(recipes.map { $0.id })
+        let apiRecipeIds = Set(recipes.map(\.id))
 
         // Remove recipes that are no longer in the API response
         let allLocalDescriptor = FetchDescriptor<PersistedRecipe>()
@@ -72,13 +72,13 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         }
 
         try modelContext.save()
-        logger.info("Successfully synced \(recipes.count) recipes")
+        self.logger.info("Successfully synced \(recipes.count) recipes")
     }
 
     /// Retrieve all cached recipes, sorted by most recent update
     func getAllRecipes() throws -> [PersistedRecipe] {
         guard let modelContext else {
-            logger.error("Attempted to fetch recipes without model context")
+            self.logger.error("Attempted to fetch recipes without model context")
             throw RepositoryError.notConfigured
         }
 
@@ -87,18 +87,18 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         )
 
         let recipes = try modelContext.fetch(descriptor)
-        logger.info("Loaded \(recipes.count) cached recipes")
+        self.logger.info("Loaded \(recipes.count) cached recipes")
         return recipes
     }
 
     /// Clear all cached recipes (used on logout)
     func clearAllRecipes() throws {
         guard let modelContext else {
-            logger.error("Attempted to clear recipes without model context")
+            self.logger.error("Attempted to clear recipes without model context")
             throw RepositoryError.notConfigured
         }
 
-        logger.info("Clearing all cached recipes")
+        self.logger.info("Clearing all cached recipes")
 
         let descriptor = FetchDescriptor<PersistedRecipe>()
         let recipes = try modelContext.fetch(descriptor)
@@ -108,13 +108,13 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         }
 
         try modelContext.save()
-        logger.info("Cleared \(recipes.count) recipes from local storage")
+        self.logger.info("Cleared \(recipes.count) recipes from local storage")
     }
 
     /// Get cached recipe by ID
     func getRecipe(id: Int) throws -> PersistedRecipe? {
         guard let modelContext else {
-            logger.error("Attempted to fetch recipe without model context")
+            self.logger.error("Attempted to fetch recipe without model context")
             throw RepositoryError.notConfigured
         }
 
@@ -128,11 +128,11 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     /// Save full recipe detail from API
     func saveRecipeDetail(_ detail: RecipeDetail) throws {
         guard let modelContext else {
-            logger.error("Attempted to save recipe detail without model context")
+            self.logger.error("Attempted to save recipe detail without model context")
             throw RepositoryError.notConfigured
         }
 
-        logger.info("Saving recipe detail for id: \(detail.id)")
+        self.logger.info("Saving recipe detail for id: \(detail.id)")
 
         let descriptor = FetchDescriptor<PersistedRecipe>(
             predicate: #Predicate { $0.id == detail.id }
@@ -146,17 +146,17 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         }
 
         try modelContext.save()
-        logger.info("Successfully saved recipe detail for: \(detail.name)")
+        self.logger.info("Successfully saved recipe detail for: \(detail.name)")
     }
 
     /// Delete a recipe by ID from local cache
     func deleteRecipe(id: Int) throws {
         guard let modelContext else {
-            logger.error("Attempted to delete recipe without model context")
+            self.logger.error("Attempted to delete recipe without model context")
             throw RepositoryError.notConfigured
         }
 
-        logger.info("Deleting recipe with id: \(id)")
+        self.logger.info("Deleting recipe with id: \(id)")
 
         let descriptor = FetchDescriptor<PersistedRecipe>(
             predicate: #Predicate { $0.id == id }
@@ -165,7 +165,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         if let recipe = try modelContext.fetch(descriptor).first {
             modelContext.delete(recipe)
             try modelContext.save()
-            logger.info("Deleted recipe with id: \(id)")
+            self.logger.info("Deleted recipe with id: \(id)")
         }
     }
 }

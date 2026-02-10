@@ -11,26 +11,21 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            RecipesView()
-                .tabItem {
-                    Label("Recipes", systemImage: "fork.knife")
-                }
-                .tag(Tab.recipes)
+        TabView(selection: self.$selectedTab) {
+            SwiftUI.Tab("Recipes", systemImage: "fork.knife", value: Tab.recipes) {
+                RecipesView()
+            }
 
-            ShoppingListView()
-                .tabItem {
-                    Label("Shopping List", systemImage: "cart")
-                }
-                .tag(Tab.shoppingList)
+            SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
+                ShoppingListView()
+            }
 
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
-                .tag(Tab.settings)
+            SwiftUI.Tab("Settings", systemImage: "gearshape", value: Tab.settings) {
+                SettingsView()
+            }
         }
         .tint(.hauptgangPrimary)
+        .toolbarBackgroundVisibility(.visible, for: .tabBar)
     }
 }
 

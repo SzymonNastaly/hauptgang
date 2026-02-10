@@ -1,5 +1,5 @@
-import XCTest
 @testable import Hauptgang
+import XCTest
 
 @MainActor
 final class AuthManagerTests: XCTestCase {
@@ -8,43 +8,43 @@ final class AuthManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockAuthService = MockAuthService()
-        sut = AuthManager(authService: mockAuthService)
+        self.mockAuthService = MockAuthService()
+        self.sut = AuthManager(authService: self.mockAuthService)
     }
 
     override func tearDown() {
-        sut = nil
-        mockAuthService = nil
+        self.sut = nil
+        self.mockAuthService = nil
         super.tearDown()
     }
 
     // MARK: - Initial State Tests
 
     func testInitialState_isUnknown() {
-        XCTAssertEqual(sut.authState, .unknown)
+        XCTAssertEqual(self.sut.authState, .unknown)
     }
 
     // MARK: - Check Auth Status Tests
 
     func testCheckAuthStatus_withUser_becomesAuthenticated() async {
         let user = User(id: 1, email: "user@example.com")
-        mockAuthService.currentUser = user
+        self.mockAuthService.currentUser = user
 
-        await sut.checkAuthStatus()
+        await self.sut.checkAuthStatus()
 
-        XCTAssertEqual(sut.authState, .authenticated(user))
-        XCTAssertTrue(sut.authState.isAuthenticated)
-        XCTAssertEqual(sut.authState.user, user)
+        XCTAssertEqual(self.sut.authState, .authenticated(user))
+        XCTAssertTrue(self.sut.authState.isAuthenticated)
+        XCTAssertEqual(self.sut.authState.user, user)
     }
 
     func testCheckAuthStatus_noUser_becomesUnauthenticated() async {
-        mockAuthService.currentUser = nil
+        self.mockAuthService.currentUser = nil
 
-        await sut.checkAuthStatus()
+        await self.sut.checkAuthStatus()
 
-        XCTAssertEqual(sut.authState, .unauthenticated)
-        XCTAssertFalse(sut.authState.isAuthenticated)
-        XCTAssertNil(sut.authState.user)
+        XCTAssertEqual(self.sut.authState, .unauthenticated)
+        XCTAssertFalse(self.sut.authState.isAuthenticated)
+        XCTAssertNil(self.sut.authState.user)
     }
 
     // MARK: - Sign In Tests
@@ -52,44 +52,44 @@ final class AuthManagerTests: XCTestCase {
     func testSignIn_updatesStateToAuthenticated() {
         let user = User(id: 42, email: "newuser@example.com")
 
-        sut.signIn(user: user)
+        self.sut.signIn(user: user)
 
-        XCTAssertEqual(sut.authState, .authenticated(user))
-        XCTAssertTrue(sut.authState.isAuthenticated)
-        XCTAssertEqual(sut.authState.user?.id, 42)
-        XCTAssertEqual(sut.authState.user?.email, "newuser@example.com")
+        XCTAssertEqual(self.sut.authState, .authenticated(user))
+        XCTAssertTrue(self.sut.authState.isAuthenticated)
+        XCTAssertEqual(self.sut.authState.user?.id, 42)
+        XCTAssertEqual(self.sut.authState.user?.email, "newuser@example.com")
     }
 
     func testSignIn_fromUnauthenticated_becomesAuthenticated() async {
-        await sut.checkAuthStatus() // Sets to .unauthenticated
-        XCTAssertEqual(sut.authState, .unauthenticated)
+        await self.sut.checkAuthStatus() // Sets to .unauthenticated
+        XCTAssertEqual(self.sut.authState, .unauthenticated)
 
         let user = User(id: 1, email: "user@example.com")
-        sut.signIn(user: user)
+        self.sut.signIn(user: user)
 
-        XCTAssertEqual(sut.authState, .authenticated(user))
+        XCTAssertEqual(self.sut.authState, .authenticated(user))
     }
 
     // MARK: - Sign Out Tests
 
     func testSignOut_clearsStateToUnauthenticated() async {
         let user = User(id: 1, email: "user@example.com")
-        sut.signIn(user: user)
-        XCTAssertTrue(sut.authState.isAuthenticated)
+        self.sut.signIn(user: user)
+        XCTAssertTrue(self.sut.authState.isAuthenticated)
 
-        await sut.signOut()
+        await self.sut.signOut()
 
-        XCTAssertEqual(sut.authState, .unauthenticated)
-        XCTAssertFalse(sut.authState.isAuthenticated)
-        XCTAssertNil(sut.authState.user)
+        XCTAssertEqual(self.sut.authState, .unauthenticated)
+        XCTAssertFalse(self.sut.authState.isAuthenticated)
+        XCTAssertNil(self.sut.authState.user)
     }
 
     func testSignOut_callsLogoutOnService() async {
-        sut.signIn(user: User(id: 1, email: "user@example.com"))
+        self.sut.signIn(user: User(id: 1, email: "user@example.com"))
 
-        await sut.signOut()
+        await self.sut.signOut()
 
-        XCTAssertTrue(mockAuthService.logoutCalled)
+        XCTAssertTrue(self.mockAuthService.logoutCalled)
     }
 
     // MARK: - AuthState Equatable Tests

@@ -21,19 +21,19 @@ struct RecipeDetailView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading && viewModel.recipe == nil {
-                loadingView
+            if self.viewModel.isLoading && self.viewModel.recipe == nil {
+                self.loadingView
             } else if let error = viewModel.errorMessage, viewModel.recipe == nil {
-                errorView(message: error)
+                self.errorView(message: error)
             } else if let recipe = viewModel.recipe {
-                recipeContent(recipe)
+                self.recipeContent(recipe)
             }
         }
         .background(Color.hauptgangBackground)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(hasHeroImage ? .hidden : .visible, for: .navigationBar)
+        .toolbarBackground(self.hasHeroImage ? .hidden : .visible, for: .navigationBar)
         .toolbar {
-            if viewModel.isRefreshing {
+            if self.viewModel.isRefreshing {
                 ToolbarItem(placement: .topBarTrailing) {
                     ProgressView()
                         .scaleEffect(0.8)
@@ -41,17 +41,17 @@ struct RecipeDetailView: View {
                 }
             }
         }
-        .task(id: recipeId) {
-            logger.info("RecipeDetailView appeared for recipe id: \(recipeId)")
-            viewModel.configure(modelContext: modelContext)
-            shoppingListViewModel.configure(modelContext: modelContext)
-            await viewModel.loadRecipe(id: recipeId)
+        .task(id: self.recipeId) {
+            logger.info("RecipeDetailView appeared for recipe id: \(self.recipeId)")
+            self.viewModel.configure(modelContext: self.modelContext)
+            self.shoppingListViewModel.configure(modelContext: self.modelContext)
+            await self.viewModel.loadRecipe(id: self.recipeId)
         }
     }
 
     /// Whether the current recipe has a hero image
     private var hasHeroImage: Bool {
-        viewModel.recipe?.coverImageUrl != nil
+        self.viewModel.recipe?.coverImageUrl != nil
     }
 
     // MARK: - Loading State
@@ -83,7 +83,7 @@ struct RecipeDetailView: View {
 
             Button {
                 Task {
-                    await viewModel.loadRecipe(id: recipeId)
+                    await self.viewModel.loadRecipe(id: self.recipeId)
                 }
             } label: {
                 Label("Retry", systemImage: "arrow.clockwise")
@@ -103,7 +103,7 @@ struct RecipeDetailView: View {
             VStack(spacing: 0) {
                 // Hero image - only show if recipe has a cover image
                 if recipe.coverImageUrl != nil {
-                    heroImage(recipe)
+                    self.heroImage(recipe)
                 }
 
                 // Content sections
@@ -120,22 +120,22 @@ struct RecipeDetailView: View {
                         || (recipe.servings ?? 0) > 0
 
                     if hasDurationData {
-                        durationCard(recipe)
+                        self.durationCard(recipe)
                     }
 
                     // Ingredients section
                     if !recipe.ingredients.isEmpty {
-                        ingredientsSection(recipe.ingredients)
+                        self.ingredientsSection(recipe.ingredients)
                     }
 
                     // Instructions section
                     if !recipe.instructions.isEmpty {
-                        instructionsSection(recipe.instructions)
+                        self.instructionsSection(recipe.instructions)
                     }
 
                     // Notes section
                     if let notes = recipe.notes, !notes.isEmpty {
-                        notesSection(notes)
+                        self.notesSection(notes)
                     }
                 }
                 .padding(Theme.Spacing.lg)
@@ -158,7 +158,7 @@ struct RecipeDetailView: View {
                             ProgressView()
                                 .tint(.hauptgangTextMuted)
                         }
-                case .success(let image):
+                case let .success(image):
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -169,7 +169,7 @@ struct RecipeDetailView: View {
                     Color.hauptgangSurfaceRaised
                 }
             }
-            .frame(height: heroImageHeight)
+            .frame(height: self.heroImageHeight)
             .frame(maxWidth: .infinity)
             .clipped()
             // Top gradient for status bar readability
@@ -178,7 +178,7 @@ struct RecipeDetailView: View {
                     stops: [
                         .init(color: .black.opacity(0.5), location: 0),
                         .init(color: .black.opacity(0.25), location: 0.4),
-                        .init(color: .clear, location: 1.0)
+                        .init(color: .clear, location: 1.0),
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -197,7 +197,7 @@ struct RecipeDetailView: View {
 
         return HStack(spacing: 0) {
             if let prepTime = recipe.prepTime, prepTime > 0 {
-                durationItem(icon: "clock", label: "Prep", value: "\(prepTime)m")
+                self.durationItem(icon: "clock", label: "Prep", value: "\(prepTime)m")
             }
 
             if let cookTime = recipe.cookTime, cookTime > 0 {
@@ -205,7 +205,7 @@ struct RecipeDetailView: View {
                     Divider()
                         .frame(height: 32)
                 }
-                durationItem(icon: "flame", label: "Cook", value: "\(cookTime)m")
+                self.durationItem(icon: "flame", label: "Cook", value: "\(cookTime)m")
             }
 
             if let servings = recipe.servings, servings > 0 {
@@ -213,7 +213,7 @@ struct RecipeDetailView: View {
                     Divider()
                         .frame(height: 32)
                 }
-                durationItem(icon: "person.2", label: "Servings", value: "\(servings)")
+                self.durationItem(icon: "person.2", label: "Servings", value: "\(servings)")
             }
         }
         .frame(maxWidth: .infinity)
@@ -243,7 +243,7 @@ struct RecipeDetailView: View {
 
     private func ingredientsSection(_ ingredients: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            sectionHeader("Ingredients")
+            self.sectionHeader("Ingredients")
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
@@ -261,11 +261,11 @@ struct RecipeDetailView: View {
             }
 
             Button {
-                shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: recipeId)
-                showShoppingListConfirmation = true
+                self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+                self.showShoppingListConfirmation = true
                 Task {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    showShoppingListConfirmation = false
+                    self.showShoppingListConfirmation = false
                 }
             } label: {
                 Label("Add to shopping list", systemImage: "cart.badge.plus")
@@ -274,7 +274,7 @@ struct RecipeDetailView: View {
             .buttonStyle(.bordered)
             .tint(.hauptgangPrimary)
 
-            if showShoppingListConfirmation {
+            if self.showShoppingListConfirmation {
                 Label("Added to shopping list", systemImage: "checkmark.circle.fill")
                     .font(.caption)
                     .foregroundColor(.hauptgangSuccess)
@@ -287,7 +287,7 @@ struct RecipeDetailView: View {
 
     private func instructionsSection(_ instructions: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            sectionHeader("Steps")
+            self.sectionHeader("Steps")
 
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                 ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
@@ -315,7 +315,7 @@ struct RecipeDetailView: View {
 
     private func notesSection(_ notes: String) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            sectionHeader("Notes")
+            self.sectionHeader("Notes")
 
             Text(notes)
                 .font(.body)

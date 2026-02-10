@@ -1,7 +1,12 @@
 module Api
   module V1
     class RecipesController < BaseController
+      class ImportLimitReachedError < StandardError; end
+
+      before_action :check_import_limit!, only: [ :import, :extract_from_text, :extract_from_image ]
       after_action :cleanup_old_failed_recipes, only: [ :index ]
+
+      rescue_from ImportLimitReachedError, with: :render_import_limit_reached
 
       def index
         recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
@@ -42,11 +47,14 @@ module Api
           return render json: { error: validation.error }, status: :unprocessable_entity
         end
 
-        recipe = current_user.recipes.create!(
-          name: "Importing...",
-          source_url: url,
-          import_status: :pending
-        )
+        recipe = current_user.with_lock do
+          check_import_limit_locked!
+          current_user.recipes.create!(
+            name: "Importing...",
+            source_url: url,
+            import_status: :pending
+          )
+        end
 
         RecipeImportJob.perform_later(current_user.id, recipe.id, url)
 
@@ -62,10 +70,13 @@ module Api
           return render json: { error: "Text too long (max 50,000 chars)" }, status: :unprocessable_entity
         end
 
-        recipe = current_user.recipes.create!(
-          name: "Importing...",
-          import_status: :pending
-        )
+        recipe = current_user.with_lock do
+          check_import_limit_locked!
+          current_user.recipes.create!(
+            name: "Importing...",
+            import_status: :pending
+          )
+        end
 
         RecipeTextExtractJob.perform_later(current_user.id, recipe.id, text)
 
@@ -79,10 +90,13 @@ module Api
           return render json: { error: validation_error }, status: :unprocessable_entity
         end
 
-        recipe = current_user.recipes.create!(
-          name: "Importing...",
-          import_status: :pending
-        )
+        recipe = current_user.with_lock do
+          check_import_limit_locked!
+          current_user.recipes.create!(
+            name: "Importing...",
+            import_status: :pending
+          )
+        end
 
         recipe.import_image.attach(image)
 
@@ -132,6 +146,26 @@ module Api
           recipe.cover_image.variant(variant),
           only_path: true
         )
+      end
+
+      def check_import_limit!
+        return unless current_user.import_limit_reached?
+
+        render_import_limit_reached
+      end
+
+      def render_import_limit_reached
+        render json: {
+          error: "Monthly import limit reached",
+          error_code: "import_limit_reached",
+          limit: User::FREE_MONTHLY_IMPORT_LIMIT
+        }, status: :forbidden
+      end
+
+      def check_import_limit_locked!
+        return unless current_user.import_limit_reached?
+
+        raise ImportLimitReachedError
       end
 
       def validate_import_image(image)

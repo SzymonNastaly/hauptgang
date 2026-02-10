@@ -11,6 +11,10 @@ Rails.application.routes.draw do
           post :extract_from_image
         end
       end
+
+      namespace :webhooks do
+        post "revenuecat", to: "revenuecat#create"
+      end
     end
   end
 

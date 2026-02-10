@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  include ImportLimitable
+
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :api_tokens, dependent: :destroy

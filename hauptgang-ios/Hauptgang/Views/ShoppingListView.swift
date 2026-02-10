@@ -9,21 +9,21 @@ struct ShoppingListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: Theme.Spacing.sm) {
-                addItemBar
+                self.addItemBar
                     .padding(.horizontal, Theme.Spacing.lg)
 
-                if viewModel.items.isEmpty && !viewModel.isSyncing {
-                    emptyState
+                if self.viewModel.items.isEmpty && !self.viewModel.isSyncing {
+                    self.emptyState
                 } else {
-                    listView
+                    self.listView
                 }
             }
             .padding(.top, Theme.Spacing.sm)
-            .background(Color.hauptgangBackground)
+            .background(Color.hauptgangBackground.ignoresSafeArea())
             .navigationTitle("Shopping List")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                if viewModel.isSyncing {
+                if self.viewModel.isSyncing {
                     ToolbarItem(placement: .topBarTrailing) {
                         ProgressView()
                             .scaleEffect(0.8)
@@ -32,61 +32,88 @@ struct ShoppingListView: View {
                 }
             }
             .task {
-                viewModel.configure(modelContext: modelContext)
-                await viewModel.refresh()
+                self.viewModel.configure(modelContext: self.modelContext)
+                await self.viewModel.refresh()
             }
-            .onChange(of: authManager.authState) { _, newValue in
+            .onChange(of: self.authManager.authState) { _, newValue in
                 if case .unauthenticated = newValue {
-                    viewModel.clearData()
+                    self.viewModel.clearData()
                 }
             }
         }
-        .offlineToast(isOffline: viewModel.isOffline)
+        .offlineToast(isOffline: self.viewModel.isOffline)
     }
 
     private var addItemBar: some View {
         VStack(spacing: Theme.Spacing.xs) {
             HStack(spacing: Theme.Spacing.sm) {
-                TextField("Add item", text: $newItemText)
+                TextField("Add item", text: self.$newItemText)
                     .themeTextField()
-                    .onSubmit(addCustomItem)
+                    .onSubmit(self.addCustomItem)
 
                 Button {
-                    addCustomItem()
+                    self.addCustomItem()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.headline)
-                        .frame(width: 44, height: 44)
-                        .background(Color.hauptgangPrimary)
+                        .font(.headline.weight(.bold))
                         .foregroundStyle(.white)
-                        .clipShape(.rect(cornerRadius: Theme.CornerRadius.md))
+                        .frame(width: 44, height: 44)
+                        .background {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                                    .fill(Color.hauptgangPrimary)
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.25),
+                                                .clear,
+                                                .black.opacity(0.15),
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.35),
+                                                .clear,
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            }
+                        }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PuffyButtonStyle())
             }
-
         }
     }
 
     private var listView: some View {
         List {
-            if !viewModel.uncheckedItems.isEmpty {
+            if !self.viewModel.uncheckedItems.isEmpty {
                 Section("To Buy") {
-                    ForEach(viewModel.uncheckedItems) { item in
-                        itemRow(item)
+                    ForEach(self.viewModel.uncheckedItems) { item in
+                        self.itemRow(item)
                     }
                     .onDelete { indexSet in
-                        deleteItems(at: indexSet, from: viewModel.uncheckedItems)
+                        self.deleteItems(at: indexSet, from: self.viewModel.uncheckedItems)
                     }
                 }
             }
 
-            if !viewModel.checkedItems.isEmpty {
+            if !self.viewModel.checkedItems.isEmpty {
                 Section("Checked") {
-                    ForEach(viewModel.checkedItems) { item in
-                        itemRow(item)
+                    ForEach(self.viewModel.checkedItems) { item in
+                        self.itemRow(item)
                     }
                     .onDelete { indexSet in
-                        deleteItems(at: indexSet, from: viewModel.checkedItems)
+                        self.deleteItems(at: indexSet, from: self.viewModel.checkedItems)
                     }
                 }
             }
@@ -94,13 +121,13 @@ struct ShoppingListView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .refreshable {
-            await viewModel.refresh()
+            await self.viewModel.refresh()
         }
     }
 
     private func itemRow(_ item: PersistedShoppingListItem) -> some View {
         Button {
-            viewModel.toggleItem(item)
+            self.viewModel.toggleItem(item)
         } label: {
             HStack(spacing: Theme.Spacing.md) {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
@@ -144,20 +171,33 @@ struct ShoppingListView: View {
     }
 
     private func addCustomItem() {
-        let trimmed = newItemText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        viewModel.addCustomItem(trimmed)
-        newItemText = ""
+        self.viewModel.addCustomItem(trimmed)
+        self.newItemText = ""
     }
 
     private func deleteItems(at indexSet: IndexSet, from items: [PersistedShoppingListItem]) {
         for index in indexSet {
             let item = items[index]
-            viewModel.deleteItem(item)
+            self.viewModel.deleteItem(item)
         }
     }
+}
 
+private struct PuffyButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .brightness(configuration.isPressed ? -0.08 : 0)
+            .shadow(
+                color: Color.hauptgangPrimary.opacity(configuration.isPressed ? 0.15 : 0.4),
+                radius: configuration.isPressed ? 1 : 4,
+                y: configuration.isPressed ? 1 : 3
+            )
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
 }
 
 #Preview {

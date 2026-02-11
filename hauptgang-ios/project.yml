@@ -14,7 +14,7 @@ packages:
 settings:
   SWIFT_VERSION: "5.9"
   MARKETING_VERSION: "1.0.0"
-  CURRENT_PROJECT_VERSION: "2"
+  CURRENT_PROJECT_VERSION: "6"
   # Enable Swift 6 strict concurrency checking for data race safety
   SWIFT_STRICT_CONCURRENCY: complete
 
@@ -101,6 +101,7 @@ schemes:
         HauptgangTests: [test]
     run:
       config: Debug
+      storeKitConfiguration: Hauptgang-StoreKit.storekit
     test:
       config: Debug
       targets:

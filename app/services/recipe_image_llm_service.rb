@@ -4,7 +4,7 @@ require "ruby_llm/schema"
 class RecipeImageLlmService
   Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
-  MODEL = "mistralai/mistral-medium-3.1"
+  MODEL = "meta-llama/llama-4-maverick"
 
   def initialize(image_path)
     @image_path = image_path

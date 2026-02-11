@@ -6,7 +6,7 @@ class RecipeLlmService
   Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
   MAX_TEXT_LENGTH = 15_000
-  MODEL = "openai/gpt-oss-20b"
+  MODEL = "openai/gpt-oss-120b"
   PROMPT_TYPES = %i[webpage raw_text].freeze
 
   def initialize(text, prompt_type: :webpage, source_url: nil)

@@ -35,7 +35,7 @@ module LlmStubHelper
   def build_openrouter_response(content)
     {
       "id" => "gen-test-123",
-      "model" => "openai/gpt-oss-20b",
+      "model" => "openai/gpt-oss-120b",
       "choices" => [
         {
           "message" => {

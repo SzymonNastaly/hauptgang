@@ -549,6 +549,74 @@ module RecipeImporters
       assert_equal [ "Just one instruction" ], result.recipe_attributes[:instructions]
     end
 
+    # ===================
+    # IMAGE EXTRACTION
+    # ===================
+
+    test "extracts image URL from string" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Cookies",
+        "image" => "https://example.com/photo.jpg"
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com").extract
+
+      assert result.success?
+      assert_equal "https://example.com/photo.jpg", result.cover_image_url
+    end
+
+    test "extracts image URL from array of strings" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Cookies",
+        "image" => [ "https://example.com/photo1.jpg", "https://example.com/photo2.jpg" ]
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com").extract
+
+      assert result.success?
+      assert_equal "https://example.com/photo1.jpg", result.cover_image_url
+    end
+
+    test "extracts image URL from ImageObject hash" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Cookies",
+        "image" => { "@type" => "ImageObject", "url" => "https://example.com/photo.jpg" }
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com").extract
+
+      assert result.success?
+      assert_equal "https://example.com/photo.jpg", result.cover_image_url
+    end
+
+    test "extracts image URL from array of ImageObject hashes" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Cookies",
+        "image" => [ { "@type" => "ImageObject", "url" => "https://example.com/photo.jpg" } ]
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com").extract
+
+      assert result.success?
+      assert_equal "https://example.com/photo.jpg", result.cover_image_url
+    end
+
+    test "returns nil cover_image_url when no image in JSON-LD" do
+      html = build_html_with_json_ld({
+        "@type" => "Recipe",
+        "name" => "Cookies"
+      })
+
+      result = JsonLdExtractor.new(html, "https://example.com").extract
+
+      assert result.success?
+      assert_nil result.cover_image_url
+    end
+
     private
 
     def build_html_with_json_ld(data)

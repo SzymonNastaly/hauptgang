@@ -26,7 +26,7 @@ module RecipeImporters
         next unless recipe
 
         attributes = extract_attributes(recipe)
-        return Result.new(success?: true, recipe_attributes: attributes, cover_image_url: nil, error: nil, error_code: nil) if attributes[:name].present?
+        return Result.new(success?: true, recipe_attributes: attributes, cover_image_url: extract_image_url(recipe), error: nil, error_code: nil) if attributes[:name].present?
       end
 
       Result.new(success?: false, recipe_attributes: {}, cover_image_url: nil, error: "No JSON-LD recipe data found", error_code: :no_json_ld)
@@ -185,6 +185,18 @@ module RecipeImporters
       # Try to extract number
       match = yield_value.to_s.match(/\d+/)
       match ? match[0].to_i : nil
+    end
+
+    def extract_image_url(recipe)
+      image = recipe["image"]
+      case image
+      when String
+        image.strip.presence
+      when Array
+        image.first.is_a?(Hash) ? image.first["url"].to_s.strip.presence : image.first.to_s.strip.presence
+      when Hash
+        image["url"].to_s.strip.presence
+      end
     end
 
     def extract_notes(recipe)

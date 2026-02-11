@@ -12,7 +12,7 @@ final class SubscriptionManager: ObservableObject {
     func identify(userId: String) async {
         do {
             let (customerInfo, _) = try await Purchases.shared.logIn(userId)
-            updateProStatus(from: customerInfo)
+            self.updateProStatus(from: customerInfo)
         } catch {
             // Failed to identify — keep current state
         }
@@ -21,23 +21,23 @@ final class SubscriptionManager: ObservableObject {
     func reset() async {
         do {
             let customerInfo = try await Purchases.shared.logOut()
-            updateProStatus(from: customerInfo)
+            self.updateProStatus(from: customerInfo)
         } catch {
-            isPro = false
+            self.isPro = false
         }
     }
 
     func refreshStatus() async {
         do {
             let customerInfo = try await Purchases.shared.customerInfo()
-            updateProStatus(from: customerInfo)
+            self.updateProStatus(from: customerInfo)
         } catch {
             // Failed to fetch — keep current state
         }
-        isLoaded = true
+        self.isLoaded = true
     }
 
     private func updateProStatus(from customerInfo: CustomerInfo) {
-        isPro = customerInfo.entitlements[Constants.RevenueCat.entitlementID]?.isActive == true
+        self.isPro = customerInfo.entitlements[Constants.RevenueCat.entitlementID]?.isActive == true
     }
 }

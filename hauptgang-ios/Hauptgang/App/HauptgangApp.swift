@@ -32,7 +32,7 @@ struct HauptgangApp: App {
                 .environmentObject(self.authManager)
                 .environmentObject(self.subscriptionManager)
                 .task {
-                    await subscriptionManager.refreshStatus()
+                    await self.subscriptionManager.refreshStatus()
                 }
         }
         .modelContainer(self.sharedModelContainer)

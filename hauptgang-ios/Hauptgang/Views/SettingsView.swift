@@ -35,7 +35,7 @@ struct SettingsView: View {
 
                 // Subscription section
                 Section("Subscription") {
-                    if subscriptionManager.isPro {
+                    if self.subscriptionManager.isPro {
                         HStack {
                             Image(systemName: "crown.fill")
                                 .foregroundColor(.yellow)
@@ -43,7 +43,7 @@ struct SettingsView: View {
                                 .fontWeight(.semibold)
                         }
                         Button {
-                            showingCustomerCenter = true
+                            self.showingCustomerCenter = true
                         } label: {
                             HStack {
                                 Image(systemName: "gearshape")
@@ -57,7 +57,7 @@ struct SettingsView: View {
                             Text("Free Plan")
                         }
                         Button {
-                            showingPaywall = true
+                            self.showingPaywall = true
                         } label: {
                             HStack {
                                 Image(systemName: "star.fill")
@@ -71,7 +71,7 @@ struct SettingsView: View {
                 // Account actions section
                 Section {
                     Button(role: .destructive) {
-                        showingLogoutConfirmation = true
+                        self.showingLogoutConfirmation = true
                     } label: {
                         HStack {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -84,22 +84,22 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.large)
             .confirmationDialog(
                 "Sign out?",
-                isPresented: $showingLogoutConfirmation,
+                isPresented: self.$showingLogoutConfirmation,
                 titleVisibility: .visible
             ) {
                 Button("Sign out", role: .destructive) {
                     Task {
-                        await authManager.signOut()
+                        await self.authManager.signOut()
                     }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("You'll need to sign in again to access your account.")
             }
-            .sheet(isPresented: $showingPaywall) {
+            .sheet(isPresented: self.$showingPaywall) {
                 PaywallView()
             }
-            .sheet(isPresented: $showingCustomerCenter) {
+            .sheet(isPresented: self.$showingCustomerCenter) {
                 CustomerCenterView()
             }
         }

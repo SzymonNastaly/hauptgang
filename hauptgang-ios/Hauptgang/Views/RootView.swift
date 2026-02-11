@@ -24,10 +24,10 @@ struct RootView: View {
         .onChange(of: self.authManager.authState) { _, newValue in
             Task {
                 switch newValue {
-                case .authenticated(let user):
-                    await subscriptionManager.identify(userId: String(user.id))
+                case let .authenticated(user):
+                    await self.subscriptionManager.identify(userId: String(user.id))
                 case .unauthenticated:
-                    await subscriptionManager.reset()
+                    await self.subscriptionManager.reset()
                 case .unknown:
                     break
                 }

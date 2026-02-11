@@ -31,6 +31,7 @@ struct HauptgangApp: App {
             ContentView()
                 .environmentObject(self.authManager)
                 .environmentObject(self.subscriptionManager)
+                .preferredColorScheme(.light)
                 .task {
                     await self.subscriptionManager.refreshStatus()
                 }

@@ -31,7 +31,7 @@ struct RecipeDetailView: View {
         }
         .background(Color.hauptgangBackground)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(self.hasHeroImage ? .hidden : .visible, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             if self.viewModel.isRefreshing {
                 ToolbarItem(placement: .topBarTrailing) {

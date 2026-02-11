@@ -52,6 +52,8 @@ class RecipeLlmService
       Extract recipe information from the following webpage content.
       Find the recipe name, ingredients list, and cooking instructions.
 
+      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on.
+
       If you cannot find recipe content, return an empty name field.
 
       Webpage content:
@@ -68,6 +70,8 @@ class RecipeLlmService
 
       For the recipe name: ignore any social media titles, series names, hashtags, or catchphrases.
       Instead, create a short, descriptive name based on the actual dish being made.
+
+      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on.
 
       If the text does not contain a valid recipe, return an empty name field.
 

@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
+      resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
       resources :shopping_list_items, only: [ :index, :create, :update, :destroy ]
       resources :recipes, only: [ :index, :show, :destroy ] do

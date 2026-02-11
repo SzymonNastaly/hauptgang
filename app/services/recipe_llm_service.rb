@@ -63,8 +63,11 @@ class RecipeLlmService
 
   def raw_text_prompt(text)
     <<~PROMPT
-      Extract recipe information from the following text.
+      Extract recipe information from the following text, which may be a social media caption or website content.
       Parse the recipe name, ingredients list, and cooking instructions.
+
+      For the recipe name: ignore any social media titles, series names, hashtags, or catchphrases.
+      Instead, create a short, descriptive name based on the actual dish being made.
 
       If the text does not contain a valid recipe, return an empty name field.
 

@@ -4,6 +4,7 @@ import Foundation
 /// Enables dependency injection for testing
 protocol AuthServiceProtocol: Sendable {
     func login(email: String, password: String) async throws -> User
+    func signup(email: String, password: String, passwordConfirmation: String) async throws -> User
     func logout() async
     func getCurrentUser() async -> User?
     func isAuthenticated() async -> Bool

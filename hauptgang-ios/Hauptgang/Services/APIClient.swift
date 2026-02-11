@@ -229,7 +229,15 @@ actor APIClient: APIClientProtocol {
         case 415:
             throw APIError.unsupportedMediaType
         case 422:
-            let message = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error"] as? String
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let message: String?
+            if let error = json?["error"] as? String {
+                message = error
+            } else if let errors = json?["errors"] as? [String] {
+                message = errors.joined(separator: ". ")
+            } else {
+                message = nil
+            }
             throw APIError.unprocessableEntity(message)
         case 500 ... 599:
             throw APIError.serverError(statusCode: response.statusCode)

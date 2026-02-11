@@ -6,7 +6,7 @@ struct LoginView: View {
     @FocusState private var focusedField: Field?
 
     private enum Field {
-        case email, password
+        case email, password, passwordConfirmation
     }
 
     var body: some View {
@@ -14,92 +14,184 @@ struct LoginView: View {
             Color.hauptgangBackground
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: Theme.Spacing.xl) {
-                    // Logo and title
-                    VStack(spacing: Theme.Spacing.md) {
-                        Text("Hauptgang")
-                            .font(.system(.largeTitle, design: .serif))
-                            .fontWeight(.bold)
-                            .foregroundColor(.hauptgangTextPrimary)
+            VStack(spacing: Theme.Spacing.xl) {
+                Spacer()
 
-                        Text("Sign in to your account")
-                            .font(.subheadline)
-                            .foregroundColor(.hauptgangTextSecondary)
+                // App icon and tagline
+                VStack(spacing: Theme.Spacing.md) {
+                    Image("LoginLogo")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+
+                    (Text("Cook something ")
+                        .foregroundColor(.hauptgangTextPrimary)
+                    + Text("delicious")
+                        .foregroundColor(.hauptgangPrimary)
+                        .italic()
+                        .underline()
+                    + Text(" today")
+                        .foregroundColor(.hauptgangTextPrimary))
+                        .font(.system(.title2, design: .serif))
+                }
+
+                // Form
+                VStack(spacing: Theme.Spacing.md) {
+                    // Email field
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                        TextField("Enter your email", text: self.$viewModel.email)
+                            .themeTextField(isError: self.viewModel.emailError != nil)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused(self.$focusedField, equals: .email)
+                            .submitLabel(.next)
+                            .onSubmit { self.focusedField = .password }
+
+                        if let error = viewModel.emailError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundColor(.hauptgangError)
+                        }
                     }
-                    .padding(.top, Theme.Spacing.xxl)
 
-                    // Form
-                    VStack(spacing: Theme.Spacing.lg) {
-                        // Email field
+                    // Password field
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                        SecureField("Enter your password", text: self.$viewModel.password)
+                            .themeTextField()
+                            .textContentType(self.viewModel.isSignUp ? .newPassword : .password)
+                            .focused(self.$focusedField, equals: .password)
+                            .submitLabel(self.viewModel.isSignUp ? .next : .go)
+                            .onSubmit {
+                                if self.viewModel.isSignUp {
+                                    self.focusedField = .passwordConfirmation
+                                } else {
+                                    self.submitForm()
+                                }
+                            }
+
+                        if self.viewModel.isSignUp && !self.viewModel.password.isEmpty && self.viewModel.password.count < 12 {
+                            Text("Password must be at least 12 characters")
+                                .font(.caption)
+                                .foregroundColor(.hauptgangError)
+                        }
+                    }
+
+                    // Password confirmation (signup only)
+                    if self.viewModel.isSignUp {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                            Text("Email")
-                                .font(.footnote)
-                                .foregroundColor(.hauptgangTextSecondary)
-                                .textCase(.uppercase)
-                                .tracking(0.5)
+                            SecureField("Confirm your password", text: self.$viewModel.passwordConfirmation)
+                                .themeTextField(isError: self.viewModel.passwordConfirmationError != nil)
+                                .textContentType(.newPassword)
+                                .focused(self.$focusedField, equals: .passwordConfirmation)
+                                .submitLabel(.go)
+                                .onSubmit { self.submitForm() }
 
-                            TextField("Enter your email", text: self.$viewModel.email)
-                                .themeTextField(isError: self.viewModel.emailError != nil)
-                                .textContentType(.emailAddress)
-                                .keyboardType(.emailAddress)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused(self.$focusedField, equals: .email)
-                                .submitLabel(.next)
-                                .onSubmit { self.focusedField = .password }
-
-                            if let error = viewModel.emailError {
+                            if let error = viewModel.passwordConfirmationError {
                                 Text(error)
                                     .font(.caption)
                                     .foregroundColor(.hauptgangError)
                             }
                         }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
 
-                        // Password field
-                        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                            Text("Password")
-                                .font(.footnote)
-                                .foregroundColor(.hauptgangTextSecondary)
-                                .textCase(.uppercase)
-                                .tracking(0.5)
+                    // Error message
+                    if let errorMessage = viewModel.errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                            .font(.subheadline)
+                            .foregroundColor(.hauptgangError)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
 
-                            SecureField("Enter your password", text: self.$viewModel.password)
-                                .themeTextField()
-                                .textContentType(.password)
-                                .focused(self.$focusedField, equals: .password)
-                                .submitLabel(.go)
-                                .onSubmit { self.submitForm() }
+                    // Submit button
+                    Button(action: self.submitForm) {
+                        HStack(spacing: Theme.Spacing.sm) {
+                            if self.viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            }
+                            Text(self.buttonLabel)
                         }
-
-                        // Error message
-                        if let errorMessage = viewModel.errorMessage {
-                            Label(errorMessage, systemImage: "exclamationmark.circle.fill")
-                                .font(.subheadline)
-                                .foregroundColor(.hauptgangError)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        // Sign in button
-                        Button(action: self.submitForm) {
-                            HStack(spacing: Theme.Spacing.sm) {
-                                if self.viewModel.isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                }
-                                Text(self.viewModel.isLoading ? "Signing in…" : "Sign In")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(Theme.Spacing.md)
+                        .background {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                                    .fill(Color.hauptgangPrimary)
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.25),
+                                                .clear,
+                                                .black.opacity(0.15),
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [
+                                                .white.opacity(0.35),
+                                                .clear,
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        ),
+                                        lineWidth: 1
+                                    )
                             }
                         }
-                        .primaryButton()
-                        .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
+                    }
+                    .puffyButton()
+                    .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
+                    .opacity((!self.viewModel.isFormValid || self.viewModel.isLoading) ? 0.5 : 1.0)
+                }
+
+                // Toggle sign in / sign up
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        self.viewModel.isSignUp.toggle()
+                    }
+                } label: {
+                    if self.viewModel.isSignUp {
+                        (Text("Already have an account? ")
+                            .foregroundColor(.hauptgangTextSecondary)
+                        + Text("Sign In")
+                            .foregroundColor(.hauptgangPrimary)
+                            .bold())
+                            .font(.subheadline)
+                    } else {
+                        (Text("Don't have an account? ")
+                            .foregroundColor(.hauptgangTextSecondary)
+                        + Text("Sign Up")
+                            .foregroundColor(.hauptgangPrimary)
+                            .bold())
+                            .font(.subheadline)
                     }
                 }
-                .padding(.horizontal, Theme.Spacing.lg)
+
+                Spacer()
             }
+            .padding(.horizontal, Theme.Spacing.lg)
         }
         .onTapGesture {
             self.focusedField = nil
         }
+    }
+
+    private var buttonLabel: String {
+        if self.viewModel.isSignUp {
+            return self.viewModel.isLoading ? "Creating Account…" : "Create Account"
+        }
+        return self.viewModel.isLoading ? "Signing in…" : "Sign In"
     }
 
     private func submitForm() {
@@ -107,7 +199,11 @@ struct LoginView: View {
         self.focusedField = nil
 
         Task {
-            await self.viewModel.login(authManager: self.authManager)
+            if self.viewModel.isSignUp {
+                await self.viewModel.signup(authManager: self.authManager)
+            } else {
+                await self.viewModel.login(authManager: self.authManager)
+            }
         }
     }
 }

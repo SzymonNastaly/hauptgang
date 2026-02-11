@@ -1,13 +1,20 @@
 import Foundation
 import SwiftUI
 
-/// Login form state and validation
+/// Login/signup form state and validation
 @MainActor
 final class AuthViewModel: ObservableObject {
     @Published var email = ""
     @Published var password = ""
+    @Published var passwordConfirmation = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var isSignUp = false {
+        didSet {
+            errorMessage = nil
+            passwordConfirmation = ""
+        }
+    }
 
     private let authService: AuthServiceProtocol
 
@@ -19,15 +26,31 @@ final class AuthViewModel: ObservableObject {
 
     var isFormValid: Bool {
         let trimmedEmail = self.email.trimmingCharacters(in: .whitespaces)
-        return !trimmedEmail.isEmpty &&
+        let baseValid = !trimmedEmail.isEmpty &&
             !self.password.isEmpty &&
             self.isValidEmail(trimmedEmail)
+
+        if self.isSignUp {
+            return baseValid &&
+                self.password.count >= 12 &&
+                self.password == self.passwordConfirmation
+        }
+
+        return baseValid
     }
 
     var emailError: String? {
         let trimmed = self.email.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return nil }
         if !self.isValidEmail(trimmed) { return "Please enter a valid email" }
+        return nil
+    }
+
+    var passwordConfirmationError: String? {
+        guard self.isSignUp, !self.passwordConfirmation.isEmpty else { return nil }
+        if self.password != self.passwordConfirmation {
+            return "Passwords don't match"
+        }
         return nil
     }
 
@@ -45,8 +68,35 @@ final class AuthViewModel: ObservableObject {
                 password: self.password
             )
 
-            // Clear sensitive data from memory
             self.password = ""
+
+            authManager.signIn(user: user)
+        } catch let error as APIError {
+            errorMessage = error.localizedDescription
+        } catch {
+            self.errorMessage = "An unexpected error occurred. Please try again."
+        }
+
+        self.isLoading = false
+    }
+
+    // MARK: - Signup
+
+    func signup(authManager: AuthManager) async {
+        guard self.isFormValid else { return }
+
+        self.isLoading = true
+        self.errorMessage = nil
+
+        do {
+            let user = try await authService.signup(
+                email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
+                password: self.password,
+                passwordConfirmation: self.passwordConfirmation
+            )
+
+            self.password = ""
+            self.passwordConfirmation = ""
 
             authManager.signIn(user: user)
         } catch let error as APIError {

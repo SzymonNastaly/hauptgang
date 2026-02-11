@@ -34,6 +34,30 @@ final class AuthService: AuthServiceProtocol {
         return response.user
     }
 
+    // MARK: - Signup
+
+    func signup(email: String, password: String, passwordConfirmation: String) async throws -> User {
+        let deviceName = await getDeviceName()
+
+        let request = SignupRequest(
+            email: email,
+            password: password,
+            passwordConfirmation: passwordConfirmation,
+            deviceName: deviceName
+        )
+
+        let response: AuthResponse = try await api.request(
+            endpoint: "registration",
+            method: .post,
+            body: request
+        )
+
+        try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
+        try await self.keychain.saveUser(response.user)
+
+        return response.user
+    }
+
     // MARK: - Logout
 
     func logout() async {
@@ -83,5 +107,12 @@ final class AuthService: AuthServiceProtocol {
 private struct LoginRequest: Encodable {
     let email: String
     let password: String
+    let deviceName: String
+}
+
+private struct SignupRequest: Encodable {
+    let email: String
+    let password: String
+    let passwordConfirmation: String
     let deviceName: String
 }

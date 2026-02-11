@@ -12,6 +12,10 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
         try self.loginResult.get()
     }
 
+    func signup(email _: String, password _: String, passwordConfirmation _: String) async throws -> User {
+        try self.loginResult.get()
+    }
+
     func logout() async {
         self.logoutCalled = true
         self.currentUser = nil

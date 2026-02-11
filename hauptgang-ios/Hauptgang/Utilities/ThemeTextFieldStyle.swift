@@ -39,6 +39,22 @@ struct PrimaryButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - Puffy Button Style
+
+struct PuffyButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .brightness(configuration.isPressed ? -0.08 : 0)
+            .shadow(
+                color: Color.hauptgangPrimary.opacity(configuration.isPressed ? 0.15 : 0.4),
+                radius: configuration.isPressed ? 1 : 4,
+                y: configuration.isPressed ? 1 : 3
+            )
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
 // MARK: - View Extension
 
 extension View {
@@ -48,5 +64,9 @@ extension View {
 
     func primaryButton() -> some View {
         self.buttonStyle(PrimaryButtonStyle())
+    }
+
+    func puffyButton() -> some View {
+        self.buttonStyle(PuffyButtonStyle())
     }
 }

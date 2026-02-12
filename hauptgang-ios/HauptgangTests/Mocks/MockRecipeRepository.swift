@@ -16,11 +16,12 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
         self.configuredCalled = true
     }
 
-    func saveRecipes(_ recipes: [RecipeListItem]) throws {
+    func saveRecipes(_ recipes: [RecipeListItem]) throws -> [Int] {
         if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }
         self.savedRecipes = recipes
+        return []
     }
 
     func getAllRecipes() throws -> [PersistedRecipe] {
@@ -28,6 +29,13 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
             throw MockRecipeError.networkError
         }
         return self.allRecipes
+    }
+
+    func getRecipes(ids: [Int]) throws -> [PersistedRecipe] {
+        if self.shouldThrowOnGet {
+            throw MockRecipeError.networkError
+        }
+        return self.allRecipes.filter { ids.contains($0.id) }
     }
 
     func clearAllRecipes() throws {
@@ -50,6 +58,13 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
             throw MockRecipeError.networkError
         }
         self.savedRecipeDetail = detail
+    }
+
+    func saveRecipeDetails(_ details: [RecipeDetail]) throws {
+        if self.shouldThrowOnSave {
+            throw MockRecipeError.networkError
+        }
+        self.savedRecipeDetail = details.last
     }
 
     func deleteRecipe(id: Int) throws {

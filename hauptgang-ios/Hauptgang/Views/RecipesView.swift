@@ -17,9 +17,12 @@ struct RecipesView: View {
     @State private var showingPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isScrolledDown = false
+    @State private var searchQuery = ""
+    @State private var isSearching = false
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: self.$navigationPath) {
             Group {
                 if self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading {
                     self.emptyStateView
@@ -53,11 +56,19 @@ struct RecipesView: View {
             .task {
                 logger.info("RecipesView appeared, configuring recipe view model")
                 self.recipeViewModel.configure(modelContext: self.modelContext)
+                if let userId = self.authManager.authState.user?.id {
+                    await self.recipeViewModel.configureSearchIndex(userId: userId)
+                }
                 await self.recipeViewModel.refreshRecipes()
             }
             .onChange(of: self.authManager.authState) { _, newValue in
-                if case .unauthenticated = newValue {
+                switch newValue {
+                case .unauthenticated:
                     self.recipeViewModel.clearData()
+                case let .authenticated(user):
+                    Task { await self.recipeViewModel.configureSearchIndex(userId: user.id) }
+                case .unknown:
+                    break
                 }
             }
             .onChange(of: self.scenePhase) { oldPhase, newPhase in
@@ -87,6 +98,10 @@ struct RecipesView: View {
             }
             .onDisappear {
                 self.recipeViewModel.stopPolling()
+            }
+            .searchable(text: self.$searchQuery, isPresented: self.$isSearching, prompt: "Search recipes")
+            .onChange(of: self.searchQuery) { _, newValue in
+                Task { await self.recipeViewModel.search(query: newValue) }
             }
             .overlay {
                 if self.recipeViewModel.isImporting {
@@ -139,8 +154,16 @@ struct RecipesView: View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
                 LazyVStack(spacing: Theme.Spacing.md) {
-                    ForEach(self.recipeViewModel.successfulRecipes) { recipe in
-                        NavigationLink(value: recipe.id) {
+                    let displayedRecipes = self.searchQuery.isEmpty
+                        ? self.recipeViewModel.successfulRecipes
+                        : self.recipeViewModel.searchResults
+                    ForEach(displayedRecipes) { recipe in
+                        Button {
+                            if self.searchQuery.isEmpty {
+                                self.isSearching = false
+                            }
+                            self.navigationPath.append(recipe.id)
+                        } label: {
                             RecipeCardView(recipe: recipe)
                         }
                         .buttonStyle(.plain)

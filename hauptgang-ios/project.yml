@@ -10,6 +10,9 @@ packages:
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios-spm.git
     from: 5.0.0
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: 6.29.0
 
 settings:
   SWIFT_VERSION: "5.9"
@@ -48,6 +51,8 @@ targets:
         product: RevenueCat
       - package: RevenueCat
         product: RevenueCatUI
+      - package: GRDB
+        product: GRDB
 
   ImportRecipeExtension:
     type: app-extension

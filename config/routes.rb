@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       resources :recipes, only: [ :index, :show, :destroy ] do
         resource :favorite, only: [ :update, :destroy ]
         collection do
+          get :batch
           post :import
           post :extract_from_text
           post :extract_from_image

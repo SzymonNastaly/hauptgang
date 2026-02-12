@@ -86,6 +86,45 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_not_includes recipe_names, "Chicken Curry"
   end
 
+  test "batch returns recipe details with cursor paging" do
+    recipe1 = recipes(:one)
+    recipe2 = recipes(:three)
+
+    recipe1.update!(updated_at: 2.days.ago)
+    recipe2.update!(updated_at: 1.day.ago)
+
+    get batch_api_v1_recipes_url, params: { limit: 1 }, headers: @auth_headers, as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal 1, json["recipes"].length
+    assert json["next_cursor"].present?
+    assert_equal recipe1.id, json["recipes"].first["id"]
+
+    get batch_api_v1_recipes_url,
+      params: { limit: 1, cursor: json["next_cursor"] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json2 = response.parsed_body
+    assert_equal [ recipe2.id ], json2["recipes"].map { |r| r["id"] }
+  end
+
+  test "batch returns 422 for invalid cursor" do
+    get batch_api_v1_recipes_url, params: { cursor: "invalid" }, headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Invalid cursor", json["error"]
+  end
+
+  test "batch requires authentication" do
+    get batch_api_v1_recipes_url, as: :json
+
+    assert_response :unauthorized
+  end
+
   test "show returns recipe details" do
     recipe = recipes(:one)
 

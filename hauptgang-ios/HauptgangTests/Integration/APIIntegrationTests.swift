@@ -199,6 +199,47 @@ final class APIIntegrationTests: XCTestCase {
         }
     }
 
+    func testSearchIndex_afterLogin_indexesAndFindsRecipe() async throws {
+        let user = try await AuthService.shared.login(
+            email: self.testEmail,
+            password: self.testPassword
+        )
+
+        let searchIndex = RecipeSearchIndex.shared
+        await searchIndex.configure(userId: user.id)
+        await searchIndex.reset()
+        await searchIndex.configure(userId: user.id)
+        defer { Task { await searchIndex.reset() } }
+
+        guard await searchIndex.isAvailable() else {
+            throw XCTSkip("FTS5 not available on this device")
+        }
+
+        let list = try await RecipeService.shared.fetchRecipes()
+        guard let listItem = list.first else {
+            throw XCTSkip("No recipes returned from API - cannot test search")
+        }
+
+        let recipe = try await RecipeService.shared.fetchRecipeDetail(id: listItem.id)
+
+        guard let token = self.searchToken(from: recipe.name) else {
+            throw XCTSkip("Recipe name not searchable: \(recipe.name)")
+        }
+
+        let detailInput = SearchIndexDetailInput(
+            id: recipe.id,
+            name: recipe.name,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            updatedAt: recipe.updatedAt
+        )
+
+        await searchIndex.rebuildIndex(with: [detailInput])
+
+        let results = await searchIndex.search("\(token)*", limit: 10)
+        XCTAssertTrue(results.contains(recipe.id), "Search should return the indexed recipe")
+    }
+
     // MARK: - Full Flow Tests
 
     func testFullAuthFlow_loginFetchLogout() async throws {
@@ -240,6 +281,13 @@ final class APIIntegrationTests: XCTestCase {
         let schema = Schema([PersistedRecipe.self])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])
+    }
+
+    private func searchToken(from name: String) -> String? {
+        let components = name
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+        return components.first?.lowercased()
     }
 }
 

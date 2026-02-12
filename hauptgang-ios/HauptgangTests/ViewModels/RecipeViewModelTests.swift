@@ -7,14 +7,17 @@ final class RecipeViewModelTests: XCTestCase {
     private var sut: RecipeViewModel!
     private var mockRecipeService: MockRecipeService!
     private var mockRepository: MockRecipeRepository!
+    private var mockSearchIndex: MockRecipeSearchIndex!
 
     override func setUp() {
         super.setUp()
         self.mockRecipeService = MockRecipeService()
         self.mockRepository = MockRecipeRepository()
+        self.mockSearchIndex = MockRecipeSearchIndex()
         self.sut = RecipeViewModel(
             recipeService: self.mockRecipeService,
-            repository: self.mockRepository
+            repository: self.mockRepository,
+            searchIndex: self.mockSearchIndex
         )
     }
 
@@ -23,6 +26,7 @@ final class RecipeViewModelTests: XCTestCase {
         self.sut = nil
         self.mockRecipeService = nil
         self.mockRepository = nil
+        self.mockSearchIndex = nil
         super.tearDown()
     }
 
@@ -245,6 +249,108 @@ final class RecipeViewModelTests: XCTestCase {
 
         XCTAssertEqual(self.sut.successfulRecipes.count, 1)
         XCTAssertEqual(self.sut.successfulRecipes.first?.id, 2)
+    }
+
+    // MARK: - Search Fallback Tests
+
+    func testSearch_fallsBackToSimpleSearch_whenIndexUnavailable() async {
+        // Make search index unavailable to force simpleSearch fallback
+        await self.mockSearchIndex.setAvailable(false)
+
+        // Set up recipes with ingredients & instructions for fuzzy matching
+        let recipe = PersistedRecipe(
+            id: 1, name: "Spaghetti Carbonara", updatedAt: Date()
+        )
+        recipe.ingredients = ["spaghetti", "eggs", "pancetta", "parmesan"]
+        recipe.instructions = ["Boil pasta", "Fry pancetta", "Mix eggs and cheese"]
+        self.mockRepository.allRecipes = [recipe]
+        self.loadCachedRecipesIntoViewModel()
+
+        await self.sut.search(query: "spaghetti")
+
+        // Wait briefly for detached task to complete
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(self.sut.searchResults.count, 1)
+        XCTAssertEqual(self.sut.searchResults.first?.id, 1)
+    }
+
+    func testSearch_fallbackReturnsEmpty_whenNoMatch() async {
+        await self.mockSearchIndex.setAvailable(false)
+
+        let recipe = PersistedRecipe(id: 1, name: "Pizza", updatedAt: Date())
+        recipe.ingredients = ["dough", "tomato", "mozzarella"]
+        self.mockRepository.allRecipes = [recipe]
+        self.loadCachedRecipesIntoViewModel()
+
+        await self.sut.search(query: "xyznonexistent")
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertTrue(self.sut.searchResults.isEmpty)
+    }
+
+    func testSearch_emptyQuery_clearsResults() async {
+        let recipe = PersistedRecipe(id: 1, name: "Test", updatedAt: Date())
+        self.mockRepository.allRecipes = [recipe]
+        self.loadCachedRecipesIntoViewModel()
+
+        await self.sut.search(query: "")
+
+        XCTAssertTrue(self.sut.searchResults.isEmpty)
+    }
+
+    func testSearch_whitespaceOnlyQuery_clearsResults() async {
+        await self.sut.search(query: "   ")
+
+        XCTAssertTrue(self.sut.searchResults.isEmpty)
+    }
+
+    func testSearch_fallbackRanksNameMatchHigherThanIngredient() async {
+        await self.mockSearchIndex.setAvailable(false)
+
+        let nameMatch = PersistedRecipe(id: 1, name: "Chicken Soup", updatedAt: Date())
+        nameMatch.ingredients = ["chicken", "broth"]
+        nameMatch.instructions = ["Cook it"]
+
+        let ingredientMatch = PersistedRecipe(id: 2, name: "Vegetable Stew", updatedAt: Date())
+        ingredientMatch.ingredients = ["chicken", "vegetables"]
+        ingredientMatch.instructions = ["Stew it"]
+
+        self.mockRepository.allRecipes = [ingredientMatch, nameMatch]
+        self.loadCachedRecipesIntoViewModel()
+
+        await self.sut.search(query: "chicken")
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(self.sut.searchResults.count, 2)
+        // Name match (weight 5) should rank higher than ingredient match (weight 3)
+        XCTAssertEqual(self.sut.searchResults.first?.id, 1)
+    }
+
+    func testSearch_excludesFailedRecipes() async {
+        await self.mockSearchIndex.setAvailable(false)
+
+        let goodRecipe = PersistedRecipe(id: 1, name: "Good Pasta", updatedAt: Date())
+        goodRecipe.ingredients = ["pasta"]
+        goodRecipe.instructions = ["Cook"]
+
+        let failedRecipe = PersistedRecipe(
+            id: 2, name: "Failed Pasta", importStatus: "failed", updatedAt: Date()
+        )
+        failedRecipe.ingredients = ["pasta"]
+        failedRecipe.instructions = ["Cook"]
+
+        self.mockRepository.allRecipes = [goodRecipe, failedRecipe]
+        self.loadCachedRecipesIntoViewModel()
+
+        await self.sut.search(query: "pasta")
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(self.sut.searchResults.count, 1)
+        XCTAssertEqual(self.sut.searchResults.first?.id, 1)
     }
 
     // MARK: - Helpers

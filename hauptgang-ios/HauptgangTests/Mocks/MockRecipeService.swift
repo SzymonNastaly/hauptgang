@@ -10,6 +10,12 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     )
     var fetchRecipeDetailCalled = false
     var fetchRecipeDetailCalledWithId: Int?
+    var fetchRecipeDetailsResult: Result<RecipeDetailBatchResponse, Error> = .success(
+        RecipeDetailBatchResponse(recipes: [], nextCursor: nil)
+    )
+    var fetchRecipeDetailsCalled = false
+    var fetchRecipeDetailsCalledWithCursor: String?
+    var fetchRecipeDetailsCalledWithLimit: Int?
 
     func fetchRecipes() async throws -> [RecipeListItem] {
         self.fetchRecipesCalled = true
@@ -21,6 +27,13 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
         self.fetchRecipeDetailCalled = true
         self.fetchRecipeDetailCalledWithId = id
         return try self.fetchRecipeDetailResult.get()
+    }
+
+    func fetchRecipeDetails(cursor: String?, limit: Int) async throws -> RecipeDetailBatchResponse {
+        self.fetchRecipeDetailsCalled = true
+        self.fetchRecipeDetailsCalledWithCursor = cursor
+        self.fetchRecipeDetailsCalledWithLimit = limit
+        return try self.fetchRecipeDetailsResult.get()
     }
 
     var deleteRecipeCalled = false

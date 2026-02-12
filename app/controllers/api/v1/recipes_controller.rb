@@ -1,3 +1,6 @@
+require "base64"
+require "time"
+
 module Api
   module V1
     class RecipesController < BaseController
@@ -17,6 +20,28 @@ module Api
         track_failed_recipe_fetches(recipes)
 
         render json: recipes.map { |recipe| recipe_list_json(recipe) }
+      end
+
+      def batch
+        limit = normalize_limit(params[:limit])
+        recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
+        recipes = recipes.order(updated_at: :asc, id: :asc)
+
+        if params[:cursor].present?
+          cursor = decode_cursor(params[:cursor])
+          return render json: { error: "Invalid cursor" }, status: :unprocessable_entity if cursor.nil?
+
+          updated_at, id = cursor
+          recipes = recipes.where("updated_at > ? OR (updated_at = ? AND id > ?)", updated_at, updated_at, id)
+        end
+
+        batch = recipes.limit(limit)
+        next_cursor = batch.any? ? encode_cursor(batch.last.updated_at, batch.last.id) : nil
+
+        render json: {
+          recipes: batch.map { |recipe| recipe_detail_json(recipe) },
+          next_cursor: next_cursor
+        }
       end
 
       def show
@@ -146,6 +171,29 @@ module Api
           recipe.cover_image.variant(variant),
           only_path: true
         )
+      end
+
+      def normalize_limit(raw_limit)
+        limit = raw_limit.to_i
+        limit = 100 if limit <= 0
+        [ limit, 500 ].min
+      end
+
+      def encode_cursor(updated_at, id)
+        payload = "#{updated_at.iso8601(6)}|#{id}"
+        Base64.urlsafe_encode64(payload)
+      end
+
+      def decode_cursor(cursor)
+        decoded = Base64.urlsafe_decode64(cursor.to_s)
+        parts = decoded.split("|", 2)
+        return nil unless parts.length == 2
+
+        timestamp = Time.iso8601(parts[0])
+        id = Integer(parts[1])
+        [ timestamp, id ]
+      rescue ArgumentError
+        nil
       end
 
       def check_import_limit!

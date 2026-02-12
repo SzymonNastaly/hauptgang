@@ -5,6 +5,7 @@ struct ShoppingListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = ShoppingListViewModel()
     @State private var newItemText = ""
+    @FocusState private var isAddItemFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -18,6 +19,7 @@ struct ShoppingListView: View {
                     self.listView
                 }
             }
+            .onTapGesture { self.isAddItemFocused = false }
             .padding(.top, Theme.Spacing.sm)
             .background(Color.hauptgangBackground.ignoresSafeArea())
             .navigationTitle("Shopping List")
@@ -49,6 +51,7 @@ struct ShoppingListView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 TextField("Add item", text: self.$newItemText)
                     .themeTextField()
+                    .focused(self.$isAddItemFocused)
                     .onSubmit(self.addCustomItem)
 
                 Button {
@@ -120,6 +123,7 @@ struct ShoppingListView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.immediately)
         .refreshable {
             await self.viewModel.refresh()
         }
@@ -176,6 +180,7 @@ struct ShoppingListView: View {
 
         self.viewModel.addCustomItem(trimmed)
         self.newItemText = ""
+        self.isAddItemFocused = false
     }
 
     private func deleteItems(at indexSet: IndexSet, from items: [PersistedShoppingListItem]) {

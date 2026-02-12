@@ -1,0 +1,71 @@
+#!/bin/bash
+set -e
+
+APP_ID="6758990872"
+INTERNAL_GROUP_ID="3e35ad55-d1da-4057-b23f-665b8b6d4601"
+EXTERNAL_GROUP_ID="58ac69c8-20ae-414e-a8f7-2088f9b19c3d"
+EXTERNAL=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --external) EXTERNAL=true ;;
+    *) echo "Unknown option: $arg"; echo "Usage: bin/ios-release [--external]"; exit 1 ;;
+  esac
+done
+
+cd "$(dirname "$0")/../hauptgang-ios"
+
+# Get current build number and increment
+CURRENT=$(grep 'CURRENT_PROJECT_VERSION' project.yml | head -1 | grep -oE '[0-9]+')
+LATEST_REMOTE=$(asc builds latest --app "$APP_ID" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['attributes']['version'])" 2>/dev/null || echo "0")
+NEXT=$(( $(( CURRENT > LATEST_REMOTE ? CURRENT : LATEST_REMOTE )) + 1 ))
+
+echo "==> Bumping build number: $CURRENT → $NEXT"
+sed -i '' "s/CURRENT_PROJECT_VERSION: \"$CURRENT\"/CURRENT_PROJECT_VERSION: \"$NEXT\"/" project.yml
+
+echo "==> Regenerating Xcode project..."
+xcodegen generate
+
+echo "==> Archiving..."
+xcodebuild archive \
+  -project Hauptgang.xcodeproj \
+  -scheme Hauptgang \
+  -destination 'generic/platform=iOS' \
+  -archivePath build/Hauptgang.xcarchive \
+  -quiet
+
+echo "==> Exporting IPA..."
+xcodebuild -exportArchive \
+  -archivePath build/Hauptgang.xcarchive \
+  -exportOptionsPlist ExportOptions.plist \
+  -exportPath build/export \
+  -allowProvisioningUpdates \
+  -quiet
+
+if [ "$EXTERNAL" = true ]; then
+  echo "==> Uploading to TestFlight (external)..."
+  asc publish testflight \
+    --app "$APP_ID" \
+    --ipa build/export/Hauptgang.ipa \
+    --group "$EXTERNAL_GROUP_ID" \
+    --wait
+
+  echo "==> Submitting for Beta App Review..."
+  BUILD_ID=$(asc builds latest --app "$APP_ID" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['id'])")
+  asc testflight review submit --build "$BUILD_ID" --confirm
+
+  echo ""
+  echo "==> Done! Build $NEXT uploaded and submitted for external review."
+  echo "    Public link: https://testflight.apple.com/join/f92CXZEW"
+else
+  echo "==> Uploading to TestFlight (internal)..."
+  asc publish testflight \
+    --app "$APP_ID" \
+    --ipa build/export/Hauptgang.ipa \
+    --group "$INTERNAL_GROUP_ID" \
+    --wait
+
+  echo ""
+  echo "==> Done! Build $NEXT uploaded for internal testing."
+  echo "    Use --external to also distribute to external testers."
+fi

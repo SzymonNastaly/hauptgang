@@ -11,6 +11,8 @@ Native SwiftUI app for iOS 17+ that communicates with the Rails backend API. Use
 ```bash
 # From project root (hauptgang/):
 bin/ios-test         # Run all iOS tests (auto-finds simulator)
+bin/ios-release      # Build, export, upload to TestFlight (internal testers)
+bin/ios-release --external  # Same + distribute to external testers & submit for beta review
 
 # From hauptgang-ios directory:
 xcodegen generate    # Regenerate Xcode project after adding/removing files

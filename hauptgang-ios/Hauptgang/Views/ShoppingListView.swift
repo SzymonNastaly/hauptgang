@@ -19,7 +19,6 @@ struct ShoppingListView: View {
                     self.listView
                 }
             }
-            .onTapGesture { self.isAddItemFocused = false }
             .padding(.top, Theme.Spacing.sm)
             .background(Color.hauptgangBackground.ignoresSafeArea())
             .navigationTitle("Shopping List")

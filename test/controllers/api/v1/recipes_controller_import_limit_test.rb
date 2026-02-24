@@ -3,6 +3,7 @@ require "test_helper"
 class Api::V1::RecipesControllerImportLimitTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
+    @cookbook = cookbooks(:one_personal)
     _token_record, @raw_token = ApiToken.generate_for(@user)
     @auth_headers = { "Authorization" => "Bearer #{@raw_token}" }
   end
@@ -77,6 +78,6 @@ class Api::V1::RecipesControllerImportLimitTest < ActionDispatch::IntegrationTes
 
   def fill_import_limit(user)
     needed = User::FREE_MONTHLY_IMPORT_LIMIT - user.monthly_import_count
-    needed.times { |i| user.recipes.create!(name: "Limit Recipe #{i}", import_status: :completed) }
+    needed.times { |i| @cookbook.recipes.create!(name: "Limit Recipe #{i}", import_status: :completed, user: user) }
   end
 end

@@ -2,8 +2,9 @@ module ShoppingList
   class UpsertItems
     Result = Data.define(:success?, :items, :errors)
 
-    def initialize(user:, items:)
+    def initialize(user:, cookbook:, items:)
       @user = user
+      @cookbook = cookbook
       @items = items
     end
 
@@ -52,21 +53,24 @@ module ShoppingList
     private
 
     def upsert_item(client_id, name, source_recipe_id, checked_at)
-      item = @user.shopping_list_items.find_or_initialize_by(client_id: client_id)
+      item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
+      item.user = @user
       item.name = name
       item.source_recipe_id = source_recipe_id
       item.checked_at = checked_at.presence
       item.save
       item
     rescue ActiveRecord::RecordNotUnique
-      item = @user.shopping_list_items.find_by!(client_id: client_id)
+      item = @cookbook.shopping_list_items.find_by!(client_id: client_id)
+      item.user = @user
       item.name = name
       item.source_recipe_id = source_recipe_id
       item.checked_at = checked_at.presence
       item.save
       item
     rescue ActiveRecord::InvalidForeignKey
-      item = @user.shopping_list_items.find_or_initialize_by(client_id: client_id)
+      item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
+      item.user = @user
       item.name = name
       item.source_recipe_id = nil
       item.checked_at = checked_at.presence
@@ -76,7 +80,7 @@ module ShoppingList
 
     def resolve_source_recipe_id(source_recipe_id)
       return nil if source_recipe_id.blank?
-      return source_recipe_id if @user.recipes.exists?(id: source_recipe_id)
+      return source_recipe_id if @cookbook.recipes.exists?(id: source_recipe_id)
 
       nil
     end

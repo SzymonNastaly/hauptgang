@@ -3,7 +3,7 @@ class RecipesController < ApplicationController
 
   # GET /recipes or /recipes.json
   def index
-    @recipes = Current.user.recipes
+    @recipes = personal_cookbook.recipes
       .with_attached_cover_image
       .includes(:tags)
 
@@ -34,7 +34,7 @@ class RecipesController < ApplicationController
 
   # GET /recipes/new/form - Manual recipe creation form
   def new_form
-    @recipe = Current.user.recipes.build(imported_recipe_params)
+    @recipe = personal_cookbook.recipes.build(imported_recipe_params.merge(user: Current.user))
   end
 
   # GET /recipes/new/import - Import URL input
@@ -60,7 +60,7 @@ class RecipesController < ApplicationController
 
   # POST /recipes or /recipes.json
   def create
-    @recipe = Current.user.recipes.build(recipe_params)
+    @recipe = personal_cookbook.recipes.build(recipe_params.merge(user: Current.user))
 
     respond_to do |format|
       if @recipe.save
@@ -115,7 +115,11 @@ class RecipesController < ApplicationController
     # Use callbacks to share common setup or constraints between actions.
     # Scoped to current user - prevents accessing other users' recipes
     def set_recipe
-      @recipe = Current.user.recipes.find(params.expect(:id))
+      @recipe = personal_cookbook.recipes.find(params.expect(:id))
+    end
+
+    def personal_cookbook
+      @personal_cookbook ||= Current.user.personal_cookbook
     end
 
     # Params for imported recipe (from session storage)

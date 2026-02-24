@@ -7,6 +7,9 @@ final class PersistedRecipe {
     /// Unique identifier from the API - ensures no duplicates
     @Attribute(.unique) var id: Int
 
+    /// The cookbook this recipe belongs to
+    var cookbookId: Int
+
     var name: String
     var prepTime: Int?
     var cookTime: Int?
@@ -79,6 +82,7 @@ final class PersistedRecipe {
 
     init(
         id: Int,
+        cookbookId: Int = 0,
         name: String,
         prepTime: Int? = nil,
         cookTime: Int? = nil,
@@ -90,6 +94,7 @@ final class PersistedRecipe {
         lastFetchedAt: Date = Date()
     ) {
         self.id = id
+        self.cookbookId = cookbookId
         self.name = name
         self.prepTime = prepTime
         self.cookTime = cookTime

@@ -13,6 +13,13 @@ class RecipeTest < ActiveSupport::TestCase
     assert_equal users(:one), recipe.user
   end
 
+  test "belongs to a cookbook" do
+    recipe = recipes(:one)
+
+    assert_not_nil recipe.cookbook
+    assert_equal cookbooks(:one_personal), recipe.cookbook
+  end
+
   test "can access recipes through user" do
     user = users(:one)
 
@@ -28,6 +35,7 @@ class RecipeTest < ActiveSupport::TestCase
 
   test "requires a name" do
     recipe = Recipe.new(
+      cookbook: cookbooks(:one_personal),
       user: users(:one),
       name: nil  # Missing required field
     )
@@ -36,19 +44,31 @@ class RecipeTest < ActiveSupport::TestCase
     assert_includes recipe.errors[:name], "can't be blank"
   end
 
-  test "requires a user" do
+  test "user is optional" do
     recipe = Recipe.new(
       name: "Test Recipe",
-      user: nil  # Missing required association
+      cookbook: cookbooks(:one_personal),
+      user: nil
+    )
+
+    assert recipe.valid?
+  end
+
+  test "requires a cookbook" do
+    recipe = Recipe.new(
+      name: "Test Recipe",
+      user: users(:one),
+      cookbook: nil
     )
 
     assert_not recipe.valid?
-    assert_includes recipe.errors[:user], "must exist"
+    assert_includes recipe.errors[:cookbook], "must exist"
   end
 
   test "valid with minimal attributes" do
     recipe = Recipe.new(
       name: "Simple Recipe",
+      cookbook: cookbooks(:one_personal),
       user: users(:one)
     )
 
@@ -76,6 +96,7 @@ class RecipeTest < ActiveSupport::TestCase
   test "ensures ingredients is an array" do
     recipe = Recipe.new(
       name: "Test",
+      cookbook: cookbooks(:one_personal),
       user: users(:one),
       ingredients: nil
     )
@@ -88,6 +109,7 @@ class RecipeTest < ActiveSupport::TestCase
   test "ensures instructions is an array" do
     recipe = Recipe.new(
       name: "Test",
+      cookbook: cookbooks(:one_personal),
       user: users(:one),
       instructions: nil
     )
@@ -158,18 +180,20 @@ class RecipeTest < ActiveSupport::TestCase
   # DEPENDENT DESTROY TEST
   # ===================
 
-  test "recipes are deleted when user is deleted" do
+  test "recipes are nullified when user is deleted" do
     user = users(:one)
     recipe_ids = user.recipes.pluck(:id)
 
     assert_not_empty recipe_ids, "User should have recipes for this test"
 
-    # When we delete the user...
+    # When we delete the user, recipes are nullified (user_id set to nil), not deleted
+    # Recipes now belong to cookbooks; user is just "created_by"
     user.destroy
 
-    # ...their recipes should be gone too
+    # Recipes still exist but with null user_id
+    # Note: user.destroy triggers destroy_owned_cookbooks! which cascades to recipes
     recipe_ids.each do |id|
-      assert_nil Recipe.find_by(id: id), "Recipe #{id} should be deleted"
+      assert_nil Recipe.find_by(id: id), "Recipe #{id} should be deleted via cookbook cascade"
     end
   end
 end

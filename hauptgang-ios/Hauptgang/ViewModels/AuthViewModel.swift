@@ -11,8 +11,8 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isSignUp = false {
         didSet {
-            errorMessage = nil
-            passwordConfirmation = ""
+            self.errorMessage = nil
+            self.passwordConfirmation = ""
         }
     }
 

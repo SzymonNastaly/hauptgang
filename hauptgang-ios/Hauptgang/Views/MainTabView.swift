@@ -33,6 +33,7 @@ struct MainTabView: View {
     let authManager = AuthManager()
     return MainTabView()
         .environmentObject(authManager)
+        .environment(CookbookViewModel())
         .modelContainer(for: [PersistedRecipe.self, PersistedShoppingListItem.self], inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))

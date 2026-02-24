@@ -33,6 +33,19 @@ struct SettingsView: View {
                     }
                 }
 
+                // Cookbooks section
+                Section("Cookbooks") {
+                    NavigationLink {
+                        CookbookSettingsView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "book.closed.fill")
+                                .foregroundColor(.hauptgangPrimary)
+                            Text("Manage Cookbooks")
+                        }
+                    }
+                }
+
                 // Subscription section
                 Section("Subscription") {
                     if self.subscriptionManager.isPro {

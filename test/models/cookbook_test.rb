@@ -1,0 +1,87 @@
+require "test_helper"
+
+class CookbookTest < ActiveSupport::TestCase
+  test "requires a name" do
+    cookbook = Cookbook.new(name: nil)
+
+    assert_not cookbook.valid?
+    assert_includes cookbook.errors[:name], "can't be blank"
+  end
+
+  test "valid with name" do
+    cookbook = Cookbook.new(name: "Family Recipes")
+
+    assert cookbook.valid?
+  end
+
+  test "personal scope returns personal cookbooks" do
+    personal = Cookbook.personal
+
+    assert_includes personal, cookbooks(:one_personal)
+    assert personal.all?(&:personal?)
+  end
+
+  test "shared scope returns non-personal cookbooks" do
+    shared_cookbook = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared_cookbook, user: users(:one), role: :owner)
+
+    shared = Cookbook.shared
+
+    assert_includes shared, shared_cookbook
+    assert shared.none?(&:personal?)
+  end
+
+  test "owner returns the owner user" do
+    cookbook = cookbooks(:one_personal)
+
+    assert_equal users(:one), cookbook.owner
+  end
+
+  test "owner? returns true for owner" do
+    cookbook = cookbooks(:one_personal)
+
+    assert cookbook.owner?(users(:one))
+  end
+
+  test "owner? returns false for non-owner" do
+    cookbook = cookbooks(:one_personal)
+
+    assert_not cookbook.owner?(users(:two))
+  end
+
+  test "destroying cookbook cascades to recipes" do
+    cookbook = cookbooks(:one_personal)
+    recipe_ids = cookbook.recipes.pluck(:id)
+    assert_not_empty recipe_ids
+
+    cookbook.destroy!
+
+    recipe_ids.each do |id|
+      assert_nil Recipe.find_by(id: id)
+    end
+  end
+
+  test "destroying cookbook cascades to shopping list items" do
+    cookbook = cookbooks(:one_personal)
+    item_ids = cookbook.shopping_list_items.pluck(:id)
+    assert_not_empty item_ids
+
+    cookbook.destroy!
+
+    item_ids.each do |id|
+      assert_nil ShoppingListItem.find_by(id: id)
+    end
+  end
+
+  test "destroying cookbook cascades to memberships" do
+    cookbook = cookbooks(:one_personal)
+    membership_ids = cookbook.cookbook_memberships.pluck(:id)
+    assert_not_empty membership_ids
+
+    cookbook.destroy!
+
+    membership_ids.each do |id|
+      assert_nil CookbookMembership.find_by(id: id)
+    end
+  end
+end

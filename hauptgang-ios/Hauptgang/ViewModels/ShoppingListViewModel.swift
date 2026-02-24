@@ -8,6 +8,7 @@ final class ShoppingListViewModel {
     private(set) var items: [PersistedShoppingListItem] = []
     private(set) var isSyncing = false
     private(set) var isOffline = false
+    var didReceiveForbidden = false
     private var recentlyCheckedIds: Set<String> = []
 
     var uncheckedItems: [PersistedShoppingListItem] {
@@ -50,8 +51,15 @@ final class ShoppingListViewModel {
             self.loadCachedItems()
         } catch {
             self.logger.error("Failed to refresh shopping list: \(error.localizedDescription)")
-            if let apiError = error as? APIError, case .networkError = apiError {
-                self.isOffline = true
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .networkError:
+                    self.isOffline = true
+                case .forbidden:
+                    self.didReceiveForbidden = true
+                default:
+                    break
+                }
             }
         }
 
@@ -148,6 +156,14 @@ final class ShoppingListViewModel {
                 self.logger.error("Failed to delete item from server: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// Cancel in-flight work and clear data for a cookbook switch
+    func resetForCookbookSwitch() {
+        self.items = []
+        self.isSyncing = false
+        self.isOffline = false
+        self.recentlyCheckedIds = []
     }
 
     func clearData() {

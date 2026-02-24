@@ -12,7 +12,7 @@ module Api
       rescue_from ImportLimitReachedError, with: :render_import_limit_reached
 
       def index
-        recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
+        recipes = current_cookbook.recipes.with_attached_cover_image.includes(:tags)
         recipes = recipes.favorited if params[:favorites] == "true"
         recipes = recipes.order(updated_at: :desc)
 
@@ -24,7 +24,7 @@ module Api
 
       def batch
         limit = normalize_limit(params[:limit])
-        recipes = current_user.recipes.with_attached_cover_image.includes(:tags)
+        recipes = current_cookbook.recipes.with_attached_cover_image.includes(:tags)
         recipes = recipes.order(updated_at: :asc, id: :asc)
 
         if params[:cursor].present?
@@ -45,14 +45,14 @@ module Api
       end
 
       def show
-        recipe = current_user.recipes.with_attached_cover_image.includes(:tags).find(params[:id])
+        recipe = current_cookbook.recipes.with_attached_cover_image.includes(:tags).find(params[:id])
         render json: recipe_detail_json(recipe)
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Recipe not found" }, status: :not_found
       end
 
       def destroy
-        recipe = current_user.recipes.find(params[:id])
+        recipe = current_cookbook.recipes.find(params[:id])
         recipe.destroy!
         head :no_content
       rescue ActiveRecord::RecordNotFound
@@ -74,10 +74,11 @@ module Api
 
         recipe = current_user.with_lock do
           check_import_limit_locked!
-          current_user.recipes.create!(
+          current_cookbook.recipes.create!(
             name: "Importing...",
             source_url: url,
-            import_status: :pending
+            import_status: :pending,
+            user: current_user
           )
         end
 
@@ -97,9 +98,10 @@ module Api
 
         recipe = current_user.with_lock do
           check_import_limit_locked!
-          current_user.recipes.create!(
+          current_cookbook.recipes.create!(
             name: "Importing...",
-            import_status: :pending
+            import_status: :pending,
+            user: current_user
           )
         end
 
@@ -117,9 +119,10 @@ module Api
 
         recipe = current_user.with_lock do
           check_import_limit_locked!
-          current_user.recipes.create!(
+          current_cookbook.recipes.create!(
             name: "Importing...",
-            import_status: :pending
+            import_status: :pending,
+            user: current_user
           )
         end
 
@@ -228,16 +231,14 @@ module Api
       end
 
       def track_failed_recipe_fetches(recipes)
-        current_user.recipes
+        current_cookbook.recipes
           .where(id: recipes.select(:id))
           .where(import_status: :failed, failed_recipe_fetched_at: nil)
           .update_all(failed_recipe_fetched_at: Time.current)
       end
 
       def cleanup_old_failed_recipes
-        # TODO: Consider moving to a recurring background job if performance needs require it
-        # Delete failed recipes that were fetched more than 1 minute ago
-        current_user.recipes
+        current_cookbook.recipes
           .where(import_status: :failed)
           .where("failed_recipe_fetched_at < ?", 1.minute.ago)
           .destroy_all

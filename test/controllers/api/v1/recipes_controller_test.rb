@@ -4,6 +4,8 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @user = users(:one)
     @other_user = users(:two)
+    @cookbook = cookbooks(:one_personal)
+    @other_cookbook = cookbooks(:two_personal)
     _token_record, @raw_token = ApiToken.generate_for(@user)
     @auth_headers = { "Authorization" => "Bearer #{@raw_token}" }
   end
@@ -338,7 +340,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   # Failed recipe handling tests
 
   test "index tracks first fetch of failed recipes" do
-    recipe = @user.recipes.create!(
+    recipe = @cookbook.recipes.create!(user: @user,
       name: "Failed Import",
       import_status: :failed,
       error_message: "Import from example.com failed."
@@ -353,7 +355,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index deletes failed recipes after 1 minute" do
-    recipe = @user.recipes.create!(
+    recipe = @cookbook.recipes.create!(user: @user,
       name: "Failed Import",
       import_status: :failed,
       error_message: "Import from example.com failed.",
@@ -368,7 +370,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index does not delete recently fetched failed recipes" do
-    recipe = @user.recipes.create!(
+    recipe = @cookbook.recipes.create!(user: @user,
       name: "Failed Import",
       import_status: :failed,
       error_message: "Import from example.com failed.",
@@ -383,7 +385,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "index includes error_message in recipe list JSON" do
-    @user.recipes.create!(
+    @cookbook.recipes.create!(user: @user,
       name: "Failed Import",
       import_status: :failed,
       error_message: "Import from test.com failed."
@@ -403,7 +405,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   # MARK: - Destroy Tests
 
   test "destroy returns 204 on successful deletion" do
-    recipe = @user.recipes.create!(name: "To Delete")
+    recipe = @cookbook.recipes.create!(user: @user, name: "To Delete")
 
     delete api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
 
@@ -420,7 +422,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "destroy returns 404 when trying to delete another user's recipe" do
-    other_recipe = @other_user.recipes.create!(name: "Other User's Recipe")
+    other_recipe = @other_cookbook.recipes.create!(user: @other_user, name: "Other User's Recipe")
 
     delete api_v1_recipe_url(other_recipe), headers: @auth_headers, as: :json
 
@@ -429,11 +431,83 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "destroy requires authentication" do
-    recipe = @user.recipes.create!(name: "Protected Recipe")
+    recipe = @cookbook.recipes.create!(user: @user, name: "Protected Recipe")
 
     delete api_v1_recipe_url(recipe), as: :json
 
     assert_response :unauthorized
     assert Recipe.exists?(recipe.id)
+  end
+
+  # ===================
+  # SHARED COOKBOOK OPERATIONS
+  # ===================
+
+  test "import creates recipe in shared cookbook via X-Cookbook-Id" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+
+    assert_enqueued_with(job: RecipeImportJob) do
+      post import_api_v1_recipes_url,
+        params: { url: "https://example.com/shared-recipe" },
+        headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+        as: :json
+    end
+
+    assert_response :accepted
+    recipe = Recipe.find(response.parsed_body["id"])
+    assert_equal shared.id, recipe.cookbook_id
+  end
+
+  test "destroy recipe in shared cookbook via X-Cookbook-Id" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+    recipe = shared.recipes.create!(name: "Shared Recipe", user: @user)
+
+    delete api_v1_recipe_url(recipe),
+      headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+      as: :json
+
+    assert_response :no_content
+    assert_nil Recipe.find_by(id: recipe.id)
+  end
+
+  test "favorite recipe in shared cookbook via X-Cookbook-Id" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+    recipe = shared.recipes.create!(name: "Shared Recipe", user: @user, favorite: false)
+
+    put api_v1_recipe_favorite_url(recipe),
+      headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+      as: :json
+
+    assert_response :success
+    assert recipe.reload.favorite
+  end
+
+  test "cannot access shared cookbook recipe without X-Cookbook-Id header" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+    recipe = shared.recipes.create!(name: "Shared Only", user: @user)
+
+    # Without X-Cookbook-Id, defaults to personal cookbook — recipe not found there
+    delete api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+  end
+
+  test "collaborator can access shared cookbook recipes" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @other_user, role: :owner)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :collaborator)
+    shared.recipes.create!(name: "Owner Recipe", user: @other_user)
+
+    get api_v1_recipes_url,
+      headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+      as: :json
+
+    assert_response :success
+    assert_equal 1, response.parsed_body.length
+    assert_equal "Owner Recipe", response.parsed_body.first["name"]
   end
 end

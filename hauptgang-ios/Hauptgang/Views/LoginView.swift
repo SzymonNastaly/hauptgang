@@ -27,11 +27,11 @@ struct LoginView: View {
 
                     (Text("Cook something ")
                         .foregroundColor(.hauptgangTextPrimary)
-                    + Text("delicious")
+                        + Text("delicious")
                         .foregroundColor(.hauptgangPrimary)
                         .italic()
                         .underline()
-                    + Text(" today")
+                        + Text(" today")
                         .foregroundColor(.hauptgangTextPrimary))
                         .font(.system(.title2, design: .serif))
                 }
@@ -72,7 +72,9 @@ struct LoginView: View {
                                 }
                             }
 
-                        if self.viewModel.isSignUp && !self.viewModel.password.isEmpty && self.viewModel.password.count < 12 {
+                        if self.viewModel.isSignUp && !self.viewModel.password.isEmpty && self.viewModel.password
+                            .count < 12
+                        {
                             Text("Password must be at least 12 characters")
                                 .font(.caption)
                                 .foregroundColor(.hauptgangError)
@@ -164,14 +166,14 @@ struct LoginView: View {
                     if self.viewModel.isSignUp {
                         (Text("Already have an account? ")
                             .foregroundColor(.hauptgangTextSecondary)
-                        + Text("Sign In")
+                            + Text("Sign In")
                             .foregroundColor(.hauptgangPrimary)
                             .bold())
                             .font(.subheadline)
                     } else {
                         (Text("Don't have an account? ")
                             .foregroundColor(.hauptgangTextSecondary)
-                        + Text("Sign Up")
+                            + Text("Sign Up")
                             .foregroundColor(.hauptgangPrimary)
                             .bold())
                             .font(.subheadline)

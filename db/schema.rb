@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_21_231554) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -52,6 +52,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
     t.index ["user_id"], name: "index_api_tokens_on_user_id"
   end
 
+  create_table "cookbook_invitations", force: :cascade do |t|
+    t.integer "cookbook_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.integer "inviter_id", null: false
+    t.integer "status", default: 0, null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cookbook_id"], name: "index_cookbook_invitations_on_cookbook_id"
+    t.index ["inviter_id"], name: "index_cookbook_invitations_on_inviter_id"
+    t.index ["token"], name: "index_cookbook_invitations_on_token", unique: true
+  end
+
+  create_table "cookbook_memberships", force: :cascade do |t|
+    t.integer "cookbook_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "role", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["cookbook_id", "user_id"], name: "index_cookbook_memberships_on_cookbook_id_and_user_id", unique: true
+    t.index ["cookbook_id"], name: "index_cookbook_memberships_on_cookbook_id"
+    t.index ["user_id"], name: "index_cookbook_memberships_on_user_id"
+  end
+
+  create_table "cookbooks", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.boolean "personal", default: false, null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "recipe_tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "recipe_id", null: false
@@ -64,6 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
 
   create_table "recipes", force: :cascade do |t|
     t.integer "cook_time"
+    t.integer "cookbook_id", null: false
     t.datetime "created_at", null: false
     t.text "error_message"
     t.datetime "failed_recipe_fetched_at"
@@ -77,7 +109,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
     t.integer "servings"
     t.string "source_url"
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
+    t.integer "user_id"
+    t.index ["cookbook_id", "updated_at", "id"], name: "index_recipes_on_cookbook_id_and_updated_at_and_id"
+    t.index ["cookbook_id"], name: "index_recipes_on_cookbook_id"
     t.index ["user_id", "created_at"], name: "index_recipes_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_recipes_on_user_id"
   end
@@ -94,14 +128,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
   create_table "shopping_list_items", force: :cascade do |t|
     t.datetime "checked_at"
     t.string "client_id", null: false
+    t.integer "cookbook_id", null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.integer "source_recipe_id"
     t.datetime "updated_at", null: false
-    t.integer "user_id", null: false
+    t.integer "user_id"
+    t.index ["cookbook_id", "client_id"], name: "index_shopping_list_items_on_cookbook_id_and_client_id", unique: true
+    t.index ["cookbook_id"], name: "index_shopping_list_items_on_cookbook_id"
     t.index ["source_recipe_id"], name: "index_shopping_list_items_on_source_recipe_id"
     t.index ["user_id", "checked_at"], name: "index_shopping_list_items_on_user_id_and_checked_at"
-    t.index ["user_id", "client_id"], name: "index_shopping_list_items_on_user_id_and_client_id", unique: true
     t.index ["user_id"], name: "index_shopping_list_items_on_user_id"
   end
 
@@ -125,10 +161,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_09_234847) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "api_tokens", "users"
-  add_foreign_key "recipe_tags", "recipes"
+  add_foreign_key "cookbook_invitations", "cookbooks", on_delete: :cascade
+  add_foreign_key "cookbook_invitations", "users", column: "inviter_id", on_delete: :cascade
+  add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade
+  add_foreign_key "cookbook_memberships", "users", on_delete: :cascade
+  add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
-  add_foreign_key "recipes", "users"
+  add_foreign_key "recipes", "cookbooks", on_delete: :cascade
+  add_foreign_key "recipes", "users", on_delete: :nullify
   add_foreign_key "sessions", "users"
-  add_foreign_key "shopping_list_items", "recipes", column: "source_recipe_id"
-  add_foreign_key "shopping_list_items", "users"
+  add_foreign_key "shopping_list_items", "cookbooks", on_delete: :cascade
+  add_foreign_key "shopping_list_items", "recipes", column: "source_recipe_id", on_delete: :nullify
+  add_foreign_key "shopping_list_items", "users", on_delete: :nullify
 end

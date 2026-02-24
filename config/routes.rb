@@ -14,6 +14,17 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :cookbooks, only: [ :index, :create, :destroy ] do
+        post :leave, on: :member
+        resources :invitations, controller: "cookbook_invitations", only: [ :create ]
+      end
+      resources :invitations, controller: "cookbook_invitations", only: [ :show ], param: :token do
+        member do
+          post :accept
+          post :reject
+        end
+      end
+
       namespace :webhooks do
         post "revenuecat", to: "revenuecat#create"
       end
@@ -30,6 +41,8 @@ Rails.application.routes.draw do
       post "import", to: "recipes#import", as: :import
     end
   end
+  get "invite/:token", to: "invitations#show", as: :invite
+
   root to: redirect("/recipes")
   resource :session
   resources :passwords, param: :token

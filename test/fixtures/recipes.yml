@@ -4,6 +4,7 @@
 
 one:
   name: Pasta Carbonara
+  cookbook: one_personal
   user: one
   ingredients: ["spaghetti", "eggs", "parmesan", "pancetta"]
   instructions: ["Boil pasta", "Fry pancetta", "Mix eggs with cheese", "Combine all"]
@@ -14,6 +15,7 @@ one:
 
 two:
   name: Chicken Curry
+  cookbook: two_personal
   user: two
   ingredients: ["chicken", "curry paste", "coconut milk", "rice"]
   instructions: ["Cook chicken", "Add curry paste", "Pour coconut milk", "Simmer"]
@@ -25,6 +27,7 @@ two:
 # A second recipe for user one (useful for testing lists)
 three:
   name: Caesar Salad
+  cookbook: one_personal
   user: one
   ingredients: ["romaine lettuce", "croutons", "parmesan", "caesar dressing"]
   instructions: ["Chop lettuce", "Add croutons", "Drizzle dressing", "Top with parmesan"]

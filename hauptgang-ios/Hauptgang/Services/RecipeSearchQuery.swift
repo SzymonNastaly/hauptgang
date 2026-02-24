@@ -24,7 +24,7 @@ enum RecipeSearchQuery {
         "yoghurt": ["yogurt"],
         "ketchup": ["catsup"],
         "bicarbonate": ["baking soda"],
-        "soda": ["bicarbonate", "bicarb"]
+        "soda": ["bicarbonate", "bicarb"],
     ]
 
     static func normalizedTokens(from raw: String) -> [String] {
@@ -38,14 +38,14 @@ enum RecipeSearchQuery {
     }
 
     static func expandedTokenVariants(from raw: String) -> [[[String]]] {
-        let tokens = normalizedTokens(from: raw)
+        let tokens = self.normalizedTokens(from: raw)
         guard !tokens.isEmpty else { return [] }
 
         return tokens.map { token in
             var variants: [[String]] = [[token]]
 
             if let synonyms = synonymMap[token] {
-                let synonymTokens = synonyms.map { normalizedTokens(from: $0) }.filter { !$0.isEmpty }
+                let synonymTokens = synonyms.map { self.normalizedTokens(from: $0) }.filter { !$0.isEmpty }
                 variants.append(contentsOf: synonymTokens)
             }
 
@@ -54,7 +54,7 @@ enum RecipeSearchQuery {
     }
 
     static func buildFTSQuery(from raw: String) -> String? {
-        let groups = expandedTokenVariants(from: raw)
+        let groups = self.expandedTokenVariants(from: raw)
         guard !groups.isEmpty else { return nil }
 
         let clauses = groups.map { group in

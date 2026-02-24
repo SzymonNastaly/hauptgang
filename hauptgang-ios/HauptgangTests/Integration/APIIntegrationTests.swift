@@ -206,9 +206,9 @@ final class APIIntegrationTests: XCTestCase {
         )
 
         let searchIndex = RecipeSearchIndex.shared
-        await searchIndex.configure(userId: user.id)
+        await searchIndex.configure(userId: user.id, cookbookId: 0)
         await searchIndex.reset()
-        await searchIndex.configure(userId: user.id)
+        await searchIndex.configure(userId: user.id, cookbookId: 0)
         defer { Task { await searchIndex.reset() } }
 
         guard await searchIndex.isAvailable() else {

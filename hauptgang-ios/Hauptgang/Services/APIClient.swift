@@ -83,9 +83,12 @@ actor APIClient: APIClientProtocol {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        // Add auth header if needed
+        // Add auth header and cookbook scope if needed
         if authenticated, let token = await tokenProvider.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let cookbookId = await CookbookContext.shared.getActiveCookbookId() {
+                request.setValue(String(cookbookId), forHTTPHeaderField: "X-Cookbook-Id")
+            }
         }
 
         // Encode body if present
@@ -128,6 +131,9 @@ actor APIClient: APIClientProtocol {
 
         if authenticated, let token = await tokenProvider.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let cookbookId = await CookbookContext.shared.getActiveCookbookId() {
+                request.setValue(String(cookbookId), forHTTPHeaderField: "X-Cookbook-Id")
+            }
         }
 
         if let body {
@@ -167,6 +173,9 @@ actor APIClient: APIClientProtocol {
 
         if authenticated, let token = await tokenProvider.getToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            if let cookbookId = await CookbookContext.shared.getActiveCookbookId() {
+                request.setValue(String(cookbookId), forHTTPHeaderField: "X-Cookbook-Id")
+            }
         }
 
         var body = Data()
@@ -230,13 +239,12 @@ actor APIClient: APIClientProtocol {
             throw APIError.unsupportedMediaType
         case 422:
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let message: String?
-            if let error = json?["error"] as? String {
-                message = error
+            let message: String? = if let error = json?["error"] as? String {
+                error
             } else if let errors = json?["errors"] as? [String] {
-                message = errors.joined(separator: ". ")
+                errors.joined(separator: ". ")
             } else {
-                message = nil
+                nil
             }
             throw APIError.unprocessableEntity(message)
         case 500 ... 599:

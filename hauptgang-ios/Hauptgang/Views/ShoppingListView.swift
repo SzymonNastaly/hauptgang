@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ShoppingListView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = ShoppingListViewModel()
     @State private var newItemText = ""
@@ -21,8 +22,22 @@ struct ShoppingListView: View {
             }
             .padding(.top, Theme.Spacing.sm)
             .background(Color.hauptgangBackground.ignoresSafeArea())
-            .navigationTitle("Shopping List")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleMenu {
+                ForEach(self.cookbookViewModel.cookbooks) { cookbook in
+                    Button {
+                        Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
+                    } label: {
+                        let isActive = cookbook.id == self.cookbookViewModel.activeCookbook?.id
+                        Label(
+                            cookbook.name,
+                            systemImage: isActive ? "checkmark" : (cookbook.personal ? "person.fill" : "person.2.fill")
+                        )
+                    }
+                    .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
+                }
+            }
             .toolbar {
                 if self.viewModel.isSyncing {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -39,6 +54,18 @@ struct ShoppingListView: View {
             .onChange(of: self.authManager.authState) { _, newValue in
                 if case .unauthenticated = newValue {
                     self.viewModel.clearData()
+                }
+            }
+            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
+                self.viewModel.resetForCookbookSwitch()
+                Task { await self.viewModel.refresh() }
+            }
+            .onChange(of: self.viewModel.didReceiveForbidden) { _, forbidden in
+                guard forbidden else { return }
+                self.viewModel.didReceiveForbidden = false
+                Task {
+                    await self.cookbookViewModel.handleForbidden()
+                    await self.viewModel.refresh()
                 }
             }
         }
@@ -194,6 +221,7 @@ struct ShoppingListView: View {
     let authManager = AuthManager()
     return ShoppingListView()
         .environmentObject(authManager)
+        .environment(CookbookViewModel())
         .modelContainer(for: PersistedShoppingListItem.self, inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))

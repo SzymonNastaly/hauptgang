@@ -172,25 +172,52 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipes.count, 0)
     }
 
-    // MARK: - refreshRecipes Concurrency Guard Tests
+    // MARK: - refreshRecipes Cancellation Tests
 
-    func testRefreshRecipes_skipsWhenAlreadyLoading() async {
-        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
+    func testRefreshRecipes_cancelsPreviousRefresh() async {
+        // First refresh will be slow (simulates a hanging network request)
+        self.mockRecipeService.fetchRecipesDelay = 500_000_000 // 500ms
+        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
 
-        // Start first refresh (will be in progress)
+        // Start first (slow, failing) refresh
         let task1 = Task { await self.sut.refreshRecipes() }
 
-        // Give first task time to set isLoading
-        try? await Task.sleep(nanoseconds: 10_000_000)
+        // Give first task time to start
+        try? await Task.sleep(nanoseconds: 50_000_000)
 
-        // Try second refresh while first is loading
-        let initialIsLoading = self.sut.isLoading
+        // Second refresh: fast and successful — should cancel the first
+        self.mockRecipeService.fetchRecipesDelay = 0
+        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
+        let persistedRecipe = self.createMockPersistedRecipe(id: 1, name: "Test Recipe")
+        self.mockRepository.allRecipes = [persistedRecipe]
+
         await self.sut.refreshRecipes()
 
+        // Wait for the cancelled first task to finish
         await task1.value
 
-        // Service should only be called once if guard works
-        XCTAssertTrue(initialIsLoading || self.mockRecipeService.fetchRecipesCalled)
+        // The second refresh won — data is loaded and offline is false
+        XCTAssertFalse(self.sut.isOffline, "Cancelled refresh should not leave isOffline = true")
+        XCTAssertFalse(self.sut.isLoading)
+        XCTAssertEqual(self.sut.recipes.count, 1)
+    }
+
+    func testRefreshRecipes_cancelledRefresh_doesNotSetOffline() async {
+        // Slow refresh that would fail with a network error
+        self.mockRecipeService.fetchRecipesDelay = 500_000_000
+        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.timedOut)))
+
+        let task1 = Task { await self.sut.refreshRecipes() }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        // Cancel via a second refresh that succeeds instantly
+        self.mockRecipeService.fetchRecipesDelay = 0
+        self.mockRecipeService.fetchRecipesResult = .success([])
+
+        await self.sut.refreshRecipes()
+        await task1.value
+
+        XCTAssertFalse(self.sut.isOffline, "A cancelled network error should not set isOffline")
     }
 
     // MARK: - dismissFailedRecipe Tests

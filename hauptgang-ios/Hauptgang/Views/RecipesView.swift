@@ -8,6 +8,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesVi
 
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @State private var recipeViewModel = RecipeViewModel()
@@ -23,58 +24,42 @@ struct RecipesView: View {
 
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
-            Group {
-                if self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading {
-                    self.emptyStateView
-                } else {
-                    self.recipeListView
-                }
-            }
-            .background(Color.hauptgangBackground.ignoresSafeArea())
-            .navigationTitle("Your Recipes")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        self.showingImportOptions = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .confirmationDialog("Import Recipe", isPresented: self.$showingImportOptions) {
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    Button("Take Photo") {
-                        self.showingCamera = true
-                    }
-                }
-                Button("Choose from Library") {
-                    self.showingPhotoPicker = true
-                }
-            }
-            .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)
+            self.recipeContent
+        }
+        .offlineToast(isOffline: self.recipeViewModel.isOffline, showToast: !self.isScrolledDown)
+    }
+
+    private var recipeContent: some View {
+        self.recipeLayout
             .task {
                 logger.info("RecipesView appeared, configuring recipe view model")
                 self.recipeViewModel.configure(modelContext: self.modelContext)
                 if let userId = self.authManager.authState.user?.id {
-                    await self.recipeViewModel.configureSearchIndex(userId: userId)
+                    let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
+                    await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
                 }
                 await self.recipeViewModel.refreshRecipes()
             }
             .onChange(of: self.authManager.authState) { _, newValue in
-                switch newValue {
-                case .unauthenticated:
-                    self.recipeViewModel.clearData()
-                case let .authenticated(user):
-                    Task { await self.recipeViewModel.configureSearchIndex(userId: user.id) }
-                case .unknown:
-                    break
+                self.handleAuthChange(newValue)
+            }
+            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
+                self.handleCookbookSwitch()
+            }
+            .onChange(of: self.recipeViewModel.didReceiveForbidden) { _, forbidden in
+                guard forbidden else { return }
+                self.recipeViewModel.didReceiveForbidden = false
+                Task {
+                    await self.cookbookViewModel.handleForbidden()
+                    await self.recipeViewModel.refreshRecipes()
                 }
             }
             .onChange(of: self.scenePhase) { oldPhase, newPhase in
                 if oldPhase == .background && newPhase == .active {
-                    logger.info("App became active, refreshing recipes")
                     Task {
+                        // Refresh cookbooks first — if the initial load failed while offline,
+                        // this recovers the cookbook list and active selection.
+                        await self.cookbookViewModel.refresh()
                         await self.recipeViewModel.refreshRecipes()
                     }
                 }
@@ -90,9 +75,7 @@ struct RecipesView: View {
             }
             .fullScreenCover(isPresented: self.$showingCamera) {
                 CameraView { imageData in
-                    Task {
-                        await self.recipeViewModel.importRecipeFromImage(imageData)
-                    }
+                    Task { await self.recipeViewModel.importRecipeFromImage(imageData) }
                 }
                 .ignoresSafeArea()
             }
@@ -127,8 +110,77 @@ struct RecipesView: View {
             )) {
                 PaywallView()
             }
+    }
+
+    private var recipeLayout: some View {
+        Group {
+            if self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading {
+                self.emptyStateView
+            } else {
+                self.recipeListView
+            }
         }
-        .offlineToast(isOffline: self.recipeViewModel.isOffline, showToast: !self.isScrolledDown)
+        .background(Color.hauptgangBackground.ignoresSafeArea())
+        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Recipes")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleMenu {
+            ForEach(self.cookbookViewModel.cookbooks) { cookbook in
+                Button {
+                    Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
+                } label: {
+                    let isActive = cookbook.id == self.cookbookViewModel.activeCookbook?.id
+                    Label(
+                        cookbook.name,
+                        systemImage: isActive ? "checkmark" : (cookbook.personal ? "person.fill" : "person.2.fill")
+                    )
+                }
+                .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    self.showingImportOptions = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .confirmationDialog("Import Recipe", isPresented: self.$showingImportOptions) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("Take Photo") {
+                    self.showingCamera = true
+                }
+            }
+            Button("Choose from Library") {
+                self.showingPhotoPicker = true
+            }
+        }
+        .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)
+    }
+
+    // MARK: - Handlers
+
+    private func handleAuthChange(_ newValue: AuthManager.AuthState) {
+        switch newValue {
+        case .unauthenticated:
+            self.recipeViewModel.clearData()
+        case let .authenticated(user):
+            let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
+            Task { await self.recipeViewModel.configureSearchIndex(userId: user.id, cookbookId: cookbookId) }
+        case .unknown:
+            break
+        }
+    }
+
+    private func handleCookbookSwitch() {
+        guard let userId = self.authManager.authState.user?.id else { return }
+        let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
+        self.recipeViewModel.resetForCookbookSwitch()
+        Task {
+            await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
+            await self.recipeViewModel.refreshRecipes()
+        }
     }
 
     // MARK: - Subviews
@@ -179,6 +231,7 @@ struct RecipesView: View {
             self.isScrolledDown = isScrolled
         }
         .refreshable {
+            await self.cookbookViewModel.refresh()
             await self.recipeViewModel.refreshRecipes()
         }
         .navigationDestination(for: Int.self) { recipeId in
@@ -246,6 +299,7 @@ struct RecipesView: View {
     let authManager = AuthManager()
     return RecipesView()
         .environmentObject(authManager)
+        .environment(CookbookViewModel())
         .modelContainer(for: PersistedRecipe.self, inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))

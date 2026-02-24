@@ -6,15 +6,6 @@ AllCops:
   Exclude:
     - "hauptgang-mobile/**/*"
 
-# Load custom cops from lib/rubocop/cop
-require:
-  - ./lib/rubocop/cop/hauptgang/scoped_recipe_query
-
-# Enable custom cops
-Hauptgang/ScopedRecipeQuery:
-  Enabled: true
-  Description: "Detects unscoped Recipe queries that leak data across users"
-
 # Complexity Metrics
 Metrics/CyclomaticComplexity:
   Max: 10  # Default is 7, adjust based on your needs

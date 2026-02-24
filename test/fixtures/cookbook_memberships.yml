@@ -1,0 +1,9 @@
+one_owns_personal:
+  cookbook: one_personal
+  user: one
+  role: 0
+
+two_owns_personal:
+  cookbook: two_personal
+  user: two
+  role: 0

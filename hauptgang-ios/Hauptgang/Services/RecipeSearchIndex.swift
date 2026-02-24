@@ -1,10 +1,10 @@
 import Foundation
 import GRDB
-import SQLite3
 import os
+import SQLite3
 
 protocol RecipeSearchIndexProtocol: Sendable {
-    func configure(userId: Int) async
+    func configure(userId: Int, cookbookId: Int) async
     func isAvailable() async -> Bool
     func needsRebuild() async -> Bool
     func rebuildIndex(with recipes: [SearchIndexDetailInput]) async
@@ -24,10 +24,12 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
     private var available = false
     private var requiresRebuild = false
     private var currentUserId: Int?
+    private var currentCookbookId: Int?
 
-    func configure(userId: Int) async {
-        guard self.currentUserId != userId else { return }
+    func configure(userId: Int, cookbookId: Int) async {
+        guard self.currentUserId != userId || self.currentCookbookId != cookbookId else { return }
         self.currentUserId = userId
+        self.currentCookbookId = cookbookId
 
         guard self.isFTS5Available() else {
             self.logger.info("FTS5 not available; search index disabled")
@@ -38,7 +40,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         }
 
         do {
-            let dbPath = try self.databasePath(for: userId)
+            let dbPath = try self.databasePath(for: userId, cookbookId: cookbookId)
             self.dbQueue = try DatabaseQueue(path: dbPath)
 
             let needsRebuild = try await self.dbQueue?.write { db in
@@ -77,7 +79,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
             }
             self.requiresRebuild = false
         } catch {
-            if await self.recoverFromCorruptionIfNeeded(error: error, userId: self.currentUserId) {
+            if await self.recoverFromCorruptionIfNeeded(
+                error: error,
+                userId: self.currentUserId,
+                cookbookId: self.currentCookbookId
+            ) {
                 await self.rebuildIndex(with: recipes)
                 return
             }
@@ -93,7 +99,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
                 try Self.upsertNames(recipes, in: db)
             }
         } catch {
-            if await self.recoverFromCorruptionIfNeeded(error: error, userId: self.currentUserId) {
+            if await self.recoverFromCorruptionIfNeeded(
+                error: error,
+                userId: self.currentUserId,
+                cookbookId: self.currentCookbookId
+            ) {
                 await self.indexNames(recipes)
                 return
             }
@@ -109,7 +119,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
                 try Self.upsertDetails(details, in: db)
             }
         } catch {
-            if await self.recoverFromCorruptionIfNeeded(error: error, userId: self.currentUserId) {
+            if await self.recoverFromCorruptionIfNeeded(
+                error: error,
+                userId: self.currentUserId,
+                cookbookId: self.currentCookbookId
+            ) {
                 await self.indexDetails(details)
                 return
             }
@@ -123,11 +137,21 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         do {
             try await dbQueue.write { db in
                 let ids = ids
-                try db.execute(sql: "DELETE FROM recipes WHERE id IN (\(ids.map { _ in "?" }.joined(separator: ",")))", arguments: StatementArguments(ids))
-                try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid IN (\(ids.map { _ in "?" }.joined(separator: ",")))", arguments: StatementArguments(ids))
+                try db.execute(
+                    sql: "DELETE FROM recipes WHERE id IN (\(ids.map { _ in "?" }.joined(separator: ",")))",
+                    arguments: StatementArguments(ids)
+                )
+                try db.execute(
+                    sql: "DELETE FROM recipes_fts WHERE rowid IN (\(ids.map { _ in "?" }.joined(separator: ",")))",
+                    arguments: StatementArguments(ids)
+                )
             }
         } catch {
-            if await self.recoverFromCorruptionIfNeeded(error: error, userId: self.currentUserId) {
+            if await self.recoverFromCorruptionIfNeeded(
+                error: error,
+                userId: self.currentUserId,
+                cookbookId: self.currentCookbookId
+            ) {
                 await self.delete(ids: ids)
                 return
             }
@@ -157,7 +181,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
                 return rows.compactMap { $0["id"] as Int? }
             }
         } catch {
-            if await self.recoverFromCorruptionIfNeeded(error: error, userId: self.currentUserId) {
+            if await self.recoverFromCorruptionIfNeeded(
+                error: error,
+                userId: self.currentUserId,
+                cookbookId: self.currentCookbookId
+            ) {
                 return await self.search(query, limit: limit)
             }
             self.logger.error("Search query failed: \(error.localizedDescription)")
@@ -175,11 +203,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         sqlite3_compileoption_used("ENABLE_FTS5") == 1
     }
 
-    private func databasePath(for userId: Int) throws -> String {
-        try self.databaseURL(for: userId).path
+    private func databasePath(for userId: Int, cookbookId: Int) throws -> String {
+        try self.databaseURL(for: userId, cookbookId: cookbookId).path
     }
 
-    private func databaseURL(for userId: Int) throws -> URL {
+    private func databaseURL(for userId: Int, cookbookId: Int) throws -> URL {
         let baseURL = try FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -192,13 +220,13 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
 
-        return directory.appendingPathComponent("user-\(userId).sqlite")
+        return directory.appendingPathComponent("user-\(userId)-cookbook-\(cookbookId).sqlite")
     }
 
     private func resetDatabaseFile() async {
-        guard let userId = self.currentUserId else { return }
+        guard let userId = self.currentUserId, let cookbookId = self.currentCookbookId else { return }
         do {
-            let url = try self.databaseURL(for: userId)
+            let url = try self.databaseURL(for: userId, cookbookId: cookbookId)
             if FileManager.default.fileExists(atPath: url.path) {
                 try FileManager.default.removeItem(at: url)
             }
@@ -210,21 +238,22 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         self.available = false
         self.requiresRebuild = false
         self.currentUserId = nil
+        self.currentCookbookId = nil
     }
 
     private static func buildFTSQuery(from raw: String) -> String? {
         RecipeSearchQuery.buildFTSQuery(from: raw)
     }
 
-    private func recoverFromCorruptionIfNeeded(error: Error, userId: Int?) async -> Bool {
-        guard let userId else { return false }
+    private func recoverFromCorruptionIfNeeded(error: Error, userId: Int?, cookbookId: Int?) async -> Bool {
+        guard let userId, let cookbookId else { return false }
         guard let dbError = error as? DatabaseError else { return false }
         let isCorrupt = dbError.resultCode == .SQLITE_CORRUPT || dbError.resultCode == .SQLITE_NOTADB
         guard isCorrupt else { return false }
 
         self.logger.error("Search index corrupted; rebuilding: \(dbError.message ?? "unknown error")")
         await self.resetDatabaseFile()
-        await self.configure(userId: userId)
+        await self.configure(userId: userId, cookbookId: cookbookId)
         return self.available
     }
 
@@ -331,7 +360,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
                     recipe.name,
                     ingredients,
                     instructions,
-                    dateFormatter.string(from: recipe.updatedAt)
+                    dateFormatter.string(from: recipe.updatedAt),
                 ]
             )
 
@@ -371,7 +400,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
                     detail.name,
                     ingredients,
                     instructions,
-                    dateFormatter.string(from: detail.updatedAt)
+                    dateFormatter.string(from: detail.updatedAt),
                 ]
             )
 

@@ -4,8 +4,8 @@ module Api
       before_action :cleanup_stale_checked_items, only: [ :index ]
 
       def index
-        unchecked = current_user.shopping_list_items.unchecked.order(created_at: :desc)
-        checked = current_user.shopping_list_items.checked.order(checked_at: :asc)
+        unchecked = current_cookbook.shopping_list_items.unchecked.order(created_at: :desc)
+        checked = current_cookbook.shopping_list_items.checked.order(checked_at: :asc)
         items = unchecked + checked
 
         render json: items.map { |item| ShoppingListItemSerializer.new(item).as_json }
@@ -13,7 +13,7 @@ module Api
 
       def create
         payload_items = ShoppingList::Payload.normalize(params)
-        result = ShoppingList::UpsertItems.new(user: current_user, items: payload_items).call
+        result = ShoppingList::UpsertItems.new(user: current_user, cookbook: current_cookbook, items: payload_items).call
 
         unless result.success?
           first_error = result.errors.first
@@ -24,7 +24,7 @@ module Api
       end
 
       def update
-        item = current_user.shopping_list_items.find(params[:id])
+        item = current_cookbook.shopping_list_items.find(params[:id])
 
         if params.key?(:checked_at)
           if params[:checked_at].blank?
@@ -50,7 +50,7 @@ module Api
       end
 
       def destroy
-        item = current_user.shopping_list_items.find(params[:id])
+        item = current_cookbook.shopping_list_items.find(params[:id])
         item.destroy!
         head :no_content
       rescue ActiveRecord::RecordNotFound
@@ -62,7 +62,7 @@ module Api
       private
 
       def cleanup_stale_checked_items
-        ShoppingListItem.cleanup_stale_checked_for(current_user)
+        ShoppingListItem.cleanup_stale_checked_for(current_cookbook)
       end
     end
   end

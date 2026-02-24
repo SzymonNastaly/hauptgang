@@ -1,10 +1,12 @@
 unchecked_milk:
+  cookbook: one_personal
   user: one
   client_id: client-milk
   name: Milk
   checked_at: nil
 
 unchecked_bread:
+  cookbook: one_personal
   user: one
   client_id: client-bread
   name: Bread
@@ -12,18 +14,21 @@ unchecked_bread:
   checked_at: nil
 
 checked_eggs:
+  cookbook: one_personal
   user: one
   client_id: client-eggs
   name: Eggs
   checked_at: <%= 10.minutes.ago.iso8601 %>
 
 stale_checked_butter:
+  cookbook: one_personal
   user: one
   client_id: client-butter
   name: Butter
   checked_at: <%= 2.hours.ago.iso8601 %>
 
 other_user_item:
+  cookbook: two_personal
   user: two
   client_id: client-rice
   name: Rice

@@ -9,7 +9,11 @@ enum ShoppingListSyncState: String, Codable {
 
 @Model
 final class PersistedShoppingListItem {
-    @Attribute(.unique) var clientId: String
+    /// Composite unique key: "\(cookbookId)|\(clientId)" — allows the same clientId
+    /// to exist in different cookbooks (server uniqueness is per-cookbook).
+    @Attribute(.unique) var scopedClientId: String
+    var clientId: String
+    var cookbookId: Int
     var serverId: Int?
     var name: String
     var checkedAt: Date?
@@ -34,6 +38,7 @@ final class PersistedShoppingListItem {
 
     init(
         clientId: String,
+        cookbookId: Int = 0,
         name: String,
         checkedAt: Date? = nil,
         sourceRecipeId: Int? = nil,
@@ -42,7 +47,9 @@ final class PersistedShoppingListItem {
         serverId: Int? = nil,
         syncState: ShoppingListSyncState = .pendingCreate
     ) {
+        self.scopedClientId = "\(cookbookId)|\(clientId)"
         self.clientId = clientId
+        self.cookbookId = cookbookId
         self.name = name
         self.checkedAt = checkedAt
         self.sourceRecipeId = sourceRecipeId
@@ -52,9 +59,10 @@ final class PersistedShoppingListItem {
         self.syncStateRaw = syncState.rawValue
     }
 
-    convenience init(from response: ShoppingListItemResponse) {
+    convenience init(from response: ShoppingListItemResponse, cookbookId: Int = 0) {
         self.init(
             clientId: response.clientId,
+            cookbookId: cookbookId,
             name: response.name,
             checkedAt: response.checkedAt,
             sourceRecipeId: response.sourceRecipeId,

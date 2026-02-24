@@ -20,7 +20,7 @@ module Api
       private
 
       def set_recipe
-        @recipe = current_user.recipes.find(params[:recipe_id])
+        @recipe = current_cookbook.recipes.find(params[:recipe_id])
       rescue ActiveRecord::RecordNotFound
         render json: { error: "Recipe not found" }, status: :not_found
       end

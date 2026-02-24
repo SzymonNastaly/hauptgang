@@ -12,6 +12,7 @@ final class RecipeViewModel {
     private(set) var searchResults: [PersistedRecipe] = []
     var importError: String?
     var shouldShowPaywall: Bool = false
+    var didReceiveForbidden = false
 
     /// Whether any recipes are currently being imported
     var hasPendingImports: Bool {
@@ -37,7 +38,9 @@ final class RecipeViewModel {
     private var pollingTask: Task<Void, Never>?
     private var detailSyncTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
+    private var refreshTask: Task<Void, Never>?
     private var currentUserId: Int?
+    private var currentCookbookId: Int?
 
     /// Polling configuration
     private let pollingInterval: UInt64 = 3_000_000_000 // 3 seconds in nanoseconds
@@ -71,11 +74,11 @@ final class RecipeViewModel {
         self.loadCachedRecipes()
     }
 
-    /// Configure search indexing for the current user
-    func configureSearchIndex(userId: Int) async {
-        guard self.currentUserId != userId else { return }
+    /// Configure search indexing for the current user and cookbook
+    func configureSearchIndex(userId: Int, cookbookId: Int = 0) async {
         self.currentUserId = userId
-        await self.searchIndex.configure(userId: userId)
+        self.currentCookbookId = cookbookId
+        await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
     }
 
     /// Load recipes from local cache
@@ -88,50 +91,75 @@ final class RecipeViewModel {
         }
     }
 
-    /// Fetch fresh recipes from API and update local cache
+    /// Fetch fresh recipes from API and update local cache.
+    ///
+    /// Cancels any in-flight refresh so the latest caller always wins. This avoids a race where
+    /// a slow/failing background refresh (e.g. from scenePhase) blocks a user-initiated
+    /// pull-to-refresh, leaving the offline toast stuck.
     func refreshRecipes() async {
-        guard !self.isLoading else {
-            self.logger.info("Refresh already in progress, skipping")
-            return
-        }
+        self.refreshTask?.cancel()
+        self.refreshTask = nil
 
         self.logger.info("Starting recipe refresh")
         self.isLoading = true
         self.isOffline = false
 
-        do {
-            let apiRecipes = try await recipeService.fetchRecipes()
-            let deletedIds = try self.repository.saveRecipes(apiRecipes)
-            self.loadCachedRecipes()
-            self.logger.info("Recipe refresh completed successfully")
+        let task = Task { @MainActor in
+            do {
+                let apiRecipes = try await self.recipeService.fetchRecipes()
+                try Task.checkCancellation()
+                let deletedIds = try self.repository.saveRecipes(apiRecipes)
+                self.loadCachedRecipes()
+                self.logger.info("Recipe refresh completed successfully")
 
-            let visibleRecipes = self.successfulRecipes
-            if await self.searchIndex.needsRebuild() {
-                let detailInputs = self.detailInputs(from: visibleRecipes)
-                await self.searchIndex.rebuildIndex(with: detailInputs)
-            } else {
-                let nameInputs = self.nameInputs(from: visibleRecipes)
-                await self.searchIndex.indexNames(nameInputs)
-                if !deletedIds.isEmpty {
-                    await self.searchIndex.delete(ids: deletedIds)
+                let visibleRecipes = self.successfulRecipes
+                if await self.searchIndex.needsRebuild() {
+                    let detailInputs = self.detailInputs(from: visibleRecipes)
+                    await self.searchIndex.rebuildIndex(with: detailInputs)
+                } else {
+                    let nameInputs = self.nameInputs(from: visibleRecipes)
+                    await self.searchIndex.indexNames(nameInputs)
+                    if !deletedIds.isEmpty {
+                        await self.searchIndex.delete(ids: deletedIds)
+                    }
                 }
-            }
 
-            self.startDetailSyncIfNeeded()
+                self.startDetailSyncIfNeeded()
 
-            // Start polling if there are pending imports
-            if self.hasPendingImports {
-                self.startPolling()
+                // Start polling if there are pending imports
+                if self.hasPendingImports {
+                    self.startPolling()
+                }
+            } catch is CancellationError {
+                self.logger.info("Recipe refresh cancelled by newer request")
+            } catch {
+                guard !Task.isCancelled else {
+                    self.logger.info("Recipe refresh cancelled by newer request")
+                    return
+                }
+                self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
+                if let apiError = error as? APIError {
+                    switch apiError {
+                    case .networkError:
+                        self.isOffline = true
+                    case .forbidden:
+                        self.didReceiveForbidden = true
+                    default:
+                        break
+                    }
+                }
+                // Keep showing cached data on error
             }
-        } catch {
-            self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
-            if let apiError = error as? APIError, case .networkError = apiError {
-                self.isOffline = true
-            }
-            // Keep showing cached data on error
         }
 
-        self.isLoading = false
+        self.refreshTask = task
+        await task.value
+
+        // Only clear isLoading if this task wasn't superseded
+        if self.refreshTask == task {
+            self.isLoading = false
+            self.refreshTask = nil
+        }
     }
 
     /// Search locally indexed recipes with ranked results
@@ -156,8 +184,13 @@ final class RecipeViewModel {
 
         // Snapshot recipe data for background scoring (PersistedRecipe is not Sendable)
         let snapshots = self.successfulRecipes.map {
-            RecipeSnapshot(id: $0.id, name: $0.name, ingredients: $0.ingredients,
-                           instructions: $0.instructions, updatedAt: $0.updatedAt)
+            RecipeSnapshot(
+                id: $0.id,
+                name: $0.name,
+                ingredients: $0.ingredients,
+                instructions: $0.instructions,
+                updatedAt: $0.updatedAt
+            )
         }
         let query = trimmed
 
@@ -239,6 +272,22 @@ final class RecipeViewModel {
         }
     }
 
+    /// Cancel all in-flight tasks and clear data for a cookbook switch
+    func resetForCookbookSwitch() {
+        self.refreshTask?.cancel()
+        self.refreshTask = nil
+        self.pollingTask?.cancel()
+        self.pollingTask = nil
+        self.detailSyncTask?.cancel()
+        self.detailSyncTask = nil
+        self.searchTask?.cancel()
+        self.searchTask = nil
+        self.recipes = []
+        self.searchResults = []
+        self.isLoading = false
+        self.isOffline = false
+    }
+
     /// Stop polling for pending imports
     func stopPolling() {
         self.logger.info("Stopping polling")
@@ -257,6 +306,8 @@ final class RecipeViewModel {
             self.logger.error("Failed to clear recipe data: \(error.localizedDescription)")
         }
 
+        self.refreshTask?.cancel()
+        self.refreshTask = nil
         self.detailSyncTask?.cancel()
         self.detailSyncTask = nil
         self.clearDetailSyncCursor()
@@ -383,7 +434,8 @@ final class RecipeViewModel {
     }
 
     private func detailCursorKey(for userId: Int) -> String {
-        "recipe_detail_cursor.\(userId)"
+        let cookbookId = self.currentCookbookId ?? 0
+        return "recipe_detail_cursor.\(userId).\(cookbookId)"
     }
 
     private func clearDetailSyncCursor() {
@@ -415,24 +467,32 @@ final class RecipeViewModel {
     }
 
     /// Perform fuzzy search scoring on background thread using value-type snapshots
-    nonisolated private static func backgroundSearch(query: String, snapshots: [RecipeSnapshot]) -> [Int] {
+    private nonisolated static func backgroundSearch(query: String, snapshots: [RecipeSnapshot]) -> [Int] {
         let queryTokenGroups = RecipeSearchQuery.expandedTokenVariants(from: query)
         guard !queryTokenGroups.isEmpty else { return [] }
 
         let scored: [(Int, Int, Date)] = snapshots.compactMap { snapshot in
             guard !Task.isCancelled else { return nil }
 
-            let nameTokens = normalizedTokens(from: snapshot.name)
-            let ingredientTokens = normalizedTokens(from: snapshot.ingredients.joined(separator: " "))
-            let instructionTokens = normalizedTokens(from: snapshot.instructions.joined(separator: " "))
+            let nameTokens = self.normalizedTokens(from: snapshot.name)
+            let ingredientTokens = self.normalizedTokens(from: snapshot.ingredients.joined(separator: " "))
+            let instructionTokens = self.normalizedTokens(from: snapshot.instructions.joined(separator: " "))
 
             var totalScore = 0
             for variants in queryTokenGroups {
                 var bestScore = 0
                 for variant in variants {
-                    let nameScore = fuzzyVariantScore(tokens: variant, recipeTokens: nameTokens, weight: 5)
-                    let ingredientScore = fuzzyVariantScore(tokens: variant, recipeTokens: ingredientTokens, weight: 3)
-                    let instructionScore = fuzzyVariantScore(tokens: variant, recipeTokens: instructionTokens, weight: 1)
+                    let nameScore = self.fuzzyVariantScore(tokens: variant, recipeTokens: nameTokens, weight: 5)
+                    let ingredientScore = self.fuzzyVariantScore(
+                        tokens: variant,
+                        recipeTokens: ingredientTokens,
+                        weight: 3
+                    )
+                    let instructionScore = self.fuzzyVariantScore(
+                        tokens: variant,
+                        recipeTokens: instructionTokens,
+                        weight: 1
+                    )
                     bestScore = max(bestScore, nameScore, ingredientScore, instructionScore)
                 }
 
@@ -453,19 +513,19 @@ final class RecipeViewModel {
                 }
                 return lhs.1 > rhs.1
             }
-            .map { $0.0 }
+            .map(\.0)
     }
 
-    nonisolated private static func normalizedTokens(from string: String) -> [String] {
+    private nonisolated static func normalizedTokens(from string: String) -> [String] {
         RecipeSearchQuery.normalizedTokens(from: string)
     }
 
-    nonisolated private static func fuzzyVariantScore(tokens: [String], recipeTokens: [String], weight: Int) -> Int {
+    private nonisolated static func fuzzyVariantScore(tokens: [String], recipeTokens: [String], weight: Int) -> Int {
         guard !tokens.isEmpty else { return 0 }
         var total = 0
 
         for token in tokens {
-            let score = fuzzyMatchScore(queryToken: token, tokens: recipeTokens, weight: weight)
+            let score = self.fuzzyMatchScore(queryToken: token, tokens: recipeTokens, weight: weight)
             if score == 0 {
                 return 0
             }
@@ -475,9 +535,9 @@ final class RecipeViewModel {
         return total
     }
 
-    nonisolated private static func fuzzyMatchScore(queryToken: String, tokens: [String], weight: Int) -> Int {
+    private nonisolated static func fuzzyMatchScore(queryToken: String, tokens: [String], weight: Int) -> Int {
         guard !tokens.isEmpty else { return 0 }
-        let maxDist = maxEditDistance(for: queryToken)
+        let maxDist = self.maxEditDistance(for: queryToken)
 
         for token in tokens {
             if token.contains(queryToken) {
@@ -486,30 +546,30 @@ final class RecipeViewModel {
 
             if token.count >= queryToken.count {
                 let prefix = String(token.prefix(queryToken.count))
-                if levenshteinDistance(queryToken, prefix, maxDistance: maxDist) != nil {
+                if self.levenshteinDistance(queryToken, prefix, maxDistance: maxDist) != nil {
                     return weight
                 }
             }
 
-            if levenshteinDistance(queryToken, token, maxDistance: maxDist) != nil {
+            if self.levenshteinDistance(queryToken, token, maxDistance: maxDist) != nil {
                 return weight
             }
         }
         return 0
     }
 
-    nonisolated private static func maxEditDistance(for token: String) -> Int {
+    private nonisolated static func maxEditDistance(for token: String) -> Int {
         switch token.count {
-        case 0...4:
+        case 0 ... 4:
             0
-        case 5...7:
+        case 5 ... 7:
             1
         default:
             2
         }
     }
 
-    nonisolated private static func levenshteinDistance(_ lhs: String, _ rhs: String, maxDistance: Int) -> Int? {
+    private nonisolated static func levenshteinDistance(_ lhs: String, _ rhs: String, maxDistance: Int) -> Int? {
         if lhs == rhs { return 0 }
         if abs(lhs.count - rhs.count) > maxDistance { return nil }
 
@@ -518,14 +578,14 @@ final class RecipeViewModel {
         if lhsChars.isEmpty { return rhsChars.count <= maxDistance ? rhsChars.count : nil }
         if rhsChars.isEmpty { return lhsChars.count <= maxDistance ? lhsChars.count : nil }
 
-        var previous = Array(0...rhsChars.count)
+        var previous = Array(0 ... rhsChars.count)
         var current = Array(repeating: 0, count: rhsChars.count + 1)
 
-        for i in 1...lhsChars.count {
+        for i in 1 ... lhsChars.count {
             current[0] = i
             var rowMin = current[0]
 
-            for j in 1...rhsChars.count {
+            for j in 1 ... rhsChars.count {
                 let cost = lhsChars[i - 1] == rhsChars[j - 1] ? 0 : 1
                 current[j] = min(
                     previous[j] + 1,

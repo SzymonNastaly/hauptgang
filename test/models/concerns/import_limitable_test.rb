@@ -3,6 +3,7 @@ require "test_helper"
 class ImportLimitableTest < ActiveSupport::TestCase
   setup do
     @user = users(:one)
+    @cookbook = cookbooks(:one_personal)
   end
 
   test "monthly_import_count counts recipes created this month" do
@@ -11,9 +12,9 @@ class ImportLimitableTest < ActiveSupport::TestCase
   end
 
   test "monthly_import_count excludes failed imports" do
-    @user.recipes.create!(name: "Failed", import_status: :failed)
+    @cookbook.recipes.create!(name: "Failed", import_status: :failed, user: @user)
     count_before = @user.monthly_import_count
-    @user.recipes.create!(name: "Success", import_status: :completed)
+    @cookbook.recipes.create!(name: "Success", import_status: :completed, user: @user)
     assert_equal count_before + 1, @user.monthly_import_count
   end
 
@@ -44,7 +45,7 @@ class ImportLimitableTest < ActiveSupport::TestCase
 
   test "remaining_imports does not go below zero" do
     create_recipes_up_to_limit(@user)
-    @user.recipes.create!(name: "Extra", import_status: :completed)
+    @cookbook.recipes.create!(name: "Extra", import_status: :completed, user: @user)
     assert_equal 0, @user.remaining_imports
   end
 
@@ -52,6 +53,6 @@ class ImportLimitableTest < ActiveSupport::TestCase
 
   def create_recipes_up_to_limit(user)
     needed = User::FREE_MONTHLY_IMPORT_LIMIT - user.monthly_import_count
-    needed.times { |i| user.recipes.create!(name: "Recipe #{i}", import_status: :completed) }
+    needed.times { |i| @cookbook.recipes.create!(name: "Recipe #{i}", import_status: :completed, user: user) }
   end
 end

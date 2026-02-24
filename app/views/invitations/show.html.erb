@@ -1,0 +1,19 @@
+<div class="max-w-md mx-auto mt-16 p-6 text-center">
+  <h1 class="text-2xl font-bold mb-4">Cookbook Invitation</h1>
+
+  <% if @invitation && @invitation.pending? && !@invitation.time_expired? %>
+    <p class="mb-4">
+      <strong><%= @invitation.inviter.email_address %></strong> has invited you to join
+      the cookbook <strong>"<%= @invitation.cookbook.name %>"</strong>.
+    </p>
+    <p class="text-gray-600">
+      Open this link on your iPhone with the Hauptgang app installed to accept the invitation.
+    </p>
+  <% elsif @invitation&.time_expired? || @invitation&.expired? %>
+    <p class="text-gray-600">This invitation has expired.</p>
+  <% elsif @invitation&.accepted? %>
+    <p class="text-gray-600">This invitation has already been accepted.</p>
+  <% else %>
+    <p class="text-gray-600">This invitation is no longer valid.</p>
+  <% end %>
+</div>

@@ -5,6 +5,8 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     var fetchRecipesResult: Result<[RecipeListItem], Error> = .success([])
     var fetchRecipesCalled = false
     var fetchRecipesCallCount = 0
+    /// Optional delay before returning from fetchRecipes (simulates slow network)
+    var fetchRecipesDelay: UInt64 = 0
     var fetchRecipeDetailResult: Result<RecipeDetail, Error> = .success(
         RecipeDetail.mock()
     )
@@ -20,6 +22,9 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     func fetchRecipes() async throws -> [RecipeListItem] {
         self.fetchRecipesCalled = true
         self.fetchRecipesCallCount += 1
+        if self.fetchRecipesDelay > 0 {
+            try await Task.sleep(nanoseconds: self.fetchRecipesDelay)
+        }
         return try self.fetchRecipesResult.get()
     }
 

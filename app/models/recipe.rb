@@ -3,7 +3,8 @@ class Recipe < ApplicationRecord
   enum :import_status, { pending: 0, completed: 1, failed: 2 }
 
   # Associations
-  belongs_to :user
+  belongs_to :cookbook
+  belongs_to :user, optional: true
   has_many :recipe_tags, dependent: :destroy
   has_many :tags, through: :recipe_tags
   has_many :shopping_list_items, foreign_key: :source_recipe_id, dependent: :nullify

@@ -1,10 +1,13 @@
 require "test_helper"
 
 class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
-  test "returns error when items are empty" do
-    user = users(:one)
+  setup do
+    @user = users(:one)
+    @cookbook = cookbooks(:one_personal)
+  end
 
-    result = ShoppingList::UpsertItems.new(user: user, items: []).call
+  test "returns error when items are empty" do
+    result = ShoppingList::UpsertItems.new(user: @user, cookbook: @cookbook, items: []).call
 
     assert_not result.success?
     assert_equal [ { client_id: nil, error: "No items provided" } ], result.errors
@@ -12,11 +15,11 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "creates items with valid attributes" do
-    user = users(:one)
     recipe = recipes(:one)
 
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "client-1", name: "Milk", source_recipe_id: recipe.id } ]
     ).call
 
@@ -28,10 +31,9 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "returns error when client_id or name is missing" do
-    user = users(:one)
-
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "", name: "" } ]
     ).call
 
@@ -40,12 +42,12 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     assert_equal "client_id and name are required", result.errors.first[:error]
   end
 
-  test "returns error when source_recipe_id does not belong to user" do
-    user = users(:one)
+  test "returns error when source_recipe_id does not belong to cookbook" do
     other_recipe = recipes(:two)
 
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "client-2", name: "Bread", source_recipe_id: other_recipe.id } ]
     ).call
 
@@ -54,10 +56,9 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "creates item without source_recipe_id" do
-    user = users(:one)
-
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "no-recipe", name: "Butter" } ]
     ).call
 
@@ -66,11 +67,10 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "rolls back all items when any item is invalid" do
-    user = users(:one)
-
     assert_no_difference "ShoppingListItem.count" do
       result = ShoppingList::UpsertItems.new(
-        user: user,
+        user: @user,
+        cookbook: @cookbook,
         items: [
           { client_id: "valid-1", name: "Flour" },
           { client_id: "", name: "" },
@@ -85,9 +85,9 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "upserts by client_id and updates checked_at" do
-    user = users(:one)
     existing = ShoppingListItem.create!(
-      user: user,
+      cookbook: @cookbook,
+      user: @user,
       client_id: "client-3",
       name: "Old Name",
       checked_at: nil
@@ -95,7 +95,8 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
 
     checked_time = Time.current
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "client-3", name: "New Name", checked_at: checked_time } ]
     ).call
 
@@ -107,13 +108,13 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "retries on concurrent duplicate client_id" do
-    user = users(:one)
     existing = shopping_list_items(:unchecked_milk)
 
     raised = false
 
     service = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: existing.client_id, name: "Updated Milk" } ]
     )
 
@@ -137,8 +138,7 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "returns error when recipe is deleted between validation and save" do
-    user = users(:one)
-    recipe = user.recipes.create!(name: "Temp Recipe")
+    recipe = @cookbook.recipes.create!(name: "Temp Recipe", user: @user)
 
     original_save = ShoppingListItem.instance_method(:save)
     raised = false
@@ -152,7 +152,8 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     end
 
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "fk-race", name: "Ingredient", source_recipe_id: recipe.id } ]
     ).call
 
@@ -163,16 +164,17 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
   end
 
   test "unchecks item by upserting with blank checked_at" do
-    user = users(:one)
     existing = ShoppingListItem.create!(
-      user: user,
+      cookbook: @cookbook,
+      user: @user,
       client_id: "client-uncheck",
       name: "Checked Item",
       checked_at: Time.current
     )
 
     result = ShoppingList::UpsertItems.new(
-      user: user,
+      user: @user,
+      cookbook: @cookbook,
       items: [ { client_id: "client-uncheck", name: "Checked Item", checked_at: "" } ]
     ).call
 

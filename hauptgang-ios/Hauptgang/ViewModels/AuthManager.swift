@@ -62,6 +62,7 @@ final class AuthManager: ObservableObject {
 
     /// Sign out and clear credentials
     func signOut() async {
+        await CookbookContext.shared.reset()
         await self.authService.logout()
         self.authState = .unauthenticated
     }

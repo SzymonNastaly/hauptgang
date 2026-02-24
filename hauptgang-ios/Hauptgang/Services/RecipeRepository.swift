@@ -58,7 +58,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         let staleRecipes = try modelContext.fetch(staleDescriptor)
         let deletedIds = staleRecipes.map(\.id)
         for staleRecipe in staleRecipes {
-            logger.info("Removing stale recipe: \(staleRecipe.id)")
+            self.logger.info("Removing stale recipe: \(staleRecipe.id)")
             modelContext.delete(staleRecipe)
         }
 

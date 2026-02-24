@@ -310,4 +310,24 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
     assert ShoppingListItem.exists?(item.id)
   end
+
+  # ===================
+  # COOKBOOK SCOPING
+  # ===================
+
+  test "upsert items validates source_recipe_id against cookbook" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+
+    # Recipe in user's personal cookbook should not be linkable from shared cookbook
+    personal_recipe = recipes(:one)
+
+    post api_v1_shopping_list_items_url,
+      params: { item: { client_id: "cross-1", name: "Cross Item", source_recipe_id: personal_recipe.id } },
+      headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+      as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "Recipe not found", response.parsed_body["error"]
+  end
 end

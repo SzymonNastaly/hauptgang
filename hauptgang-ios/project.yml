@@ -71,6 +71,7 @@ targets:
       - path: Hauptgang/Models/ImportRecipeResponse.swift
       - path: Hauptgang/Services/RecipeImportService.swift
       - path: Hauptgang/Services/ImageCompressor.swift
+      - path: Hauptgang/Services/CookbookContext.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.share-extension
       INFOPLIST_FILE: ImportRecipeExtension/Info.plist

@@ -3,6 +3,7 @@ import Foundation
 
 actor MockRecipeSearchIndex: RecipeSearchIndexProtocol {
     private(set) var configuredUserId: Int?
+    private(set) var configuredCookbookId: Int?
     private(set) var available = true
     private(set) var rebuildNeeded = false
     private(set) var indexedNames: [SearchIndexNameInput] = []
@@ -14,8 +15,9 @@ actor MockRecipeSearchIndex: RecipeSearchIndexProtocol {
         self.available = value
     }
 
-    func configure(userId: Int) async {
+    func configure(userId: Int, cookbookId: Int) async {
         self.configuredUserId = userId
+        self.configuredCookbookId = cookbookId
     }
 
     func isAvailable() async -> Bool {
@@ -44,9 +46,8 @@ actor MockRecipeSearchIndex: RecipeSearchIndexProtocol {
         self.deletedIds.append(contentsOf: ids)
     }
 
-    func search(_ query: String, limit: Int) async -> [Int] {
-        let limited = Array(self.searchResultIds.prefix(limit))
-        return limited
+    func search(_: String, limit: Int) async -> [Int] {
+        Array(self.searchResultIds.prefix(limit))
     }
 
     func reset() async {

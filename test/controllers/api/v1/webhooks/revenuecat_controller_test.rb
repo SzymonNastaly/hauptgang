@@ -4,6 +4,12 @@ class Api::V1::Webhooks::RevenuecatControllerTest < ActionDispatch::IntegrationT
   setup do
     @user = users(:one)
     @webhook_url = api_v1_webhooks_revenuecat_url
+    # Override credentials-based secret with blank value so tests without explicit secret skip auth
+    ENV["REVENUECAT_WEBHOOK_SECRET"] = ""
+  end
+
+  teardown do
+    ENV.delete("REVENUECAT_WEBHOOK_SECRET")
   end
 
   test "sets user pro when entitlement is active" do

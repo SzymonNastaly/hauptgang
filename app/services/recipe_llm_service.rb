@@ -3,7 +3,7 @@ require "ruby_llm/schema"
 # Extracts recipe data from text using an LLM.
 # Supports extraction from webpage content or raw recipe text.
 class RecipeLlmService
-  Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
+  include Llm::RecipeExtraction
 
   MAX_TEXT_LENGTH = 15_000
   MODEL = "openai/gpt-oss-120b"
@@ -22,7 +22,13 @@ class RecipeLlmService
     return extraction_failed("No text content provided") if truncated_text.blank?
 
     response = call_llm(truncated_text)
-    build_result(response.content)
+    result = build_result(response.content)
+
+    if result.success? && @source_url.present?
+      Result.new(**result.to_h, recipe_attributes: result.recipe_attributes.merge(source_url: @source_url))
+    else
+      result
+    end
   rescue Faraday::TimeoutError, Faraday::ConnectionFailed => error
     error_result("LLM request timed out: #{error.message}", :llm_timeout)
   rescue RubyLLM::Error => error
@@ -80,38 +86,5 @@ class RecipeLlmService
       #{text}
       ---
     PROMPT
-  end
-
-  def build_result(content)
-    return extraction_failed("No recipe data returned") if content.blank?
-
-    name = content["name"].to_s.strip
-    return extraction_failed("Could not identify recipe name") if name.blank?
-
-    attributes = {
-      name: name,
-      ingredients: normalize_array(content["ingredients"]),
-      instructions: normalize_array(content["instructions"]),
-      prep_time: content["prep_time"],
-      cook_time: content["cook_time"],
-      servings: content["servings"],
-      notes: content["notes"].to_s.strip.presence
-    }
-    attributes[:source_url] = @source_url if @source_url.present?
-
-    Result.new(success?: true, recipe_attributes: attributes, error: nil, error_code: nil)
-  end
-
-  def normalize_array(arr)
-    return [] unless arr.is_a?(Array)
-    arr.map { |item| item.to_s.strip }.reject(&:blank?)
-  end
-
-  def extraction_failed(message)
-    error_result(message, :extraction_failed)
-  end
-
-  def error_result(message, code)
-    Result.new(success?: false, recipe_attributes: {}, error: message, error_code: code)
   end
 end

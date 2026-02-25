@@ -161,7 +161,7 @@ module Api
           instructions: recipe.instructions,
           notes: recipe.notes,
           source_url: recipe.source_url,
-          tags: recipe.tags.map { |t| { id: t.id, name: t.name } },
+          tags: recipe.tags.map { |tag| { id: tag.id, name: tag.name } },
           cover_image_url: cover_image_url(recipe, :display),
           created_at: recipe.created_at,
           updated_at: recipe.updated_at

@@ -9,7 +9,7 @@ class User < ApplicationRecord
   has_many :recipes, dependent: :nullify
   has_many :shopping_list_items, dependent: :nullify
 
-  normalizes :email_address, with: ->(e) { e.strip.downcase }
+  normalizes :email_address, with: ->(email) { email.strip.downcase }
 
   validates :email_address, presence: true, uniqueness: true
 

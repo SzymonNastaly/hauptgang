@@ -25,7 +25,7 @@ class RecipeImportJob < ApplicationJob
       )
       Rails.logger.error "[RecipeImportJob] Import failed for recipe #{recipe_id}: #{result.error}"
     end
-  rescue => e
+  rescue => error
     if recipe
       error_message = build_error_message(source_url, :unexpected_error)
       recipe.update(
@@ -33,7 +33,7 @@ class RecipeImportJob < ApplicationJob
         error_message: error_message
       )
     end
-    Rails.logger.error "[RecipeImportJob] Unexpected error for recipe #{recipe_id}: #{e.class} - #{e.message}"
+    Rails.logger.error "[RecipeImportJob] Unexpected error for recipe #{recipe_id}: #{error.class} - #{error.message}"
     raise
   end
 
@@ -64,15 +64,15 @@ class RecipeImportJob < ApplicationJob
       filename: filename,
       content_type: content_type
     )
-  rescue => e
-    Rails.logger.error "[RecipeImportJob] Cover image attach failed for recipe #{recipe.id}: #{e.class} - #{e.message}"
+  rescue => error
+    Rails.logger.error "[RecipeImportJob] Cover image attach failed for recipe #{recipe.id}: #{error.class} - #{error.message}"
   end
 
   def cover_image_client
-    Faraday.new do |f|
-      f.options.timeout = 10
-      f.options.open_timeout = 5
-      f.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
+    Faraday.new do |conn|
+      conn.options.timeout = 10
+      conn.options.open_timeout = 5
+      conn.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
     end
   end
 
@@ -84,7 +84,7 @@ class RecipeImportJob < ApplicationJob
     "cover-image"
   end
 
-  def build_error_message(url, error_code)
+  def build_error_message(url, _error_code = nil)
     domain = extract_domain(url)
     "Import from #{domain} failed."
   end

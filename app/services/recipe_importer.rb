@@ -73,18 +73,18 @@ class RecipeImporter
   rescue Faraday::ConnectionFailed
     Rails.logger.info "[RecipeImporter] Connection failed for #{sanitized_url}"
     { success: false, error: "Could not connect to the server", error_code: :connection_failed }
-  rescue Faraday::Error, URI::InvalidURIError, Addressable::URI::InvalidURIError => e
-    Rails.logger.info "[RecipeImporter] Fetch error for #{sanitized_url}: #{e.class}"
+  rescue Faraday::Error, URI::InvalidURIError, Addressable::URI::InvalidURIError => error
+    Rails.logger.info "[RecipeImporter] Fetch error for #{sanitized_url}: #{error.class}"
     { success: false, error: "Could not fetch the page", error_code: :fetch_failed }
   end
 
   def build_http_client
-    Faraday.new do |f|
-      f.options.timeout = 10
-      f.options.open_timeout = 5
-      f.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
-      f.headers["Accept"] = "text/html"
-      f.response :follow_redirects, limit: MAX_REDIRECTS
+    Faraday.new do |conn|
+      conn.options.timeout = 10
+      conn.options.open_timeout = 5
+      conn.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
+      conn.headers["Accept"] = "text/html"
+      conn.response :follow_redirects, limit: MAX_REDIRECTS
     end
   end
 
@@ -94,7 +94,7 @@ class RecipeImporter
   end
 
   def sanitized_url
-    URI.parse(@url).tap { |u| u.query = nil; u.fragment = nil }.to_s
+    URI.parse(@url).tap { |uri| uri.query = nil; uri.fragment = nil }.to_s
   rescue URI::InvalidURIError
     "[invalid URL]"
   end

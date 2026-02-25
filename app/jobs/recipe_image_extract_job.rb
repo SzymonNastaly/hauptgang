@@ -28,12 +28,12 @@ class RecipeImageExtractJob < ApplicationJob
       )
       Rails.logger.error "[RecipeImageExtractJob] Extraction failed for recipe #{recipe_id}: #{result.error}"
     end
-  rescue => e
+  rescue => error
     recipe&.update(
       import_status: :failed,
       error_message: "Import failed."
     )
-    Rails.logger.error "[RecipeImageExtractJob] Unexpected error for recipe #{recipe_id}: #{e.class} - #{e.message}"
+    Rails.logger.error "[RecipeImageExtractJob] Unexpected error for recipe #{recipe_id}: #{error.class} - #{error.message}"
     raise
   end
 end

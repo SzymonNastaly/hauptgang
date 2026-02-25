@@ -1,0 +1,9 @@
+---
+detectors:
+  IrresponsibleModule:
+    enabled: false
+  UncommunicativeModuleName:
+    accept:
+      - "V1"
+  MissingSafeMethod:
+    enabled: false

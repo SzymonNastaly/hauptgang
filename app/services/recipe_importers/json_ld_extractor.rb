@@ -81,7 +81,7 @@ module RecipeImporters
       return false unless type
 
       types = type.is_a?(Array) ? type : [ type ]
-      types.any? { |t| t == "Recipe" || t.to_s.match?(%r{\Ahttps?://schema\.org/Recipe\z}) }
+      types.any? { |type_val| type_val == "Recipe" || type_val.to_s.match?(%r{\Ahttps?://schema\.org/Recipe\z}) }
     end
 
     def extract_attributes(recipe)
@@ -104,7 +104,7 @@ module RecipeImporters
     def extract_ingredients(recipe)
       ingredients = recipe["recipeIngredient"] || recipe["ingredients"] || []
       ingredients = [ ingredients ] unless ingredients.is_a?(Array)
-      ingredients.map { |i| i.to_s.strip }.reject(&:blank?)
+      ingredients.map { |ingredient| ingredient.to_s.strip }.reject(&:blank?)
     end
 
     def extract_instructions(recipe)

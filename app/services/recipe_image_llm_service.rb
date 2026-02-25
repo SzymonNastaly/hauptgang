@@ -15,12 +15,12 @@ class RecipeImageLlmService
 
     response = call_llm
     build_result(response.content)
-  rescue Faraday::TimeoutError, Faraday::ConnectionFailed => e
-    error_result("LLM request timed out: #{e.message}", :llm_timeout)
-  rescue RubyLLM::Error => e
-    error_result("LLM API error: #{e.message}", :llm_error)
-  rescue StandardError => e
-    error_result("Extraction failed: #{e.message}", :extraction_failed)
+  rescue Faraday::TimeoutError, Faraday::ConnectionFailed => error
+    error_result("LLM request timed out: #{error.message}", :llm_timeout)
+  rescue RubyLLM::Error => error
+    error_result("LLM API error: #{error.message}", :llm_error)
+  rescue StandardError => error
+    error_result("Extraction failed: #{error.message}", :extraction_failed)
   end
 
   private

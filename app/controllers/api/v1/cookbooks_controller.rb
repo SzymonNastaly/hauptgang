@@ -89,11 +89,11 @@ module Api
           name: cookbook.name,
           personal: cookbook.personal,
           recipe_count: recipe_count || cookbook.recipes.count,
-          members: cookbook.cookbook_memberships.map do |m|
+          members: cookbook.cookbook_memberships.map do |membership|
             {
-              id: m.user.id,
-              email: m.user.email_address,
-              role: m.role
+              id: membership.user.id,
+              email: membership.user.email_address,
+              role: membership.role
             }
           end
         }

@@ -75,8 +75,8 @@ module RecipeImporters
       failure("Instagram import timed out", :apify_timeout)
     rescue Faraday::ConnectionFailed
       failure("Could not connect to Instagram importer", :apify_connection_failed)
-    rescue StandardError => e
-      Rails.logger.error "[InstagramReelExtractor] Unexpected error for #{sanitized_url}: #{e.class} - #{e.message}"
+    rescue StandardError => error
+      Rails.logger.error "[InstagramReelExtractor] Unexpected error for #{sanitized_url}: #{error.class} - #{error.message}"
       failure("Instagram import failed", :apify_failed)
     end
 
@@ -90,10 +90,10 @@ module RecipeImporters
     end
 
     def build_http_client
-      Faraday.new do |f|
-        f.options.timeout = 20
-        f.options.open_timeout = 5
-        f.headers["User-Agent"] = USER_AGENT
+      Faraday.new do |conn|
+        conn.options.timeout = 20
+        conn.options.open_timeout = 5
+        conn.headers["User-Agent"] = USER_AGENT
       end
     end
 
@@ -102,7 +102,7 @@ module RecipeImporters
     end
 
     def sanitized_url
-      URI.parse(@url).tap { |u| u.query = nil; u.fragment = nil }.to_s
+      URI.parse(@url).tap { |uri| uri.query = nil; uri.fragment = nil }.to_s
     rescue URI::InvalidURIError
       "[invalid URL]"
     end

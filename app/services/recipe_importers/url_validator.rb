@@ -41,12 +41,13 @@ module RecipeImporters
       return failure("Invalid URL format") unless uri
 
       return failure("Only http and https URLs are allowed") unless valid_scheme?(uri)
-      return failure("URL must have a valid host") if uri.host.blank?
+      host = uri.host
+      return failure("URL must have a valid host") if host.blank?
       return failure("URLs with username or password are not allowed") if has_userinfo?(uri)
       return failure("Port #{uri.port} is not allowed") unless valid_port?(uri)
-      return failure("This hostname is not allowed") if blocked_hostname?(uri.host)
+      return failure("This hostname is not allowed") if blocked_hostname?(host)
 
-      resolved_ip = resolve_host(uri.host)
+      resolved_ip = resolve_host(host)
       return failure("Could not resolve hostname") unless resolved_ip
       return failure("URLs pointing to private or internal addresses are not allowed") if private_ip?(resolved_ip)
 
@@ -70,9 +71,10 @@ module RecipeImporters
     end
 
     def valid_port?(uri)
-      return true if uri.port.nil?
+      port = uri.port
+      return true if port.nil?
 
-      ALLOWED_PORTS.include?(uri.port)
+      ALLOWED_PORTS.include?(port)
     end
 
     def blocked_hostname?(host)

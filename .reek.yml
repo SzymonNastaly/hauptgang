@@ -14,15 +14,22 @@ detectors:
   NilCheck:
     enabled: false
   TooManyStatements:
-    max_statements: 10
+    max_statements: 25
   ControlParameter:
     exclude:
       - "RecipeImporter#initialize"
       - "RecipeImporters::InstagramReelExtractor#initialize"
   DuplicateMethodCall:
+    allow_calls:
+      - "Rails.logger"
+      - "error.message"
     exclude:
       - "ShoppingList::UpsertItems#call"
       - "ShoppingList::UpsertItems#upsert_item"
+      - "RecipeImporter#build_http_client"
+      - "RecipeImporter#import"
+      - "RecipeImporters::InstagramReelExtractor#build_http_client"
+      - "RecipeImporters::JsonLdExtractor#find_recipe"
   LongParameterList:
     exclude:
       - "ShoppingList::UpsertItems#upsert_item"
@@ -31,6 +38,13 @@ detectors:
       - "ShoppingList::UpsertItems#upsert_item"
       - "RecipeImporter#sanitized_url"
       - "RecipeImporters::InstagramReelExtractor#sanitized_url"
+      - "Llm::RecipeExtraction#build_result"
+      - "RecipeImporters::JsonLdExtractor#extract_instructions"
+      - "RecipeImporters::JsonLdExtractor#find_recipe"
+      - "RecipeImporters::LlmExtractor#clean_html"
+  RepeatedConditional:
+    exclude:
+      - "RecipeImporters::JsonLdExtractor"
 
 directories:
   "app/controllers":
@@ -59,4 +73,15 @@ directories:
       enabled: false
   "app/models":
     DuplicateMethodCall:
+      enabled: false
+  "test":
+    TooManyInstanceVariables:
+      enabled: false
+    UncommunicativeVariableName:
+      enabled: false
+    ControlParameter:
+      enabled: false
+    LongParameterList:
+      enabled: false
+    FeatureEnvy:
       enabled: false

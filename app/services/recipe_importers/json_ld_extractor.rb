@@ -59,15 +59,17 @@ module RecipeImporters
 
       # Check mainEntity/mainEntityOfPage wrappers (e.g., WebPage wrapping Recipe)
       %w[mainEntity mainEntityOfPage].each do |key|
-        if data[key].is_a?(Hash)
-          recipe = find_recipe(data[key])
+        entity = data[key]
+        if entity.is_a?(Hash)
+          recipe = find_recipe(entity)
           return recipe if recipe
         end
       end
 
       # Check @graph for Recipe
-      if data["@graph"].is_a?(Array)
-        data["@graph"].each do |item|
+      graph = data["@graph"]
+      if graph.is_a?(Array)
+        graph.each do |item|
           recipe = find_recipe(item)
           return recipe if recipe
         end
@@ -123,9 +125,10 @@ module RecipeImporters
           instruction.strip
         when Hash
           # HowToStep or HowToSection
-          if instruction["@type"] == "HowToSection"
+          type = instruction["@type"]
+          if type == "HowToSection"
             extract_section_steps(instruction)
-          elsif instruction["@type"] == "ListItem"
+          elsif type == "ListItem"
             extract_list_item_text(instruction)
           else
             instruction["text"].to_s.strip
@@ -193,7 +196,8 @@ module RecipeImporters
       when String
         image.strip.presence
       when Array
-        image.first.is_a?(Hash) ? image.first["url"].to_s.strip.presence : image.first.to_s.strip.presence
+        first_image = image.first
+        first_image.is_a?(Hash) ? first_image["url"].to_s.strip.presence : first_image.to_s.strip.presence
       when Hash
         image["url"].to_s.strip.presence
       end

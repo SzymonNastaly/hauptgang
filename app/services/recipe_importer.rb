@@ -58,12 +58,15 @@ class RecipeImporter
       return { success: false, error: "The URL does not appear to be a web page", error_code: :invalid_content_type }
     end
 
-    if response.body.bytesize > MAX_RESPONSE_SIZE
-      Rails.logger.info "[RecipeImporter] Response too large for #{sanitized_url}: #{response.body.bytesize} bytes"
+    body = response.body
+    body_size = body.bytesize
+
+    if body_size > MAX_RESPONSE_SIZE
+      Rails.logger.info "[RecipeImporter] Response too large for #{sanitized_url}: #{body_size} bytes"
       return { success: false, error: "The page is too large to process", error_code: :response_too_large }
     end
 
-    { success: true, body: response.body }
+    { success: true, body: body }
   rescue Faraday::FollowRedirects::RedirectLimitReached
     Rails.logger.info "[RecipeImporter] Too many redirects for #{sanitized_url}"
     { success: false, error: "Too many redirects", error_code: :too_many_redirects }

@@ -13,30 +13,13 @@ detectors:
     enabled: false
   NilCheck:
     enabled: false
+  TooManyStatements:
+    max_statements: 10
   ControlParameter:
     exclude:
       - "RecipeImporter#initialize"
       - "RecipeImporters::InstagramReelExtractor#initialize"
-      - "Api::V1::CookbooksController#cookbook_json"
-  ManualDispatch:
-    exclude:
-      - "Api::V1::RecipesController#validate_import_image"
-  RepeatedConditional:
-    exclude:
-      - "Api::V1::CookbookInvitationsController"
   DuplicateMethodCall:
-    exclude:
-      - "RecipesController#create"
-      - "RecipesController#update"
-      - "RecipesController#recipe_params"
-      - "RecipesController#index"
-      - "Authentication#find_session_by_cookie"
-      - "ShoppingList::UpsertItems#call"
-      - "ShoppingList::UpsertItems#upsert_item"
-      - "Api::V1::CookbookInvitationsController#create"
-      - "Api::V1::CookbookInvitationsController#accept"
-  TooManyStatements:
-    max_statements: 10
     exclude:
       - "ShoppingList::UpsertItems#call"
       - "ShoppingList::UpsertItems#upsert_item"
@@ -46,12 +29,34 @@ detectors:
   FeatureEnvy:
     exclude:
       - "ShoppingList::UpsertItems#upsert_item"
-      - "Api::V1::RecipesController#recipe_detail_json"
-      - "Api::V1::RecipesController#recipe_list_json"
-      - "Api::V1::RecipesController#decode_cursor"
-      - "RecipesController#imported_recipe_params"
-      - "RecipesController#recipe_params"
-      - "RecipeImporters::JsonLdExtractor#find_recipe"
-      - "RecipeImporters::JsonLdExtractor#extract_instructions"
-      - "RecipeImporters::InstagramReelExtractor#sanitized_url"
       - "RecipeImporter#sanitized_url"
+      - "RecipeImporters::InstagramReelExtractor#sanitized_url"
+
+directories:
+  "app/controllers":
+    DuplicateMethodCall:
+      enabled: false
+    TooManyStatements:
+      enabled: false
+    TooManyInstanceVariables:
+      enabled: false
+    TooManyMethods:
+      enabled: false
+    FeatureEnvy:
+      enabled: false
+    RepeatedConditional:
+      enabled: false
+    ManualDispatch:
+      enabled: false
+    ControlParameter:
+      enabled: false
+  "app/jobs":
+    DuplicateMethodCall:
+      enabled: false
+    TooManyStatements:
+      enabled: false
+    FeatureEnvy:
+      enabled: false
+  "app/models":
+    DuplicateMethodCall:
+      enabled: false

@@ -82,72 +82,90 @@ struct CookbookSettingsView: View {
 
     private func cookbookSection(_ cookbook: Cookbook, isPersonal: Bool) -> some View {
         Section {
-            HStack {
-                Image(systemName: isPersonal ? "person.fill" : "person.2.fill")
-                    .foregroundStyle(Color.hauptgangPrimary)
-                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                    Text(cookbook.name)
-                        .font(.body)
-                        .foregroundStyle(Color.hauptgangTextPrimary)
-                    Text("\(cookbook.recipeCount) recipes")
-                        .font(.caption)
-                        .foregroundStyle(Color.hauptgangTextSecondary)
-                }
-            }
-
-            if !isPersonal {
-                // Members
-                ForEach(cookbook.members) { member in
-                    HStack {
-                        Image(systemName: member.role == "owner" ? "crown.fill" : "person.fill")
-                            .font(.caption)
-                            .foregroundStyle(member.role == "owner" ? Color.hauptgangAmber : .hauptgangTextMuted)
-                        Text(member.email)
-                            .font(.subheadline)
-                            .foregroundStyle(Color.hauptgangTextPrimary)
-                        Spacer()
-                        Text(member.role.capitalized)
-                            .font(.caption)
-                            .foregroundStyle(Color.hauptgangTextSecondary)
-                    }
-                }
-
-                // Invite button (owner only)
-                if self.cookbookViewModel.isSharedCookbookOwner {
-                    Button {
-                        Task { await self.generateInviteLink() }
-                    } label: {
-                        HStack {
-                            Image(systemName: "link.badge.plus")
-                            Text(self.isWorking ? "Generating..." : "Generate Invite Link")
-                        }
-                    }
-                    .disabled(self.isWorking)
-                }
-
-                // Leave / Delete
-                if self.cookbookViewModel.isSharedCookbookOwner {
-                    Button(role: .destructive) {
-                        self.showingDeleteConfirmation = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "trash")
-                            Text("Delete Cookbook")
-                        }
-                    }
-                } else {
-                    Button(role: .destructive) {
-                        self.showingLeaveConfirmation = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                            Text("Leave Cookbook")
-                        }
-                    }
-                }
-            }
+            self.cookbookRow(cookbook, isPersonal: isPersonal)
+            self.sharedCookbookSectionContent(cookbook, isPersonal: isPersonal)
         } header: {
             Text(isPersonal ? "Personal" : "Shared")
+        }
+    }
+
+    private func cookbookRow(_ cookbook: Cookbook, isPersonal: Bool) -> some View {
+        HStack {
+            Image(systemName: isPersonal ? "person.fill" : "person.2.fill")
+                .foregroundStyle(Color.hauptgangPrimary)
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                Text(cookbook.name)
+                    .font(.body)
+                    .foregroundStyle(Color.hauptgangTextPrimary)
+                Text("\(cookbook.recipeCount) recipes")
+                    .font(.caption)
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sharedCookbookSectionContent(_ cookbook: Cookbook, isPersonal: Bool) -> some View {
+        if !isPersonal {
+            ForEach(cookbook.members) { member in
+                self.memberRow(member)
+            }
+
+            if self.cookbookViewModel.isSharedCookbookOwner {
+                self.inviteButton
+                self.deleteCookbookButton
+            } else {
+                self.leaveCookbookButton
+            }
+        }
+    }
+
+    private func memberRow(_ member: CookbookMember) -> some View {
+        HStack {
+            Image(systemName: member.role == "owner" ? "crown.fill" : "person.fill")
+                .font(.caption)
+                .foregroundStyle(member.role == "owner" ? Color.hauptgangAmber : .hauptgangTextMuted)
+            Text(member.email)
+                .font(.subheadline)
+                .foregroundStyle(Color.hauptgangTextPrimary)
+            Spacer()
+            Text(member.role.capitalized)
+                .font(.caption)
+                .foregroundStyle(Color.hauptgangTextSecondary)
+        }
+    }
+
+    private var inviteButton: some View {
+        Button {
+            Task { await self.generateInviteLink() }
+        } label: {
+            HStack {
+                Image(systemName: "link.badge.plus")
+                Text(self.isWorking ? "Generating..." : "Generate Invite Link")
+            }
+        }
+        .disabled(self.isWorking)
+    }
+
+    private var deleteCookbookButton: some View {
+        Button(role: .destructive) {
+            self.showingDeleteConfirmation = true
+        } label: {
+            HStack {
+                Image(systemName: "trash")
+                Text("Delete Cookbook")
+            }
+        }
+    }
+
+    private var leaveCookbookButton: some View {
+        Button(role: .destructive) {
+            self.showingLeaveConfirmation = true
+        } label: {
+            HStack {
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                Text("Leave Cookbook")
+            }
         }
     }
 
@@ -195,43 +213,49 @@ private struct CreateCookbookSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("Cookbook Name", text: self.$name)
-                } header: {
-                    Text("Name")
-                }
-
-                Section {
-                    Toggle("Move all personal recipes", isOn: self.$moveRecipes)
-                } footer: {
-                    Text(
-                        "When enabled, your existing recipes and shopping list items will move to the shared cookbook."
-                    )
-                }
-
-                if let error = self.errorMessage {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(Color.hauptgangError)
-                            .font(.subheadline)
+            self.formContent
+                .navigationTitle("New Shared Cookbook")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { self.dismiss() }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Create") {
+                            Task { await self.create() }
+                        }
+                        .disabled(self.isCreateDisabled)
                     }
                 }
+        }
+    }
+
+    private var formContent: some View {
+        Form {
+            Section {
+                TextField("Cookbook Name", text: self.$name)
+            } header: {
+                Text("Name")
             }
-            .navigationTitle("New Shared Cookbook")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { self.dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        Task { await self.create() }
-                    }
-                    .disabled(self.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || self.isCreating)
+
+            Section {
+                Toggle("Move all personal recipes", isOn: self.$moveRecipes)
+            } footer: {
+                Text("When enabled, your existing recipes and shopping list items will move to the shared cookbook.")
+            }
+
+            if let error = self.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundStyle(Color.hauptgangError)
+                        .font(.subheadline)
                 }
             }
         }
+    }
+
+    private var isCreateDisabled: Bool {
+        self.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || self.isCreating
     }
 
     private func create() async {
@@ -262,42 +286,46 @@ private struct ShareLinkSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: Theme.Spacing.lg) {
-                Spacer()
-
-                Image(systemName: "link.circle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(Color.hauptgangPrimary)
-
-                Text("Invite Link Created")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.hauptgangTextPrimary)
-
-                Text("Share this link with someone to invite them to your cookbook.")
-                    .font(.subheadline)
-                    .foregroundStyle(Color.hauptgangTextSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, Theme.Spacing.xl)
-
-                ShareLink(item: self.url) {
-                    Label("Share Link", systemImage: "square.and.arrow.up")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Theme.Spacing.md)
+            self.content
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { self.dismiss() }
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.hauptgangPrimary)
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            Spacer()
+
+            Image(systemName: "link.circle.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(Color.hauptgangPrimary)
+
+            Text("Invite Link Created")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.hauptgangTextPrimary)
+
+            Text("Share this link with someone to invite them to your cookbook.")
+                .font(.subheadline)
+                .foregroundStyle(Color.hauptgangTextSecondary)
+                .multilineTextAlignment(.center)
                 .padding(.horizontal, Theme.Spacing.xl)
 
-                Spacer()
+            ShareLink(item: self.url) {
+                Label("Share Link", systemImage: "square.and.arrow.up")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.md)
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { self.dismiss() }
-                }
-            }
+            .buttonStyle(.borderedProminent)
+            .tint(.hauptgangPrimary)
+            .padding(.horizontal, Theme.Spacing.xl)
+
+            Spacer()
         }
     }
 }

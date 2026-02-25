@@ -24,7 +24,7 @@ enum RecipeSearchQuery {
         "yoghurt": ["yogurt"],
         "ketchup": ["catsup"],
         "bicarbonate": ["baking soda"],
-        "soda": ["bicarbonate", "bicarb"],
+        "soda": ["bicarbonate", "bicarb"]
     ]
 
     static func normalizedTokens(from raw: String) -> [String] {

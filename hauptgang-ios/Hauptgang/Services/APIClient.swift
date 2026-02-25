@@ -179,13 +179,15 @@ actor APIClient: APIClientProtocol {
         }
 
         var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body
-            .append("Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n"
-                .data(using: .utf8)!)
-        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(
+            Data(
+                "Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n".utf8
+            )
+        )
+        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
         body.append(fileData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8))
 
         do {
             let (data, response) = try await session.upload(for: request, from: body)
@@ -211,26 +213,15 @@ actor APIClient: APIClientProtocol {
     // MARK: - Private
 
     private func validateResponse(_ response: HTTPURLResponse, data: Data) throws {
+        let json = self.parseJSONObject(data)
+
         switch response.statusCode {
         case 200 ... 299:
             return
         case 401:
-            // Check if this is a login failure vs session expiry
-            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let error = json["error"] as? String,
-               error.lowercased().contains("invalid")
-            {
-                throw APIError.invalidCredentials
-            }
-            throw APIError.unauthorized
+            throw self.unauthorizedError(from: json)
         case 403:
-            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let errorCode = json["error_code"] as? String,
-               errorCode == "import_limit_reached"
-            {
-                throw APIError.importLimitReached
-            }
-            throw APIError.forbidden
+            throw self.forbiddenError(from: json)
         case 404:
             throw APIError.notFound
         case 413:
@@ -238,20 +229,42 @@ actor APIClient: APIClientProtocol {
         case 415:
             throw APIError.unsupportedMediaType
         case 422:
-            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let message: String? = if let error = json?["error"] as? String {
-                error
-            } else if let errors = json?["errors"] as? [String] {
-                errors.joined(separator: ". ")
-            } else {
-                nil
-            }
-            throw APIError.unprocessableEntity(message)
+            throw APIError.unprocessableEntity(self.unprocessableMessage(from: json))
         case 500 ... 599:
             throw APIError.serverError(statusCode: response.statusCode)
         default:
             throw APIError.unknown
         }
+    }
+
+    private func parseJSONObject(_ data: Data) -> [String: Any] {
+        (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    private func unauthorizedError(from json: [String: Any]) -> APIError {
+        guard let error = json["error"] as? String else {
+            return .unauthorized
+        }
+        return error.lowercased().contains("invalid") ? .invalidCredentials : .unauthorized
+    }
+
+    private func forbiddenError(from json: [String: Any]) -> APIError {
+        guard let errorCode = json["error_code"] as? String else {
+            return .forbidden
+        }
+        return errorCode == "import_limit_reached" ? .importLimitReached : .forbidden
+    }
+
+    private func unprocessableMessage(from json: [String: Any]) -> String? {
+        if let error = json["error"] as? String {
+            return error
+        }
+
+        if let errors = json["errors"] as? [String] {
+            return errors.joined(separator: ". ")
+        }
+
+        return nil
     }
 }
 

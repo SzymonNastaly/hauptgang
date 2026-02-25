@@ -21,8 +21,7 @@ actor KeychainService {
 
         // Check if token is expired
         if let expiryData = get(key: Constants.Keychain.tokenExpiryKey),
-           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData)
-        {
+           let expiresAt = try? JSONDecoder().decode(Date.self, from: expiryData) {
             if Date() >= expiresAt {
                 // Token expired, clean up
                 self.deleteToken()
@@ -67,7 +66,7 @@ actor KeychainService {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.service,
-            kSecAttrAccount as String: key,
+            kSecAttrAccount as String: key
         ]
         if let accessGroup = Constants.Keychain.accessGroup {
             query[kSecAttrAccessGroup as String] = accessGroup

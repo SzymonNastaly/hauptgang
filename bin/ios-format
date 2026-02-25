@@ -5,12 +5,22 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+lint_mode=false
+if [[ "${1:-}" == "--lint" ]]; then
+  lint_mode=true
+fi
+
 if ! command -v swiftformat &> /dev/null; then
   echo "Error: swiftformat not found. Install with: brew install swiftformat"
   exit 1
 fi
 
-echo "Formatting Swift code..."
-swiftformat hauptgang-ios/ --config hauptgang-ios/.swiftformat
-
-echo "✓ Swift formatting complete"
+if [[ "$lint_mode" == "true" ]]; then
+  echo "Checking Swift formatting..."
+  swiftformat hauptgang-ios/ --config hauptgang-ios/.swiftformat --lint
+  echo "✓ Swift formatting check complete"
+else
+  echo "Formatting Swift code..."
+  swiftformat hauptgang-ios/ --config hauptgang-ios/.swiftformat
+  echo "✓ Swift formatting complete"
+fi

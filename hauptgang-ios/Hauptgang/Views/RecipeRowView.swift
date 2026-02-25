@@ -45,7 +45,7 @@ struct RecipeRowView: View {
         .shadow(
             color: Theme.Shadow.sm.color,
             radius: Theme.Shadow.sm.radius,
-            y: Theme.Shadow.sm.y
+            y: Theme.Shadow.sm.offsetY
         )
     }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct ThemeTextFieldStyle: TextFieldStyle {
     var isError: Bool = false
 
+    // swiftlint:disable:next identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding(Theme.Spacing.md)

@@ -43,7 +43,7 @@ enum ImageCompressor {
             let options: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
             ]
             guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
                 return nil
@@ -52,7 +52,7 @@ enum ImageCompressor {
         } else {
             let transformOptions: [CFString: Any] = [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
-                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceCreateThumbnailWithTransform: true
             ]
             guard let fullImage = CGImageSourceCreateThumbnailAtIndex(source, 0, transformOptions as CFDictionary)
             else {
@@ -80,7 +80,7 @@ enum ImageCompressor {
         ) else { return nil }
 
         let options: [CFString: Any] = [
-            kCGImageDestinationLossyCompressionQuality: quality,
+            kCGImageDestinationLossyCompressionQuality: quality
         ]
         CGImageDestinationAddImage(destination, image, options as CFDictionary)
 

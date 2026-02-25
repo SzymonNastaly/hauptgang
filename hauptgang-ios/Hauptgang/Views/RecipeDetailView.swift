@@ -178,7 +178,7 @@ struct RecipeDetailView: View {
                     stops: [
                         .init(color: .black.opacity(0.5), location: 0),
                         .init(color: .black.opacity(0.25), location: 0.4),
-                        .init(color: .clear, location: 1.0),
+                        .init(color: .clear, location: 1.0)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -247,39 +247,51 @@ struct RecipeDetailView: View {
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
-                    HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                        Circle()
-                            .fill(Color.hauptgangPrimary)
-                            .frame(width: 6, height: 6)
-                            .padding(.top, 6)
-
-                        Text(ingredient)
-                            .font(.body)
-                            .foregroundColor(.hauptgangTextPrimary)
-                    }
+                    self.ingredientRow(ingredient)
                 }
             }
 
-            Button {
-                self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
-                self.showShoppingListConfirmation = true
-                Task {
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    self.showShoppingListConfirmation = false
-                }
-            } label: {
-                Label("Add to shopping list", systemImage: "cart.badge.plus")
-                    .font(.subheadline)
-            }
-            .buttonStyle(.bordered)
-            .tint(.hauptgangPrimary)
+            self.addIngredientsButton(ingredients)
+            self.shoppingListAddedBanner
+        }
+    }
 
-            if self.showShoppingListConfirmation {
-                Label("Added to shopping list", systemImage: "checkmark.circle.fill")
-                    .font(.caption)
-                    .foregroundColor(.hauptgangSuccess)
-                    .transition(.opacity)
+    private func ingredientRow(_ ingredient: String) -> some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Circle()
+                .fill(Color.hauptgangPrimary)
+                .frame(width: 6, height: 6)
+                .padding(.top, 6)
+
+            Text(ingredient)
+                .font(.body)
+                .foregroundColor(.hauptgangTextPrimary)
+        }
+    }
+
+    private func addIngredientsButton(_ ingredients: [String]) -> some View {
+        Button {
+            self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+            self.showShoppingListConfirmation = true
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                self.showShoppingListConfirmation = false
             }
+        } label: {
+            Label("Add to shopping list", systemImage: "cart.badge.plus")
+                .font(.subheadline)
+        }
+        .buttonStyle(.bordered)
+        .tint(.hauptgangPrimary)
+    }
+
+    @ViewBuilder
+    private var shoppingListAddedBanner: some View {
+        if self.showShoppingListConfirmation {
+            Label("Added to shopping list", systemImage: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundColor(.hauptgangSuccess)
+                .transition(.opacity)
         }
     }
 

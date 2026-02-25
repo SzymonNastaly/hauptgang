@@ -31,7 +31,7 @@ struct RecipeCardView: View {
         .shadow(
             color: Theme.Shadow.sm.color,
             radius: Theme.Shadow.sm.radius,
-            y: Theme.Shadow.sm.y
+            y: Theme.Shadow.sm.offsetY
         )
     }
 
@@ -66,7 +66,7 @@ struct RecipeCardView: View {
                     stops: [
                         .init(color: .black.opacity(0.6), location: 0),
                         .init(color: .black.opacity(0.35), location: 0.4),
-                        .init(color: .clear, location: 0.7),
+                        .init(color: .clear, location: 0.7)
                     ],
                     startPoint: .bottom,
                     endPoint: .top
@@ -194,55 +194,49 @@ struct RecipeCardView: View {
 }
 
 #Preview("Grid layout") {
-    let columns = [
+    RecipeCardGridPreview()
+}
+
+private struct RecipeCardGridPreview: View {
+    private let columns = [
         GridItem(.flexible(), spacing: Theme.Spacing.md),
-        GridItem(.flexible(), spacing: Theme.Spacing.md),
+        GridItem(.flexible(), spacing: Theme.Spacing.md)
     ]
 
-    ScrollView {
-        LazyVGrid(columns: columns, spacing: Theme.Spacing.md) {
-            RecipeCardView(
-                recipe: PersistedRecipe(
-                    id: 1,
-                    name: "Spaghetti Carbonara",
-                    prepTime: 15,
-                    cookTime: 20,
-                    favorite: true,
-                    coverImageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400",
-                    updatedAt: Date()
-                )
-            )
-            RecipeCardView(
-                recipe: PersistedRecipe(
-                    id: 2,
-                    name: "Quick Salad",
-                    prepTime: 10,
-                    favorite: false,
-                    updatedAt: Date()
-                )
-            )
-            RecipeCardView(
-                recipe: PersistedRecipe(
-                    id: 3,
-                    name: "Chicken Tikka Masala with Basmati Rice",
-                    prepTime: 20,
-                    cookTime: 40,
-                    favorite: true,
-                    coverImageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
-                    updatedAt: Date()
-                )
-            )
-            RecipeCardView(
-                recipe: PersistedRecipe(
-                    id: 4,
-                    name: "Avocado Toast",
-                    prepTime: 5,
-                    favorite: false,
-                    updatedAt: Date()
-                )
-            )
-        }
-        .padding(Theme.Spacing.lg)
+    private var sampleRecipes: [PersistedRecipe] {
+        [
+            PersistedRecipe(
+                id: 1,
+                name: "Spaghetti Carbonara",
+                prepTime: 15,
+                cookTime: 20,
+                favorite: true,
+                coverImageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=400",
+                updatedAt: Date()
+            ),
+            PersistedRecipe(id: 2, name: "Quick Salad", prepTime: 10, favorite: false, updatedAt: Date()),
+            PersistedRecipe(
+                id: 3,
+                name: "Chicken Tikka Masala with Basmati Rice",
+                prepTime: 20,
+                cookTime: 40,
+                favorite: true,
+                coverImageUrl: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400",
+                updatedAt: Date()
+            ),
+            PersistedRecipe(id: 4, name: "Avocado Toast", prepTime: 5, favorite: false, updatedAt: Date())
+        ]
     }
-    .background(Color.hauptgangBackground)
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: self.columns, spacing: Theme.Spacing.md) {
+                ForEach(self.sampleRecipes, id: \.id) { recipe in
+                    RecipeCardView(recipe: recipe)
+                }
+            }
+            .padding(Theme.Spacing.lg)
+        }
+        .background(Color.hauptgangBackground)
+    }
 }

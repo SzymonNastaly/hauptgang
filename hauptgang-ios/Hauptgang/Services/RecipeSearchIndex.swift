@@ -44,7 +44,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
             self.dbQueue = try DatabaseQueue(path: dbPath)
 
             let needsRebuild = try await self.dbQueue?.write { db in
-                try Self.prepareSchema(in: db)
+                try RecipeSearchStore.prepareSchema(in: db, schemaVersion: Self.schemaVersion)
             }
 
             self.available = true
@@ -60,11 +60,11 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         }
     }
 
-    func isAvailable() async -> Bool {
+    func isAvailable() -> Bool {
         self.available
     }
 
-    func needsRebuild() async -> Bool {
+    func needsRebuild() -> Bool {
         self.requiresRebuild
     }
 
@@ -73,9 +73,9 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
 
         do {
             try await dbQueue.write { db in
-                try Self.dropTables(in: db)
-                try Self.createTables(in: db)
-                try Self.upsertPersisted(recipes, in: db)
+                try RecipeSearchStore.dropTables(in: db)
+                try RecipeSearchStore.createTables(in: db)
+                try RecipeSearchStore.upsertPersisted(recipes, in: db)
             }
             self.requiresRebuild = false
         } catch {
@@ -96,7 +96,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
 
         do {
             try await dbQueue.write { db in
-                try Self.upsertNames(recipes, in: db)
+                try RecipeSearchStore.upsertNames(recipes, in: db)
             }
         } catch {
             if await self.recoverFromCorruptionIfNeeded(
@@ -116,7 +116,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
 
         do {
             try await dbQueue.write { db in
-                try Self.upsertDetails(details, in: db)
+                try RecipeSearchStore.upsertDetails(details, in: db)
             }
         } catch {
             if await self.recoverFromCorruptionIfNeeded(
@@ -223,7 +223,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         return directory.appendingPathComponent("user-\(userId)-cookbook-\(cookbookId).sqlite")
     }
 
-    private func resetDatabaseFile() async {
+    private func resetDatabaseFile() {
         guard let userId = self.currentUserId, let cookbookId = self.currentCookbookId else { return }
         do {
             let url = try self.databaseURL(for: userId, cookbookId: cookbookId)
@@ -255,166 +255,5 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         await self.resetDatabaseFile()
         await self.configure(userId: userId, cookbookId: cookbookId)
         return self.available
-    }
-
-    private static func prepareSchema(in db: Database) throws -> Bool {
-        try db.create(table: "search_metadata", ifNotExists: true) { table in
-            table.column("key", .text).primaryKey()
-            table.column("value", .text).notNull()
-        }
-
-        let existingVersion = try String.fetchOne(
-            db,
-            sql: "SELECT value FROM search_metadata WHERE key = ?",
-            arguments: ["schema_version"]
-        )
-
-        if existingVersion != Self.schemaVersion {
-            try Self.dropTables(in: db)
-            try Self.createTables(in: db)
-            try db.execute(
-                sql: "INSERT OR REPLACE INTO search_metadata (key, value) VALUES (?, ?)",
-                arguments: ["schema_version", Self.schemaVersion]
-            )
-            return true
-        }
-
-        return false
-    }
-
-    private static func createTables(in db: Database) throws {
-        try db.execute(sql: """
-        CREATE TABLE IF NOT EXISTS recipes (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            ingredients TEXT,
-            instructions TEXT,
-            updated_at TEXT
-        );
-        """)
-
-        try db.execute(sql: """
-        CREATE VIRTUAL TABLE IF NOT EXISTS recipes_fts USING fts5(
-            name,
-            ingredients,
-            instructions,
-            tokenize='unicode61 remove_diacritics 2',
-            prefix='2 3 4'
-        );
-        """)
-    }
-
-    private static func dropTables(in db: Database) throws {
-        try db.execute(sql: "DROP TABLE IF EXISTS recipes_fts")
-        try db.execute(sql: "DROP TABLE IF EXISTS recipes")
-    }
-
-    private static func upsertNames(_ recipes: [SearchIndexNameInput], in db: Database) throws {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        for recipe in recipes {
-            try db.execute(
-                sql: """
-                INSERT INTO recipes (id, name, updated_at)
-                VALUES (?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    name = excluded.name,
-                    updated_at = excluded.updated_at
-                """,
-                arguments: [recipe.id, recipe.name, dateFormatter.string(from: recipe.updatedAt)]
-            )
-
-            try db.execute(
-                sql: "DELETE FROM recipes_fts WHERE rowid = ?",
-                arguments: [recipe.id]
-            )
-            try db.execute(
-                sql: """
-                INSERT INTO recipes_fts (rowid, name, ingredients, instructions)
-                VALUES (?, ?, COALESCE((SELECT ingredients FROM recipes WHERE id = ?), ''), COALESCE((SELECT instructions FROM recipes WHERE id = ?), ''))
-                """,
-                arguments: [recipe.id, recipe.name, recipe.id, recipe.id]
-            )
-        }
-    }
-
-    private static func upsertPersisted(_ recipes: [SearchIndexDetailInput], in db: Database) throws {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        for recipe in recipes {
-            let ingredients = recipe.ingredients.joined(separator: "\n")
-            let instructions = recipe.instructions.joined(separator: "\n")
-
-            try db.execute(
-                sql: """
-                INSERT INTO recipes (id, name, ingredients, instructions, updated_at)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    name = excluded.name,
-                    ingredients = excluded.ingredients,
-                    instructions = excluded.instructions,
-                    updated_at = excluded.updated_at
-                """,
-                arguments: [
-                    recipe.id,
-                    recipe.name,
-                    ingredients,
-                    instructions,
-                    dateFormatter.string(from: recipe.updatedAt),
-                ]
-            )
-
-            try db.execute(
-                sql: "DELETE FROM recipes_fts WHERE rowid = ?",
-                arguments: [recipe.id]
-            )
-            try db.execute(
-                sql: """
-                INSERT INTO recipes_fts (rowid, name, ingredients, instructions)
-                VALUES (?, ?, ?, ?)
-                """,
-                arguments: [recipe.id, recipe.name, ingredients, instructions]
-            )
-        }
-    }
-
-    private static func upsertDetails(_ details: [SearchIndexDetailInput], in db: Database) throws {
-        let dateFormatter = ISO8601DateFormatter()
-        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        for detail in details {
-            let ingredients = detail.ingredients.joined(separator: "\n")
-            let instructions = detail.instructions.joined(separator: "\n")
-
-            try db.execute(
-                sql: """
-                INSERT INTO recipes (id, name, ingredients, instructions, updated_at)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(id) DO UPDATE SET
-                    name = excluded.name,
-                    ingredients = excluded.ingredients,
-                    instructions = excluded.instructions,
-                    updated_at = excluded.updated_at
-                """,
-                arguments: [
-                    detail.id,
-                    detail.name,
-                    ingredients,
-                    instructions,
-                    dateFormatter.string(from: detail.updatedAt),
-                ]
-            )
-
-            try db.execute(
-                sql: "DELETE FROM recipes_fts WHERE rowid = ?",
-                arguments: [detail.id]
-            )
-            try db.execute(
-                sql: """
-                INSERT INTO recipes_fts (rowid, name, ingredients, instructions)
-                VALUES (?, ?, ?, ?)
-                """,
-                arguments: [detail.id, detail.name, ingredients, instructions]
-            )
-        }
     }
 }

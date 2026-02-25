@@ -46,15 +46,6 @@ final class RecipeViewModel {
     private let pollingInterval: UInt64 = 3_000_000_000 // 3 seconds in nanoseconds
     private let maxPollingDuration: UInt64 = 30_000_000_000 // 30 seconds in nanoseconds
 
-    /// Lightweight value snapshot for background search scoring
-    private struct RecipeSnapshot: Sendable {
-        let id: Int
-        let name: String
-        let ingredients: [String]
-        let instructions: [String]
-        let updatedAt: Date
-    }
-
     init(
         recipeService: RecipeServiceProtocol = RecipeService.shared,
         repository: RecipeRepositoryProtocol? = nil,
@@ -80,7 +71,9 @@ final class RecipeViewModel {
         self.currentCookbookId = cookbookId
         await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
     }
+}
 
+extension RecipeViewModel {
     /// Load recipes from local cache
     private func loadCachedRecipes() {
         do {
@@ -105,51 +98,7 @@ final class RecipeViewModel {
         self.isOffline = false
 
         let task = Task { @MainActor in
-            do {
-                let apiRecipes = try await self.recipeService.fetchRecipes()
-                try Task.checkCancellation()
-                let deletedIds = try self.repository.saveRecipes(apiRecipes)
-                self.loadCachedRecipes()
-                self.logger.info("Recipe refresh completed successfully")
-
-                let visibleRecipes = self.successfulRecipes
-                if await self.searchIndex.needsRebuild() {
-                    let detailInputs = self.detailInputs(from: visibleRecipes)
-                    await self.searchIndex.rebuildIndex(with: detailInputs)
-                } else {
-                    let nameInputs = self.nameInputs(from: visibleRecipes)
-                    await self.searchIndex.indexNames(nameInputs)
-                    if !deletedIds.isEmpty {
-                        await self.searchIndex.delete(ids: deletedIds)
-                    }
-                }
-
-                self.startDetailSyncIfNeeded()
-
-                // Start polling if there are pending imports
-                if self.hasPendingImports {
-                    self.startPolling()
-                }
-            } catch is CancellationError {
-                self.logger.info("Recipe refresh cancelled by newer request")
-            } catch {
-                guard !Task.isCancelled else {
-                    self.logger.info("Recipe refresh cancelled by newer request")
-                    return
-                }
-                self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
-                if let apiError = error as? APIError {
-                    switch apiError {
-                    case .networkError:
-                        self.isOffline = true
-                    case .forbidden:
-                        self.didReceiveForbidden = true
-                    default:
-                        break
-                    }
-                }
-                // Keep showing cached data on error
-            }
+            await self.performRefresh()
         }
 
         self.refreshTask = task
@@ -159,6 +108,66 @@ final class RecipeViewModel {
         if self.refreshTask == task {
             self.isLoading = false
             self.refreshTask = nil
+        }
+    }
+
+    private func performRefresh() async {
+        do {
+            try await self.fetchAndPersistRecipes()
+            self.logger.info("Recipe refresh completed successfully")
+        } catch is CancellationError {
+            self.logger.info("Recipe refresh cancelled by newer request")
+        } catch {
+            guard !Task.isCancelled else {
+                self.logger.info("Recipe refresh cancelled by newer request")
+                return
+            }
+            self.handleRefreshError(error)
+        }
+    }
+
+    private func fetchAndPersistRecipes() async throws {
+        let apiRecipes = try await self.recipeService.fetchRecipes()
+        try Task.checkCancellation()
+
+        let deletedIds = try self.repository.saveRecipes(apiRecipes)
+        self.loadCachedRecipes()
+
+        let visibleRecipes = self.successfulRecipes
+        await self.updateSearchIndex(visibleRecipes: visibleRecipes, deletedIds: deletedIds)
+        self.startDetailSyncIfNeeded()
+
+        if self.hasPendingImports {
+            self.startPolling()
+        }
+    }
+
+    private func updateSearchIndex(visibleRecipes: [PersistedRecipe], deletedIds: [Int]) async {
+        if await self.searchIndex.needsRebuild() {
+            await self.searchIndex.rebuildIndex(with: self.detailInputs(from: visibleRecipes))
+            return
+        }
+
+        await self.searchIndex.indexNames(self.nameInputs(from: visibleRecipes))
+        if !deletedIds.isEmpty {
+            await self.searchIndex.delete(ids: deletedIds)
+        }
+    }
+
+    private func handleRefreshError(_ error: Error) {
+        self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
+
+        guard let apiError = error as? APIError else {
+            return
+        }
+
+        switch apiError {
+        case .networkError:
+            self.isOffline = true
+        case .forbidden:
+            self.didReceiveForbidden = true
+        default:
+            break
         }
     }
 
@@ -184,7 +193,7 @@ final class RecipeViewModel {
 
         // Snapshot recipe data for background scoring (PersistedRecipe is not Sendable)
         let snapshots = self.successfulRecipes.map {
-            RecipeSnapshot(
+            RecipeSearchSnapshot(
                 id: $0.id,
                 name: $0.name,
                 ingredients: $0.ingredients,
@@ -195,7 +204,7 @@ final class RecipeViewModel {
         let query = trimmed
 
         self.searchTask = Task.detached { [weak self] in
-            let rankedIds = Self.backgroundSearch(query: query, snapshots: snapshots)
+            let rankedIds = RecipeFuzzyScorer.rankedIds(query: query, snapshots: snapshots)
 
             guard !Task.isCancelled else { return }
 
@@ -225,51 +234,70 @@ final class RecipeViewModel {
 
         self.pollingTask = Task.detached { [weak self] in
             guard let self else { return }
-
-            defer {
-                Task { @MainActor in
-                    self.pollingTask = nil
-                }
-            }
-
-            while !Task.isCancelled {
-                let elapsed = DispatchTime.now().uptimeNanoseconds - startTime
-                if elapsed > maxDuration {
-                    await MainActor.run { self.logger.info("Polling timeout reached, stopping") }
-                    break
-                }
-
-                do {
-                    try await Task.sleep(nanoseconds: interval)
-                } catch {
-                    break
-                }
-
-                if Task.isCancelled { break }
-
-                await MainActor.run { self.logger.info("Polling: refreshing recipes") }
-                do {
-                    let apiRecipes = try await self.recipeService.fetchRecipes()
-
-                    let stillPending = await MainActor.run {
-                        do {
-                            try self.repository.saveRecipes(apiRecipes)
-                            self.loadCachedRecipes()
-                        } catch {
-                            self.logger.error("Polling save failed: \(error.localizedDescription)")
-                        }
-                        return self.hasPendingImports
-                    }
-
-                    if !stillPending {
-                        await MainActor.run { self.logger.info("No more pending imports, stopping polling") }
-                        break
-                    }
-                } catch {
-                    await MainActor.run { self.logger.error("Polling refresh failed: \(error.localizedDescription)") }
-                }
+            await self.runPollingLoop(startTime: startTime, maxDuration: maxDuration, interval: interval)
+            await MainActor.run {
+                self.pollingTask = nil
             }
         }
+    }
+
+    private func runPollingLoop(startTime: UInt64, maxDuration: UInt64, interval: UInt64) async {
+        while !Task.isCancelled {
+            if self.pollingTimedOut(startTime: startTime, maxDuration: maxDuration) {
+                await MainActor.run {
+                    self.logger.info("Polling timeout reached, stopping")
+                }
+                break
+            }
+
+            do {
+                try await Task.sleep(nanoseconds: interval)
+            } catch {
+                break
+            }
+
+            if Task.isCancelled { break }
+            if await self.pollOnceFoundNoPendingImports() {
+                await MainActor.run {
+                    self.logger.info("No more pending imports, stopping polling")
+                }
+                break
+            }
+        }
+    }
+
+    private func pollingTimedOut(startTime: UInt64, maxDuration: UInt64) -> Bool {
+        let elapsed = DispatchTime.now().uptimeNanoseconds - startTime
+        return elapsed > maxDuration
+    }
+
+    private func pollOnceFoundNoPendingImports() async -> Bool {
+        await MainActor.run {
+            self.logger.info("Polling: refreshing recipes")
+        }
+
+        do {
+            let apiRecipes = try await self.recipeService.fetchRecipes()
+            let stillPending = await MainActor.run {
+                self.applyPollingRecipes(apiRecipes)
+            }
+            return !stillPending
+        } catch {
+            await MainActor.run {
+                self.logger.error("Polling refresh failed: \(error.localizedDescription)")
+            }
+            return false
+        }
+    }
+
+    private func applyPollingRecipes(_ apiRecipes: [RecipeListItem]) -> Bool {
+        do {
+            try self.repository.saveRecipes(apiRecipes)
+            self.loadCachedRecipes()
+        } catch {
+            self.logger.error("Polling save failed: \(error.localizedDescription)")
+        }
+        return self.hasPendingImports
     }
 
     /// Cancel all in-flight tasks and clear data for a cookbook switch
@@ -385,52 +413,57 @@ final class RecipeViewModel {
         let cursorKey = self.detailCursorKey(for: userId)
 
         self.detailSyncTask = Task.detached(priority: .utility) { [weak self] in
-            defer {
-                Task { @MainActor in
-                    self?.detailSyncTask = nil
-                }
-            }
-
-            var cursor = UserDefaults.standard.string(forKey: cursorKey)
-
-            while !Task.isCancelled {
-                do {
-                    let response = try await recipeService.fetchRecipeDetails(cursor: cursor, limit: 100)
-                    if response.recipes.isEmpty { break }
-
-                    await MainActor.run {
-                        do {
-                            try repository.saveRecipeDetails(response.recipes)
-                        } catch {
-                            self?.logger.error("Detail sync save failed: \(error.localizedDescription)")
-                        }
-                        self?.loadCachedRecipes()
-                    }
-
-                    let detailInputs = response.recipes.map {
-                        SearchIndexDetailInput(
-                            id: $0.id,
-                            name: $0.name,
-                            ingredients: $0.ingredients,
-                            instructions: $0.instructions,
-                            updatedAt: $0.updatedAt
-                        )
-                    }
-                    await searchIndex.indexDetails(detailInputs)
-
-                    if let nextCursor = response.nextCursor {
-                        UserDefaults.standard.set(nextCursor, forKey: cursorKey)
-                        cursor = nextCursor
-                    } else {
-                        UserDefaults.standard.removeObject(forKey: cursorKey)
-                        break
-                    }
-                } catch {
-                    self?.logger.error("Detail sync failed: \(error.localizedDescription)")
-                    break
-                }
+            await self?.runDetailSyncLoop(
+                recipeService: recipeService,
+                repository: repository,
+                searchIndex: searchIndex,
+                cursorKey: cursorKey
+            )
+            await MainActor.run {
+                self?.detailSyncTask = nil
             }
         }
+    }
+
+    private func runDetailSyncLoop(
+        recipeService: RecipeServiceProtocol,
+        repository: RecipeRepositoryProtocol,
+        searchIndex: RecipeSearchIndexProtocol,
+        cursorKey: String
+    ) async {
+        var cursor = UserDefaults.standard.string(forKey: cursorKey)
+
+        while !Task.isCancelled {
+            do {
+                let response = try await recipeService.fetchRecipeDetails(cursor: cursor, limit: 100)
+                if response.recipes.isEmpty { break }
+
+                await MainActor.run {
+                    self.applyDetailSyncRecipes(response.recipes, repository: repository)
+                }
+                await searchIndex.indexDetails(self.detailInputs(from: response.recipes))
+
+                if let nextCursor = response.nextCursor {
+                    UserDefaults.standard.set(nextCursor, forKey: cursorKey)
+                    cursor = nextCursor
+                } else {
+                    UserDefaults.standard.removeObject(forKey: cursorKey)
+                    break
+                }
+            } catch {
+                self.logger.error("Detail sync failed: \(error.localizedDescription)")
+                break
+            }
+        }
+    }
+
+    private func applyDetailSyncRecipes(_ recipes: [RecipeDetail], repository: RecipeRepositoryProtocol) {
+        do {
+            try repository.saveRecipeDetails(recipes)
+        } catch {
+            self.logger.error("Detail sync save failed: \(error.localizedDescription)")
+        }
+        self.loadCachedRecipes()
     }
 
     private func detailCursorKey(for userId: Int) -> String {
@@ -445,7 +478,7 @@ final class RecipeViewModel {
     }
 
     @MainActor
-    private func fetchRecipesByIds(_ ids: [Int]) async -> [PersistedRecipe] {
+    private func fetchRecipesByIds(_ ids: [Int]) -> [PersistedRecipe] {
         do {
             return try self.repository.getRecipes(ids: ids)
         } catch {
@@ -463,164 +496,6 @@ final class RecipeViewModel {
                 return lhs.updatedAt > rhs.updatedAt
             }
             return left < right
-        }
-    }
-
-    /// Perform fuzzy search scoring on background thread using value-type snapshots
-    private nonisolated static func backgroundSearch(query: String, snapshots: [RecipeSnapshot]) -> [Int] {
-        let queryTokenGroups = RecipeSearchQuery.expandedTokenVariants(from: query)
-        guard !queryTokenGroups.isEmpty else { return [] }
-
-        let scored: [(Int, Int, Date)] = snapshots.compactMap { snapshot in
-            guard !Task.isCancelled else { return nil }
-
-            let nameTokens = self.normalizedTokens(from: snapshot.name)
-            let ingredientTokens = self.normalizedTokens(from: snapshot.ingredients.joined(separator: " "))
-            let instructionTokens = self.normalizedTokens(from: snapshot.instructions.joined(separator: " "))
-
-            var totalScore = 0
-            for variants in queryTokenGroups {
-                var bestScore = 0
-                for variant in variants {
-                    let nameScore = self.fuzzyVariantScore(tokens: variant, recipeTokens: nameTokens, weight: 5)
-                    let ingredientScore = self.fuzzyVariantScore(
-                        tokens: variant,
-                        recipeTokens: ingredientTokens,
-                        weight: 3
-                    )
-                    let instructionScore = self.fuzzyVariantScore(
-                        tokens: variant,
-                        recipeTokens: instructionTokens,
-                        weight: 1
-                    )
-                    bestScore = max(bestScore, nameScore, ingredientScore, instructionScore)
-                }
-
-                if bestScore == 0 {
-                    return nil
-                }
-
-                totalScore += bestScore
-            }
-
-            return totalScore > 0 ? (snapshot.id, totalScore, snapshot.updatedAt) : nil
-        }
-
-        return scored
-            .sorted { lhs, rhs in
-                if lhs.1 == rhs.1 {
-                    return lhs.2 > rhs.2
-                }
-                return lhs.1 > rhs.1
-            }
-            .map(\.0)
-    }
-
-    private nonisolated static func normalizedTokens(from string: String) -> [String] {
-        RecipeSearchQuery.normalizedTokens(from: string)
-    }
-
-    private nonisolated static func fuzzyVariantScore(tokens: [String], recipeTokens: [String], weight: Int) -> Int {
-        guard !tokens.isEmpty else { return 0 }
-        var total = 0
-
-        for token in tokens {
-            let score = self.fuzzyMatchScore(queryToken: token, tokens: recipeTokens, weight: weight)
-            if score == 0 {
-                return 0
-            }
-            total += score
-        }
-
-        return total
-    }
-
-    private nonisolated static func fuzzyMatchScore(queryToken: String, tokens: [String], weight: Int) -> Int {
-        guard !tokens.isEmpty else { return 0 }
-        let maxDist = self.maxEditDistance(for: queryToken)
-
-        for token in tokens {
-            if token.contains(queryToken) {
-                return weight * 2
-            }
-
-            if token.count >= queryToken.count {
-                let prefix = String(token.prefix(queryToken.count))
-                if self.levenshteinDistance(queryToken, prefix, maxDistance: maxDist) != nil {
-                    return weight
-                }
-            }
-
-            if self.levenshteinDistance(queryToken, token, maxDistance: maxDist) != nil {
-                return weight
-            }
-        }
-        return 0
-    }
-
-    private nonisolated static func maxEditDistance(for token: String) -> Int {
-        switch token.count {
-        case 0 ... 4:
-            0
-        case 5 ... 7:
-            1
-        default:
-            2
-        }
-    }
-
-    private nonisolated static func levenshteinDistance(_ lhs: String, _ rhs: String, maxDistance: Int) -> Int? {
-        if lhs == rhs { return 0 }
-        if abs(lhs.count - rhs.count) > maxDistance { return nil }
-
-        let lhsChars = Array(lhs)
-        let rhsChars = Array(rhs)
-        if lhsChars.isEmpty { return rhsChars.count <= maxDistance ? rhsChars.count : nil }
-        if rhsChars.isEmpty { return lhsChars.count <= maxDistance ? lhsChars.count : nil }
-
-        var previous = Array(0 ... rhsChars.count)
-        var current = Array(repeating: 0, count: rhsChars.count + 1)
-
-        for i in 1 ... lhsChars.count {
-            current[0] = i
-            var rowMin = current[0]
-
-            for j in 1 ... rhsChars.count {
-                let cost = lhsChars[i - 1] == rhsChars[j - 1] ? 0 : 1
-                current[j] = min(
-                    previous[j] + 1,
-                    current[j - 1] + 1,
-                    previous[j - 1] + cost
-                )
-                rowMin = min(rowMin, current[j])
-            }
-
-            if rowMin > maxDistance {
-                return nil
-            }
-
-            previous = current
-        }
-
-        let distance = previous[rhsChars.count]
-        return distance <= maxDistance ? distance : nil
-    }
-
-    private func nameInputs(from recipes: [PersistedRecipe]) -> [SearchIndexNameInput] {
-        recipes.map {
-            SearchIndexNameInput(id: $0.id, name: $0.name, updatedAt: $0.updatedAt)
-        }
-    }
-
-    private func detailInputs(from recipes: [PersistedRecipe]) -> [SearchIndexDetailInput] {
-        recipes.map {
-            SearchIndexDetailInput(
-                id: $0.id,
-                name: $0.name,
-                ingredients: $0.ingredients,
-                instructions: $0.instructions,
-                updatedAt: $0.updatedAt
-            )
         }
     }
 }

@@ -71,13 +71,13 @@ enum Theme {
     }
 
     enum Shadow {
-        static let sm = ShadowStyle(color: .black.opacity(0.05), radius: 2, y: 1)
-        static let md = ShadowStyle(color: .black.opacity(0.1), radius: 4, y: 2)
+        static let sm = ShadowStyle(color: .black.opacity(0.05), radius: 2, offsetY: 1)
+        static let md = ShadowStyle(color: .black.opacity(0.1), radius: 4, offsetY: 2)
     }
 
     struct ShadowStyle {
         let color: Color
         let radius: CGFloat
-        let y: CGFloat
+        let offsetY: CGFloat
     }
 }

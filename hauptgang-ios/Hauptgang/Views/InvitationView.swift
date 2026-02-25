@@ -88,45 +88,53 @@ struct InvitationView: View {
                 }
             }
 
-            if self.cookbookViewModel.hasSharedCookbook {
-                HStack(spacing: Theme.Spacing.sm) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(Color.hauptgangAmber)
-                    Text("You already have a shared cookbook. You must leave it before joining another.")
-                        .font(.caption)
-                        .foregroundStyle(Color.hauptgangTextSecondary)
-                }
-                .padding(Theme.Spacing.md)
-                .background(Color.hauptgangSurfaceRaised)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
-                .padding(.horizontal, Theme.Spacing.xl)
-            }
-
-            VStack(spacing: Theme.Spacing.md) {
-                Button {
-                    Task { await self.acceptInvitation() }
-                } label: {
-                    Text("Join Cookbook")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Theme.Spacing.md)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.hauptgangPrimary)
-                .disabled(self.cookbookViewModel.hasSharedCookbook)
-
-                Button {
-                    Task { await self.declineInvitation() }
-                } label: {
-                    Text("Decline")
-                        .font(.subheadline)
-                        .foregroundStyle(Color.hauptgangTextSecondary)
-                }
-            }
-            .padding(.horizontal, Theme.Spacing.xl)
+            self.sharedCookbookWarning
+            self.previewActions
 
             Spacer()
         }
+    }
+
+    @ViewBuilder
+    private var sharedCookbookWarning: some View {
+        if self.cookbookViewModel.hasSharedCookbook {
+            HStack(spacing: Theme.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(Color.hauptgangAmber)
+                Text("You already have a shared cookbook. You must leave it before joining another.")
+                    .font(.caption)
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+            }
+            .padding(Theme.Spacing.md)
+            .background(Color.hauptgangSurfaceRaised)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
+            .padding(.horizontal, Theme.Spacing.xl)
+        }
+    }
+
+    private var previewActions: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Button {
+                Task { await self.acceptInvitation() }
+            } label: {
+                Text("Join Cookbook")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.md)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.hauptgangPrimary)
+            .disabled(self.cookbookViewModel.hasSharedCookbook)
+
+            Button {
+                Task { await self.declineInvitation() }
+            } label: {
+                Text("Decline")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+            }
+        }
+        .padding(.horizontal, Theme.Spacing.xl)
     }
 
     private var acceptingContent: some View {

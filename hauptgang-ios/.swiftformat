@@ -37,7 +37,7 @@
 
 # Rules (alphabetically sorted for clarity)
 --enable isEmpty
---enable sortedImports
+--enable sortImports
 --enable blankLinesBetweenScopes
 --enable consecutiveSpaces
 --enable duplicateImports
@@ -56,10 +56,10 @@
 --enable spaceInsideComments
 --enable spaceInsideGenerics
 --enable spaceInsideParens
---enable trailingCommas
+--disable trailingCommas
 --enable trailingSpace
 --enable void
---enable wrapMultilineStatementBraces
+--disable wrapMultilineStatementBraces
 --enable wrapSingleLineComments
 
 # Self options

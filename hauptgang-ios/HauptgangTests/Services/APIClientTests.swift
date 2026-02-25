@@ -317,8 +317,7 @@ final class MockURLProtocol: URLProtocol {
             let (response, data): (HTTPURLResponse, Data)
 
             if let uploadHandler = MockURLProtocol.uploadHandler,
-               let bodyData = request.httpBody ?? request.httpBodyStream?.readAllData()
-            {
+               let bodyData = request.httpBody ?? request.httpBodyStream?.readAllData() {
                 (response, data) = try uploadHandler(request, bodyData)
             } else if let handler = MockURLProtocol.requestHandler {
                 (response, data) = try handler(request)

@@ -10,116 +10,120 @@ struct ShoppingListView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: Theme.Spacing.sm) {
-                self.addItemBar
-                    .padding(.horizontal, Theme.Spacing.lg)
-
-                if self.viewModel.items.isEmpty && !self.viewModel.isSyncing {
-                    self.emptyState
-                } else {
-                    self.listView
-                }
-            }
-            .padding(.top, Theme.Spacing.sm)
-            .background(Color.hauptgangBackground.ignoresSafeArea())
-            .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarTitleMenu {
-                ForEach(self.cookbookViewModel.cookbooks) { cookbook in
-                    Button {
-                        Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
-                    } label: {
-                        let isActive = cookbook.id == self.cookbookViewModel.activeCookbook?.id
-                        Label(
-                            cookbook.name,
-                            systemImage: isActive ? "checkmark" : (cookbook.personal ? "person.fill" : "person.2.fill")
-                        )
-                    }
-                    .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
-                }
-            }
-            .toolbar {
-                if self.viewModel.isSyncing {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .tint(.hauptgangTextSecondary)
-                    }
-                }
-            }
-            .task {
-                self.viewModel.configure(modelContext: self.modelContext)
-                await self.viewModel.refresh()
-            }
-            .onChange(of: self.authManager.authState) { _, newValue in
-                if case .unauthenticated = newValue {
-                    self.viewModel.clearData()
-                }
-            }
-            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
-                self.viewModel.resetForCookbookSwitch()
-                Task { await self.viewModel.refresh() }
-            }
-            .onChange(of: self.viewModel.didReceiveForbidden) { _, forbidden in
-                guard forbidden else { return }
-                self.viewModel.didReceiveForbidden = false
-                Task {
-                    await self.cookbookViewModel.handleForbidden()
-                    await self.viewModel.refresh()
-                }
-            }
+            self.screenContent
         }
         .offlineToast(isOffline: self.viewModel.isOffline)
     }
 
-    private var addItemBar: some View {
-        VStack(spacing: Theme.Spacing.xs) {
-            HStack(spacing: Theme.Spacing.sm) {
-                TextField("Add item", text: self.$newItemText)
-                    .themeTextField()
-                    .focused(self.$isAddItemFocused)
-                    .onSubmit(self.addCustomItem)
+    private var screenContent: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            self.addItemBar
+                .padding(.horizontal, Theme.Spacing.lg)
 
-                Button {
-                    self.addCustomItem()
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                                    .fill(Color.hauptgangPrimary)
-                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [
-                                                .white.opacity(0.25),
-                                                .clear,
-                                                .black.opacity(0.15),
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                                    .strokeBorder(
-                                        LinearGradient(
-                                            colors: [
-                                                .white.opacity(0.35),
-                                                .clear,
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .center
-                                        ),
-                                        lineWidth: 1
-                                    )
-                            }
-                        }
-                }
-                .buttonStyle(PuffyButtonStyle())
+            if self.viewModel.items.isEmpty && !self.viewModel.isSyncing {
+                self.emptyState
+            } else {
+                self.listView
             }
+        }
+        .padding(.top, Theme.Spacing.sm)
+        .background(Color.hauptgangBackground.ignoresSafeArea())
+        .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleMenu {
+            ForEach(self.cookbookViewModel.cookbooks) { cookbook in
+                self.cookbookSwitcherButton(cookbook)
+            }
+        }
+        .toolbar {
+            if self.viewModel.isSyncing {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .tint(.hauptgangTextSecondary)
+                }
+            }
+        }
+        .task {
+            self.viewModel.configure(modelContext: self.modelContext)
+            await self.viewModel.refresh()
+        }
+        .onChange(of: self.authManager.authState) { _, newValue in
+            if case .unauthenticated = newValue {
+                self.viewModel.clearData()
+            }
+        }
+        .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
+            self.viewModel.resetForCookbookSwitch()
+            Task { await self.viewModel.refresh() }
+        }
+        .onChange(of: self.viewModel.didReceiveForbidden) { _, forbidden in
+            guard forbidden else { return }
+            self.viewModel.didReceiveForbidden = false
+            Task {
+                await self.cookbookViewModel.handleForbidden()
+                await self.viewModel.refresh()
+            }
+        }
+    }
+
+    private func cookbookSwitcherButton(_ cookbook: Cookbook) -> some View {
+        Button {
+            Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
+        } label: {
+            Label(cookbook.name, systemImage: self.cookbookSymbol(for: cookbook))
+        }
+        .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
+    }
+
+    private func cookbookSymbol(for cookbook: Cookbook) -> String {
+        if cookbook.id == self.cookbookViewModel.activeCookbook?.id {
+            return "checkmark"
+        }
+        return cookbook.personal ? "person.fill" : "person.2.fill"
+    }
+
+    private var addItemBar: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            TextField("Add item", text: self.$newItemText)
+                .themeTextField()
+                .focused(self.$isAddItemFocused)
+                .onSubmit(self.addCustomItem)
+
+            Button {
+                self.addCustomItem()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(self.addItemButtonBackground)
+            }
+            .buttonStyle(PuffyButtonStyle())
+        }
+    }
+
+    private var addItemButtonBackground: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .fill(Color.hauptgangPrimary)
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.25), .clear, .black.opacity(0.15)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [.white.opacity(0.35), .clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    ),
+                    lineWidth: 1
+                )
         }
     }
 

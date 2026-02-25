@@ -6,19 +6,15 @@ enum ShareImportExtractor {
         let urlType = UTType.url.identifier
         let plainTextType = UTType.plainText.identifier
 
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(urlType) {
-                if let url = await loadURL(from: provider, typeIdentifier: urlType) {
-                    return url
-                }
+        for provider in attachments where provider.hasItemConformingToTypeIdentifier(urlType) {
+            if let url = await loadURL(from: provider, typeIdentifier: urlType) {
+                return url
             }
         }
 
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(plainTextType) {
-                if let url = await loadURLFromPlainText(from: provider, typeIdentifier: plainTextType) {
-                    return url
-                }
+        for provider in attachments where provider.hasItemConformingToTypeIdentifier(plainTextType) {
+            if let url = await loadURLFromPlainText(from: provider, typeIdentifier: plainTextType) {
+                return url
             }
         }
 
@@ -28,11 +24,9 @@ enum ShareImportExtractor {
     static func extractImageFileURL(from attachments: [NSItemProvider]) async -> URL? {
         let imageType = UTType.image.identifier
 
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(imageType) {
-                if let url = await loadImageFileURL(from: provider, typeIdentifier: imageType) {
-                    return url
-                }
+        for provider in attachments where provider.hasItemConformingToTypeIdentifier(imageType) {
+            if let url = await loadImageFileURL(from: provider, typeIdentifier: imageType) {
+                return url
             }
         }
 

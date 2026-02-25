@@ -121,7 +121,7 @@ struct ImportRecipeView: View {
 
 #Preview("Importing") {
     ImportRecipeView(
-        state: .importing(URL(string: "https://example.com/recipe")!),
+        state: .importing(URL(string: "https://example.com/recipe")),
         onClose: {}
     )
 }

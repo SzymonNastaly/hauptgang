@@ -14,7 +14,7 @@ class User < ApplicationRecord
   validates :email_address, presence: true, uniqueness: true
 
   after_create :create_personal_cookbook!
-  before_destroy :destroy_owned_cookbooks!
+  before_destroy :destroy_owned_cookbooks!, prepend: true
 
   def personal_cookbook
     cookbooks.personal.first

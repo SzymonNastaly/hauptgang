@@ -83,8 +83,7 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
         var components: [String] = []
         components.append("limit=\(max(limit, 1))")
         if let cursor, !cursor.isEmpty,
-           let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
-        {
+           let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
             components.append("cursor=\(encoded)")
         }
 

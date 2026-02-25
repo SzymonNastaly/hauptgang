@@ -32,8 +32,7 @@ struct CameraView: UIViewControllerRepresentable {
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
             if let image = info[.originalImage] as? UIImage,
-               let data = image.jpegData(compressionQuality: 0.9)
-            {
+               let data = image.jpegData(compressionQuality: 0.9) {
                 self.onImageCaptured(data)
             }
             self.dismiss()

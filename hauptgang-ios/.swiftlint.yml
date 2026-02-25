@@ -62,7 +62,6 @@ opt_in_rules:
 
   # Swift Concurrency
   - async_without_await                      # async functions should contain await
-  - actor_mark                               # Actor properties should be marked with @MainActor when needed
 
 # Cyclomatic Complexity
 cyclomatic_complexity:

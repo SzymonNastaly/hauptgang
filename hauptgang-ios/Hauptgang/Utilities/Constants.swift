@@ -3,14 +3,36 @@ import Foundation
 enum Constants {
     enum API {
         #if DEBUG
-        // Local development - use your Mac's IP for device testing
-        // For simulator: localhost works fine
-        static let host = URL(string: "http://127.0.0.1:3000")!
-        static let baseURL = URL(string: "http://127.0.0.1:3000/api/v1")!
+        /// Local development - use your Mac's IP for device testing
+        /// For simulator: localhost works fine
+        static let host: URL = {
+            guard let url = URL(string: "http://127.0.0.1:3000") else {
+                preconditionFailure("Invalid API host URL")
+            }
+            return url
+        }()
+
+        static let baseURL: URL = {
+            guard let url = URL(string: "http://127.0.0.1:3000/api/v1") else {
+                preconditionFailure("Invalid API base URL")
+            }
+            return url
+        }()
         #else
-        // Production URL - update when deploying
-        static let host = URL(string: "https://cook.hauptgang.app")!
-        static let baseURL = URL(string: "https://cook.hauptgang.app/api/v1")!
+        /// Production URL - update when deploying
+        static let host: URL = {
+            guard let url = URL(string: "https://cook.hauptgang.app") else {
+                preconditionFailure("Invalid API host URL")
+            }
+            return url
+        }()
+
+        static let baseURL: URL = {
+            guard let url = URL(string: "https://cook.hauptgang.app/api/v1") else {
+                preconditionFailure("Invalid API base URL")
+            }
+            return url
+        }()
         #endif
 
         static let sessionPath = "/session"
@@ -31,6 +53,7 @@ enum Constants {
         #else
         static let apiKey = "appl_cXUmnxvvORXplHaLebPtFzfKEhC"
         #endif
+
         static let entitlementID = "Hauptgang Pro"
     }
 

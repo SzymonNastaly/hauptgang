@@ -74,6 +74,13 @@ directories:
   "app/models":
     DuplicateMethodCall:
       enabled: false
+  "db/migrate":
+    FeatureEnvy:
+      enabled: false
+    UncommunicativeVariableName:
+      enabled: false
+    DuplicateMethodCall:
+      enabled: false
   "test":
     TooManyInstanceVariables:
       enabled: false

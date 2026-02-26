@@ -1,0 +1,541 @@
+---
+- url: https://www.allrecipes.com/recipe/10813/best-chocolate-chip-cookies/
+  domain: allrecipes.com
+  slug: allrecipes-chocolate-chip-cookies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.allrecipes.com/recipe/10549/best-brownies/
+  domain: allrecipes.com
+  slug: allrecipes-best-brownies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.allrecipes.com/recipe/23600/worlds-best-lasagna/
+  domain: allrecipes.com
+  slug: allrecipes-worlds-best-lasagna
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.foodnetwork.com/recipes/food-network-kitchen/classic-guacamole-3563460
+  domain: foodnetwork.com
+  slug: foodnetwork-classic-guacamole
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.epicurious.com/expert-advice/how-to-make-crispy-smashed-potatoes-article
+  domain: epicurious.com
+  slug: epicurious-smashed-potatoes
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 2
+- url: https://www.delish.com/cooking/recipe-ideas/a42923660/french-toast-recipe/
+  domain: delish.com
+  slug: delish-french-toast
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.food.com/recipe/to-die-for-blueberry-muffins-114850
+  domain: food.com
+  slug: food-com-blueberry-muffins
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.simplyrecipes.com/recipes/homemade_pizza/
+  domain: simplyrecipes.com
+  slug: simplyrecipes-homemade-pizza
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.tasteofhome.com/recipes/the-best-ever-pancakes/
+  domain: tasteofhome.com
+  slug: tasteofhome-pancakes
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://cooking.nytimes.com/recipes/1015819-chocolate-chip-cookies
+  domain: cooking.nytimes.com
+  slug: nytcooking-chocolate-chip-cookies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.marthastewart.com/312772/banana-bread
+  domain: marthastewart.com
+  slug: marthastewart-classic-banana-bread
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://sallysbakingaddiction.com/best-banana-bread-recipe/
+  domain: sallysbakingaddiction.com
+  slug: sallys-banana-bread
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://pinchofyum.com/the-best-soft-chocolate-chip-cookies
+  domain: pinchofyum.com
+  slug: pinchofyum-chocolate-chip-cookies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.budgetbytes.com/snap-challenge-one-pot-chili-pasta/
+  domain: budgetbytes.com
+  slug: budgetbytes-chili-pasta
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://minimalistbaker.com/easy-vegan-fried-rice/
+  domain: minimalistbaker.com
+  slug: minimalistbaker-fried-rice
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://cookieandkate.com/best-lentil-soup-recipe/
+  domain: cookieandkate.com
+  slug: cookieandkate-lentil-soup
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.halfbakedharvest.com/tuscan-chicken-pasta/
+  domain: halfbakedharvest.com
+  slug: halfbakedharvest-tuscan-pasta
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.loveandlemons.com/guacamole-recipe/
+  domain: loveandlemons.com
+  slug: loveandlemons-guacamole
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 2
+- url: https://www.skinnytaste.com/chicken-marsala/
+  domain: skinnytaste.com
+  slug: skinnytaste-chicken-marsala
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://damndelicious.net/2019/01/30/creamy-tortellini-soup/
+  domain: damndelicious.net
+  slug: damndelicious-tortellini-soup
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.recipetineats.com/honey-garlic-chicken/
+  domain: recipetineats.com
+  slug: recipetineats-honey-garlic-chicken
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.seriouseats.com/the-best-slow-cooked-bolognese-sauce-recipe
+  domain: seriouseats.com
+  slug: seriouseats-bolognese
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.seriouseats.com/new-york-style-pizza
+  domain: seriouseats.com
+  slug: seriouseats-ny-pizza
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.bonappetit.com/recipe/bas-best-chocolate-chip-cookies
+  domain: bonappetit.com
+  slug: bonappetit-chocolate-chip-cookies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.bonappetit.com/recipe/simple-is-best-dressing
+  domain: bonappetit.com
+  slug: bonappetit-simple-dressing
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 1
+- url: https://www.lecker.de/backkartoffeln-mit-avocadocreme-70437.html
+  domain: lecker.de
+  slug: lecker-backkartoffeln
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 2
+- url: https://www.einfachbacken.de/rezepte/bananenbrot
+  domain: einfachbacken.de
+  slug: einfachbacken-bananenbrot
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://anitalianinmykitchen.com/spaghetti-aglio-olio-e-peperincino-garlicoil-hot-pepper-flakes/
+  domain: anitalianinmykitchen.com
+  slug: essenundtrinken-aglio-olio
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://springlane.de/blogs/rezepte/herbstliche-zimt-apfel-waffeln-der-geschmack-von-gemutlichkeit
+  domain: springlane.de
+  slug: springlane-waffeln
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.bbcgoodfood.com/recipes/easy-pancakes
+  domain: bbcgoodfood.com
+  slug: bbcgoodfood-pancakes
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 2
+- url: https://www.bbcgoodfood.com/recipes/best-ever-chocolate-brownies-recipe
+  domain: bbcgoodfood.com
+  slug: bbcgoodfood-brownies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 3
+- url: https://www.jamieoliver.com/recipes/pasta/gennaro-s-classic-spaghetti-carbonara/
+  domain: jamieoliver.com
+  slug: jamieoliver-carbonara
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.marmiton.org/recettes/recette_crepes_12372.aspx
+  domain: marmiton.org
+  slug: marmiton-crepes
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 2
+- url: https://www.giallozafferano.com/recipes/Tiramisu.html
+  domain: giallozafferano.com
+  slug: giallozafferano-tiramisu
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 3
+- url: https://tasty.co/recipe/the-best-ever-mac-cheese
+  domain: tasty.co
+  slug: tasty-mac-cheese
+  tags:
+    structured_data: json_ld
+    js_required: true
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://tasty.co/recipe/one-pot-chicken-fajita-pasta
+  domain: tasty.co
+  slug: tasty-fajita-pasta
+  tags:
+    structured_data: json_ld
+    js_required: true
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.kingarthurbaking.com/recipes/chocolate-cake-recipe
+  domain: kingarthurbaking.com
+  slug: kingarthur-chocolate-cake
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://smittenkitchen.com/2014/06/coconut-brown-butter-cookies/
+  domain: smittenkitchen.com
+  slug: smittenkitchen-brown-butter-cookies
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://thepioneerwoman.com/cooking/baked-ziti/
+  domain: thepioneerwoman.com
+  slug: pioneerwoman-baked-ziti
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.onceuponachef.com/recipes/banana-bread.html
+  domain: onceuponachef.com
+  slug: onceuponachef-banana-bread
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.inspiredtaste.net/24412/essential-pancake-recipe/
+  domain: inspiredtaste.net
+  slug: inspiredtaste-pancakes
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor: json_ld
+    min_ingredients: 4
+    min_instructions: 3
+- url: https://cafedelites.com/chicken-tikka-masala/
+  domain: cafedelites.com
+  slug: cafedelites-tikka-masala
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 5
+    min_instructions: 3
+- url: https://www.gimmesomeoven.com/baked-chicken-breast/
+  domain: gimmesomeoven.com
+  slug: gimmesomeoven-baked-chicken
+  tags:
+    structured_data: json_ld
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 3
+    min_instructions: 2
+- url: https://www.seriouseats.com/serious-eats-halal-cart-style-chicken-and-rice-white-sauce-recipe
+  domain: seriouseats.com
+  slug: seriouseats-halal-cart-style
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients:
+    min_instructions:
+- url: https://www.chefkoch.de/rezepte/2826591434709897/Gyros-selber-machen.html
+  domain: chefkoch.de
+  slug: chefkoch-gyros
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor: json_ld
+    min_ingredients: 10
+    min_instructions: 4

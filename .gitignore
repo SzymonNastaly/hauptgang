@@ -49,3 +49,9 @@
 hauptgang-ios/build/
 
 agents/
+
+# Recipe corpus HTML snapshots (large, regenerate with: bin/rails recipe_corpus:fetch)
+test/recipe_corpus/snapshots/*
+!test/recipe_corpus/snapshots/static/
+test/recipe_corpus/snapshots/static/*
+!test/recipe_corpus/snapshots/static/.keep

@@ -31,6 +31,12 @@ bin/ios-test                 # Run iOS tests (auto-finds simulator, macOS only)
 # Standard Rails commands for database, testing, etc. work as expected
 ```
 
+**Recipe Import Corpus:** A regression test suite for recipe extractors using cached HTML snapshots. See `docs/recipe-import-corpus.md` for usage and `recipe_corpus:*` rake tasks.
+
+## Documentation
+
+`docs/` contains guides and reference documentation about how things work in this codebase. Check there first when working on a feature area.
+
 ## Task Management
 
 Use `/dex` to break down complex work, track progress across sessions, and coordinate multi-step implementations.

@@ -539,3 +539,1119 @@
     extractor: json_ld
     min_ingredients: 10
     min_instructions: 4
+- url: https://therecipecritic.com/irish-chicken/
+  domain: therecipecritic.com
+  slug: therecipecritic-irish-chicken
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.thespruceeats.com/avocado-toast-4174244
+  domain: thespruceeats.com
+  slug: thespruceeats-avocado-toast-4174244
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://food52.com/recipes/57388-risotto-style-pasta-with-asparagus-and-lemon
+  domain: food52.com
+  slug: food52-recipes-57388-risotto-style-pasta-with-asparagus-and-lemon
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.thekitchn.com/kristen-bell-jemma-salad-recipe-review-23763425
+  domain: thekitchn.com
+  slug: thekitchn-kristen-bell-jemma-salad-recipe-review-23763425
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.recipegirl.com/grilled-cornish-game-hens/
+  domain: recipegirl.com
+  slug: recipegirl-grilled-cornish-game-hens
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.wellplated.com/shepherds-pie/
+  domain: wellplated.com
+  slug: wellplated-shepherds-pie
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.twopeasandtheirpod.com/broccoli-cheddar-orzo/
+  domain: twopeasandtheirpod.com
+  slug: twopeasandtheirpod-broccoli-cheddar-orzo
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.ambitiouskitchen.com/hot-honey-chicken-bowls/
+  domain: ambitiouskitchen.com
+  slug: ambitiouskitchen-hot-honey-chicken-bowls
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.nigella.com/recipes/golden-garlic-mayonnaise
+  domain: nigella.com
+  slug: nigella-recipes-golden-garlic-mayonnaise
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.deliciousmagazine.co.uk/recipes/sloe-gin-bramble-pie/
+  domain: deliciousmagazine.co.uk
+  slug: deliciousmagazine-recipes-sloe-gin-bramble-pie
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.olivemagazine.com/recipes/meat-and-poultry/creamy-chicken-with-spinach-and-sundried-tomatoes/
+  domain: olivemagazine.com
+  slug: olivemagazine-recipes-meat-and-poultry-creamy-chicken-with-spinach-and-sundried-
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.mob.co.uk/recipes/puttanesca-pasta-salad
+  domain: mob.co.uk
+  slug: mob-recipes-puttanesca-pasta-salad
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://pinchofnom.com/recipes/nutella-baked-oats/
+  domain: pinchofnom.com
+  slug: pinchofnom-recipes-nutella-baked-oats
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://thehappyfoodie.co.uk/recipes/jamie-olivers-giant-madras-spiced-meatballs/
+  domain: thehappyfoodie.co.uk
+  slug: thehappyfoodie-recipes-jamie-olivers-giant-madras-spiced-meatballs
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.greatbritishchefs.com/recipes/pasanda-cauliflower-curry-recipe
+  domain: greatbritishchefs.com
+  slug: greatbritishchefs-recipes-pasanda-cauliflower-curry-recipe
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://eatsmarter.de/rezepte/vegetarische-one-pot-pasta
+  domain: eatsmarter.de
+  slug: eatsmarter-rezepte-vegetarische-one-pot-pasta
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.kochbar.de/rezept/600750/Rahmschnitzeltopf.html
+  domain: kochbar.de
+  slug: kochbar-rezept-600750-Rahmschnitzeltopf-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.zuckerjagdwurst.com/de/rezepte/vegane-rigatoni-al-forno
+  domain: zuckerjagdwurst.com
+  slug: zuckerjagdwurst-de-rezepte-vegane-rigatoni-al-forno
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.foodboom.de/rezept/bohneneintopf-mit-ackerbohnen
+  domain: foodboom.de
+  slug: foodboom-rezept-bohneneintopf-mit-ackerbohnen
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.gaumenfreundin.de/one-pot-quinoa-mit-spinat-und-suesskartoffeln/
+  domain: gaumenfreundin.de
+  slug: gaumenfreundin-one-pot-quinoa-mit-spinat-und-suesskartoffeln
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://klopotenko.com/avtentychnyy-boykivskyy-retsept-kvashena-kapusta-z-kartoplyanymy-klotskamy/
+  domain: klopotenko.com
+  slug: klopotenko-avtentychnyy-boykivskyy-retsept-kvashena-kapusta-z-kartoplyanymy-klot
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://smak.telegraf.com.ua/ukr/recept/salati-i-zakuski/73647-svidka-zakuska-na-stil-smaragdovi-kulki
+  domain: smak.telegraf.com.ua
+  slug: smak-ukr-recept-salati-i-zakuski-73647-svidka-zakuska-na-stil-smaragdovi-kulki
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://shuba.life/recipes/757-pikantnij-garbuzovij-sup-z-imbirom
+  domain: shuba.life
+  slug: shuba-recipes-757-pikantnij-garbuzovij-sup-z-imbirom
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://etnocook.com/ukrainian-dumplings-varenyky-with-bilberry-filling/
+  domain: etnocook.com
+  slug: etnocook-ukrainian-dumplings-varenyky-with-bilberry-filling
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://food.obozrevatel.com/novosti-kulinarii/vkusnaya-namazka-iz-morkovi-i-syira-za-1-minutu-samyij-prostoj-retsept-vkusnoj-zakuski.htm
+  domain: food.obozrevatel.com
+  slug: food-novosti-kulinarii-vkusnaya-namazka-iz-morkovi-i-syira-za-1-minutu-samyij-pr
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.matusyaskitchen.com/nourishing-cauliflower-pea-soup/
+  domain: matusyaskitchen.com
+  slug: matusyaskitchen-nourishing-cauliflower-pea-soup
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://easy-cooking.com.ua/en/potato-zrazy-roasted-in-oven/
+  domain: easy-cooking.com.ua
+  slug: easy-cooking-en-potato-zrazy-roasted-in-oven
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.kwestiasmaku.com/przepis/muffiny-z-kawalkami-czekolady
+  domain: kwestiasmaku.com
+  slug: kwestiasmaku-przepis-muffiny-z-kawalkami-czekolady
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://aniagotuje.pl/przepis/domowa-pizza
+  domain: aniagotuje.pl
+  slug: aniagotuje-przepis-domowa-pizza
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.przepisownia.pl/slodkie-wypieki-przepisy/apple-cinnamon-roll-hand-pies/uy288wgh-312b3-062319-f60be-y66xtgdq
+  domain: przepisownia.pl
+  slug: przepisownia-slodkie-wypieki-przepisy-apple-cinnamon-roll-hand-pies-uy288wgh-312
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://beszamel.se.pl/przepisy/przystawki-i-przekaski/beszamel-prosty-przepis-na-sos-beszamelowy-infografika-re-3N55-bQux-bBxP.html
+  domain: beszamel.se.pl
+  slug: beszamel-przepisy-przystawki-i-przekaski-beszamel-prosty-przepis-na-sos-beszamel
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.dorotasmakuje.com/2025/07/schab-pieczony-a-airfryer/
+  domain: dorotasmakuje.com
+  slug: dorotasmakuje-2025-07-schab-pieczony-a-airfryer
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://mojewypieki.com/przepis/sernik-migdalowy
+  domain: mojewypieki.com
+  slug: mojewypieki-przepis-sernik-migdalowy
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://polishfoodies.com/colorful-breakfast-muffins-recipe/
+  domain: polishfoodies.com
+  slug: polishfoodies-colorful-breakfast-muffins-recipe
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.polishyourkitchen.com/polish-sauerkraut-and-mushroom-pies-paszteciki-z-kapusta-i-z-grzybami/
+  domain: polishyourkitchen.com
+  slug: polishyourkitchen-polish-sauerkraut-and-mushroom-pies-paszteciki-z-kapusta-i-z-g
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://cookinpolish.com/unstuffed-golabki-with-sauerkraut/
+  domain: cookinpolish.com
+  slug: cookinpolish-unstuffed-golabki-with-sauerkraut
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.polonist.com/golabki-polish-stuffed-cabbage-rolls/
+  domain: polonist.com
+  slug: polonist-golabki-polish-stuffed-cabbage-rolls
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.bettybossi.ch/de/rezepte/rezept/schinken-frischkase-gipfeli-10011174/
+  domain: bettybossi.ch
+  slug: bettybossi-de-rezepte-rezept-schinken-frischkase-gipfeli-10011174
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.swissmilk.ch/de/rezepte-kochideen/rezepte/SM2023_DIVE_56/kirschenwaehe/?collection=97249
+  domain: swissmilk.ch
+  slug: swissmilk-de-rezepte-kochideen-rezepte-SM2023-DIVE-56-kirschenwaehe
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://migusto.migros.ch/de/rezepte/suesskartoffeleintopf-mit-linsen
+  domain: migusto.migros.ch
+  slug: migusto-de-rezepte-suesskartoffeleintopf-mit-linsen
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://fooby.ch/en/recipes/13697/glass-noodle-salad
+  domain: fooby.ch
+  slug: fooby-en-recipes-13697-glass-noodle-salad
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.helvetickitchen.com/recipes/zopf
+  domain: helvetickitchen.com
+  slug: helvetickitchen-recipes-zopf
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://cuisinehelvetica.com/2019/03/22/bauernbrot/
+  domain: cuisinehelvetica.com
+  slug: cuisinehelvetica-2019-03-22-bauernbrot
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://littlecity.ch/karamellisierter-birnenkuchen-herbstliche-tarte-tatin-chochquatsch-6-mit-m0reniita/
+  domain: littlecity.ch
+  slug: littlecity-karamellisierter-birnenkuchen-herbstliche-tarte-tatin-chochquatsch-6-
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://loumalou.ch/fenchel-birnen-gratin-mit-gorgonzola/
+  domain: loumalou.ch
+  slug: loumalou-fenchel-birnen-gratin-mit-gorgonzola
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.princess.ch/blog/kartoffelstock-spinat-eier-auflauf/
+  domain: princess.ch
+  slug: princess-blog-kartoffelstock-spinat-eier-auflauf
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.nom-nom.ch/blog/203020/lahmacun
+  domain: nom-nom.ch
+  slug: nom-nom-blog-203020-lahmacun
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.gutekueche.at/schupfnudeln-aus-suesskartoffel-rezept-25573
+  domain: gutekueche.at
+  slug: gutekueche-schupfnudeln-aus-suesskartoffel-rezept-25573
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.ichkoche.at/palatschinken-cordon-bleu-rezept-11314
+  domain: ichkoche.at
+  slug: ichkoche-palatschinken-cordon-bleu-rezept-11314
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.steirische-spezialitaeten.at/rezepte/apfelstrudel.html
+  domain: steirische-spezialitaeten.at
+  slug: steirische-spezialitaeten-rezepte-apfelstrudel-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://cookingcatrin.at/germknoedel-aus-dem-ofen-mit-mohn-vanillesauce/
+  domain: cookingcatrin.at
+  slug: cookingcatrin-germknoedel-aus-dem-ofen-mit-mohn-vanillesauce
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.sweetsandlifestyle.com/rote-linsen-curry-mit-kokosmilch/
+  domain: sweetsandlifestyle.com
+  slug: sweetsandlifestyle-rote-linsen-curry-mit-kokosmilch
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.kochen-kueche.com/rezept/apfelkrapfen
+  domain: kochen-kueche.com
+  slug: kochen-kueche-rezept-apfelkrapfen
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.backenmitchristina.at/rezepte/mohnherzen/
+  domain: backenmitchristina.at
+  slug: backenmitchristina-rezepte-mohnherzen
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.vienna-sunday.kitchen/gelingsicheres-semmelknoedel-rezept/
+  domain: vienna-sunday.kitchen
+  slug: vienna-sunday-gelingsicheres-semmelknoedel-rezept
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.directoalpaladar.com/postres/caramelo-salado-casero-receta-super-versatil-que-podras-utilizar-monton-postres
+  domain: directoalpaladar.com
+  slug: directoalpaladar-postres-caramelo-salado-casero-receta-super-versatil-que-podras
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.hogarmania.com/cocina/recetas/banda-de-kiwi-con-crema_23_1152707.html
+  domain: hogarmania.com
+  slug: hogarmania-cocina-recetas-banda-de-kiwi-con-crema-23-1152707-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.abc.es/recetasderechupete/sopa-de-coliflor-casera-sencilla-reconfortante-y-de-rechupete/158673/
+  domain: abc.es
+  slug: abc-recetasderechupete-sopa-de-coliflor-casera-sencilla-reconfortante-y-de-rechu
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.pequerecetas.com/receta/pan-naan-pan-plano-indio/
+  domain: pequerecetas.com
+  slug: pequerecetas-receta-pan-naan-pan-plano-indio
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://elpais.com/gastronomia/el-comidista/2026-02-27/matasuegras-la-receta-de-galletas-fritas-rellenas-tipica-de-murcia.html
+  domain: elpais.com
+  slug: elpais-gastronomia-el-comidista-2026-02-27-matasuegras-la-receta-de-galletas-fri
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.velocidadcuchara.com/torrijas-en-freidora-de-aire-o-airfryer/
+  domain: velocidadcuchara.com
+  slug: velocidadcuchara-torrijas-en-freidora-de-aire-o-airfryer
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.divinacocina.es/makis-de-avena-y-frutas-frescas/
+  domain: divinacocina.es
+  slug: divinacocina-makis-de-avena-y-frutas-frescas
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://webosfritos.es/filetes-rusos-de-pollo-en-freidora-de-aire/
+  domain: webosfritos.es
+  slug: webosfritos-filetes-rusos-de-pollo-en-freidora-de-aire
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.lasrecetasdemj.com/2024/12/pollo-relleno-para-navidad.html
+  domain: lasrecetasdemj.com
+  slug: lasrecetasdemj-2024-12-pollo-relleno-para-navidad-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://danzadefogones.com/potaje-de-garbanzos-con-verduras/
+  domain: danzadefogones.com
+  slug: danzadefogones-potaje-de-garbanzos-con-verduras
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.marmiton.org/recettes/recette_coquilles-saint-jacques-sur-lit-de-poireaux_30741.aspx
+  domain: marmiton.org
+  slug: marmiton-recettes-recette-coquilles-saint-jacques-sur-lit-de-poireaux-30741-aspx
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.cuisineaz.com/diaporamas/le-ramadan-commence-demain-50-idees-de-recettes-faciles-pour-le-ftour-7083/interne/1.aspx
+  domain: cuisineaz.com
+  slug: cuisineaz-diaporamas-le-ramadan-commence-demain-50-idees-de-recettes-faciles-pou
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://cuisine.journaldesfemmes.fr/recette/300105-gateau-aux-cerises
+  domain: cuisine.journaldesfemmes.fr
+  slug: cuisine-recette-300105-gateau-aux-cerises
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.750g.com/pour-changer-de-la-tarte-aux-pommes-miser-sur-la-brioche-fourree-aux-pommes-caramelisees-de-loulou-kitchen-a43061.htm
+  domain: 750g.com
+  slug: 750g-pour-changer-de-la-tarte-aux-pommes-miser-sur-la-brioche-fourree-aux-pommes
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.hervecuisine.com/recette/recette-quatre-quart-vanille/
+  domain: hervecuisine.com
+  slug: hervecuisine-recette-recette-quatre-quart-vanille
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://chefsimon.com/gourmets/chef-simon/recettes/noix-de-saint-jacques-sautees
+  domain: chefsimon.com
+  slug: chefsimon-gourmets-chef-simon-recettes-noix-de-saint-jacques-sautees
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.papillesetpupilles.fr/2026/02/gratin-de-butternut-rotie-poireaux-fondants-et-champignons.html/
+  domain: papillesetpupilles.fr
+  slug: papillesetpupilles-2026-02-gratin-de-butternut-rotie-poireaux-fondants-et-champi
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.cuisineactuelle.fr/recettes/couscous-royal-marocain-258780
+  domain: cuisineactuelle.fr
+  slug: cuisineactuelle-recettes-couscous-royal-marocain-258780
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://odelices.ouest-france.fr/recette/beignets-de-calamars-r3055/
+  domain: odelices.ouest-france.fr
+  slug: odelices-recette-beignets-de-calamars-r3055
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.amandinecooking.com/muffins-pomme-noisette.html
+  domain: amandinecooking.com
+  slug: amandinecooking-muffins-pomme-noisette-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://ricette.giallozafferano.it/Riso-alla-cantonese.html
+  domain: ricette.giallozafferano.it
+  slug: ricette-Riso-alla-cantonese-html
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.cucchiaio.it/ricetta/muffin-al-cioccolato-vegani/
+  domain: cucchiaio.it
+  slug: cucchiaio-ricetta-muffin-al-cioccolato-vegani
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.fattoincasadabenedetta.it/ricetta/matcha-cookies/
+  domain: fattoincasadabenedetta.it
+  slug: fattoincasadabenedetta-ricetta-matcha-cookies
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://ricetta.it/muffin-salati-prosciutto-e-formaggio
+  domain: ricetta.it
+  slug: ricetta-muffin-salati-prosciutto-e-formaggio
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.misya.info/ricetta/focaccia-pere-e-gorgonzola.htm
+  domain: misya.info
+  slug: misya-ricetta-focaccia-pere-e-gorgonzola-htm
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.lacucinaitaliana.com/italian-food/italian-dishes/light-pasta-vegetables-recipe-spring
+  domain: lacucinaitaliana.com
+  slug: lacucinaitaliana-italian-food-italian-dishes-light-pasta-vegetables-recipe-sprin
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.tavolartegusto.it/ricetta/ragu-di-pollo/
+  domain: tavolartegusto.it
+  slug: tavolartegusto-ricetta-ragu-di-pollo
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.gnamgnam.it/ricetta/torta-salata-patate-e-salsiccia.htm
+  domain: gnamgnam.it
+  slug: gnamgnam-ricetta-torta-salata-patate-e-salsiccia-htm
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.dissapore.com/ricette/plumcake-arancia/
+  domain: dissapore.com
+  slug: dissapore-ricette-plumcake-arancia
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.ricardocuisine.com/en/recipes/11168-beef-shepherd-s-pie
+  domain: ricardocuisine.com
+  slug: ricardocuisine-en-recipes-11168-beef-shepherd-s-pie
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.foodnetwork.com/recipes/tourtiere-with-a-twist-2126069
+  domain: foodnetwork.com
+  slug: foodnetwork-recipes-tourtiere-with-a-twist-2126069
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://fraicheliving.com/fraiche-table-cajun-chicken-sandwich/
+  domain: fraicheliving.com
+  slug: fraicheliving-fraiche-table-cajun-chicken-sandwich
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://ohsheglows.com/chickpea-salad/
+  domain: ohsheglows.com
+  slug: ohsheglows-chickpea-salad
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.thereciperebel.com/slow-cooker-chicken-breast/
+  domain: thereciperebel.com
+  slug: thereciperebel-slow-cooker-chicken-breast
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.seasonsandsuppers.ca/seeded-multigrain-sandwich-bread/
+  domain: seasonsandsuppers.ca
+  slug: seasonsandsuppers-seeded-multigrain-sandwich-bread
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://thelemonapron.com/pesto-garlic-french-bread-pizza/
+  domain: thelemonapron.com
+  slug: thelemonapron-pesto-garlic-french-bread-pizza
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://annaolson.ca/project/pumpkin-seed-multigrain-bread/
+  domain: annaolson.ca
+  slug: annaolson-project-pumpkin-seed-multigrain-bread
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: true
+  expected:
+    result: fail
+    extractor:
+    min_ingredients:
+    min_instructions:
+- url: https://www.acanadianfoodie.com/2017/09/24/rolling-desserts-ice-cream-flavours/
+  domain: acanadianfoodie.com
+  slug: acanadianfoodie-2017-09-24-rolling-desserts-ice-cream-flavours
+  tags:
+    structured_data: unknown
+    js_required: false
+    bot_protected: false
+  expected:
+    result: success
+    extractor:
+    min_ingredients:
+    min_instructions:

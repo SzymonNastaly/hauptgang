@@ -115,6 +115,55 @@ class RecipeCorpusRakeTest < ActiveSupport::TestCase
     assert_match(/expected fail/i, failure[:reason])
   end
 
+  test "expected fail contract passes when ingredient threshold is not met" do
+    failure = evaluate_expected_contract(
+      {
+        slug: "demo",
+        success: true,
+        error: nil,
+        extractor: "json_ld",
+        ingredients_count: 3,
+        instructions_count: 8,
+        expected: { "result" => "fail", "min_ingredients" => 5 }
+      }
+    )
+
+    assert_nil failure
+  end
+
+  test "expected fail contract passes when instruction threshold is not met" do
+    failure = evaluate_expected_contract(
+      {
+        slug: "demo",
+        success: true,
+        error: nil,
+        extractor: "json_ld",
+        ingredients_count: 8,
+        instructions_count: 2,
+        expected: { "result" => "fail", "min_instructions" => 3 }
+      }
+    )
+
+    assert_nil failure
+  end
+
+  test "expected fail contract fails when extraction meets fail thresholds" do
+    failure = evaluate_expected_contract(
+      {
+        slug: "demo",
+        success: true,
+        error: nil,
+        extractor: "json_ld",
+        ingredients_count: 8,
+        instructions_count: 5,
+        expected: { "result" => "fail", "min_ingredients" => 5, "min_instructions" => 3 }
+      }
+    )
+
+    assert failure
+    assert_match(/met thresholds/i, failure[:reason])
+  end
+
   test "expected success contract enforces min ingredient count" do
     failure = evaluate_expected_contract(
       {
@@ -152,5 +201,4 @@ class RecipeCorpusRakeTest < ActiveSupport::TestCase
 
     assert_nil failure
   end
-
 end

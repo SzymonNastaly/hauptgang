@@ -55,7 +55,7 @@ Each entry in `test/recipe_corpus/manifest.yml`:
 - Runs **all** manifest entries through extraction on cached snapshots
 - Checks each URL against its `expected` contract:
   - `expected.result: success` => extraction must succeed, and optional `extractor`/minimum counts must match
-  - `expected.result: fail` => extraction must fail
+  - `expected.result: fail` => contract passes if extraction fails, or if extraction succeeds but misses configured `min_ingredients` / `min_instructions`
 - Prints report grouped by: overall, extractor, domain, tags
 - Lists contract failures under `Failed URLs`
 - Exits non-zero if any URL violates its expected contract
@@ -95,13 +95,15 @@ Each entry in `test/recipe_corpus/manifest.yml`:
 
 ## File Locations
 
-| File | Purpose |
-|---|---|
-| `test/recipe_corpus/manifest.yml` | URL list with metadata and expected results |
-| `test/recipe_corpus/snapshots/static/*.html` | Cached HTML (gitignored) |
-| `test/recipe_corpus/snapshots/static/*.meta.yml` | Response metadata (gitignored) |
-| `lib/tasks/recipe_corpus.rake` | All rake tasks (fetch, evaluate, add, refresh) |
-| `test/services/recipe_corpus_test.rb` | CI regression tests |
+
+| File                                             | Purpose                                        |
+| ------------------------------------------------ | ---------------------------------------------- |
+| `test/recipe_corpus/manifest.yml`                | URL list with metadata and expected results    |
+| `test/recipe_corpus/snapshots/static/*.html`     | Cached HTML (gitignored)                       |
+| `test/recipe_corpus/snapshots/static/*.meta.yml` | Response metadata (gitignored)                 |
+| `lib/tasks/recipe_corpus.rake`                   | All rake tasks (fetch, evaluate, add, refresh) |
+| `test/services/recipe_corpus_test.rb`            | CI regression tests                            |
+
 
 ## Evaluation Report Details
 
@@ -110,5 +112,4 @@ Failed URLs in the report show why a URL violated its expected contract. Typical
 - `expected fail, but extracted successfully ...` — URL marked as expected fail now extracts successfully
 - `expected >= N ingredients/instructions` — extraction succeeded but falls below configured thresholds
 - `expected extractor X, got Y` — extraction succeeded with a different extractor than expected
-
 

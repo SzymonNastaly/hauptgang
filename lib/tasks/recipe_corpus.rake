@@ -387,11 +387,11 @@ def infer_bot_protection(meta:, html:)
 
   not_found_markers = body.match?(/not\s+found|page\s+not\s+found|404|doesn'?t\s+exist|unavailable/)
 
-  gate_a = [403, 429].include?(status) || (status == 503 && challenge_markers.any?) || challenge_markers.any?
+  gate_a = [ 403, 429 ].include?(status) || (status == 503 && challenge_markers.any?) || challenge_markers.any?
   gate_b = anti_bot_headers.any? || challenge_markers.any?
   very_strong_body = challenge_markers.intersect?(%w[captcha verify-you-are-human attention-required cf-challenge])
 
-  if [404, 410].include?(status) && not_found_markers && !challenge_markers.any?
+  if [ 404, 410 ].include?(status) && not_found_markers && !challenge_markers.any?
     return {
       bot_protected: false,
       reason: "status #{status} with not-found body and no challenge markers",
@@ -611,12 +611,34 @@ def evaluate_expected_contract(result)
       }
     end
   when "fail"
-    if result[:success]
+    # For expected fail, we accept either:
+    # - extraction failure, or
+    # - extraction success that still violates configured minimum thresholds.
+    return nil unless result[:success]
+
+    min_ingredients = expected["min_ingredients"]
+    min_instructions = expected["min_instructions"]
+    ingredients_mismatch = min_ingredients && result[:ingredients_count] < min_ingredients
+    instructions_mismatch = min_instructions && result[:instructions_count] < min_instructions
+    return nil if ingredients_mismatch || instructions_mismatch
+
+    if min_ingredients || min_instructions
+      expected_bits = []
+      expected_bits << "ingredients>=#{min_ingredients}" if min_ingredients
+      expected_bits << "instructions>=#{min_instructions}" if min_instructions
+      actual_bits = []
+      actual_bits << "ingredients=#{result[:ingredients_count]}" if min_ingredients
+      actual_bits << "instructions=#{result[:instructions_count]}" if min_instructions
       return {
         result: result,
-        reason: "expected fail, but extracted successfully via #{result[:extractor]}"
+        reason: "expected fail, but extracted successfully via #{result[:extractor]} and met thresholds (#{expected_bits.join(', ')}; #{actual_bits.join(', ')})"
       }
     end
+
+    return {
+      result: result,
+      reason: "expected fail, but extracted successfully via #{result[:extractor]}"
+    }
   else
     return {
       result: result,

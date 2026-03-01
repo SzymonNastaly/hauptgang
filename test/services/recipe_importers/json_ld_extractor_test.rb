@@ -537,6 +537,27 @@ module RecipeImporters
       assert_not result.success?
     end
 
+    test "extracts from direct JSON-LD strings and ignores invalid blocks" do
+      extractor = JsonLdExtractor.new("", "https://example.com")
+      json_ld_strings = [
+        "</script><script>alert(1)</script>",
+        "{ invalid json",
+        JSON.generate({
+          "@type" => "Recipe",
+          "name" => "Direct JSON-LD Recipe",
+          "recipeIngredient" => [ "1 cup flour" ],
+          "recipeInstructions" => [ "Mix" ]
+        })
+      ]
+
+      result = extractor.extract_from_json_ld_strings(json_ld_strings)
+
+      assert result.success?
+      assert_equal "Direct JSON-LD Recipe", result.recipe_attributes[:name]
+      assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "Mix" ], result.recipe_attributes[:instructions]
+    end
+
     test "handles single instruction wrapped in string" do
       html = build_html_with_json_ld({
         "@type" => "Recipe",

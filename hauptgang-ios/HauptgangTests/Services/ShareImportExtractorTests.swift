@@ -1,87 +1,233 @@
 @testable import Hauptgang
 import XCTest
+import UniformTypeIdentifiers
 
 final class ShareImportExtractorTests: XCTestCase {
-    // MARK: - urlFromPlainText Tests
+    func testPropertyList_withValidJSResults_returnsSuccessPageContent() async {
+        let url = URL(string: "https://example.com/recipe")!
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [
+                UTType.propertyList.identifier: .success(makePropertyList(jsValues: [
+                    "url": url.absoluteString,
+                    "jsonLd": ["{\"@type\":\"Recipe\"}"],
+                    "metaTags": ["og:title": "Example Recipe"],
+                    "coverImageCandidates": ["https://example.com/cover.jpg"],
+                    "html": "<body><article>Recipe</article></body>"
+                ]))
+            ]
+        )
 
-    func testUrlFromPlainText_validHttpsUrl_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("https://example.com/recipe")
-        XCTAssertEqual(result?.absoluteString, "https://example.com/recipe")
+        let result = await ShareImportExtractor.extractWebPageData(from: [provider])
+        guard case .success(let pageContent) = result else {
+            return XCTFail("Expected .success but got \(result)")
+        }
+
+        XCTAssertEqual(pageContent.url, url)
+        XCTAssertEqual(pageContent.jsonLd.count, 1)
+        XCTAssertEqual(pageContent.metaTags["og:title"], "Example Recipe")
+        XCTAssertEqual(pageContent.coverImageCandidates, ["https://example.com/cover.jpg"])
+        XCTAssertEqual(pageContent.html, "<body><article>Recipe</article></body>")
     }
 
-    func testUrlFromPlainText_validHttpUrl_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("http://example.com")
-        XCTAssertEqual(result?.absoluteString, "http://example.com")
+    func testPropertyList_withEmptyJSResults_butURLInside_returnsUrlOnly() async {
+        let fallbackURL = URL(string: "https://example.com/from-plist")!
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [
+                UTType.propertyList.identifier: .success([
+                    NSExtensionJavaScriptPreprocessingResultsKey: [:] as NSDictionary,
+                    "URL": fallbackURL.absoluteString
+                ] as NSDictionary)
+            ]
+        )
+
+        let result = await ShareImportExtractor.extractWebPageData(from: [provider])
+        guard case .urlOnly(let url) = result else {
+            return XCTFail("Expected .urlOnly but got \(result)")
+        }
+
+        XCTAssertEqual(url, fallbackURL)
     }
 
-    func testUrlFromPlainText_withLeadingWhitespace_trimsAndReturnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("   https://example.com")
-        XCTAssertEqual(result?.absoluteString, "https://example.com")
+    func testPropertyList_noJS_noURL_thenURLAttachment_returnsUrl() async {
+        let attachmentURL = URL(string: "https://example.com/url-attachment")!
+
+        let propertyListProvider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [
+                UTType.propertyList.identifier: .success([
+                    NSExtensionJavaScriptPreprocessingResultsKey: ["notAURL": "value"] as NSDictionary
+                ] as NSDictionary)
+            ]
+        )
+        let urlProvider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.url.identifier],
+            loadItemResults: [UTType.url.identifier: .success(attachmentURL as NSURL)]
+        )
+
+        let webResult = await ShareImportExtractor.extractWebPageData(from: [propertyListProvider, urlProvider])
+        if case .none = webResult {
+            // expected
+        } else {
+            XCTFail("Expected .none from web-page extraction but got \(webResult)")
+        }
+
+        let extractedURL = await ShareImportExtractor.extractURL(from: [propertyListProvider, urlProvider])
+        XCTAssertEqual(extractedURL, attachmentURL)
     }
 
-    func testUrlFromPlainText_withTrailingWhitespace_trimsAndReturnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("https://example.com   ")
-        XCTAssertEqual(result?.absoluteString, "https://example.com")
+    func testPlainTextURL_only_returnsURL() async {
+        let textURL = URL(string: "https://example.com/plain-text")!
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.plainText.identifier],
+            loadItemResults: [UTType.plainText.identifier: .success(textURL.absoluteString as NSString)]
+        )
+
+        let result = await ShareImportExtractor.extractURL(from: [provider])
+        XCTAssertEqual(result, textURL)
     }
 
-    func testUrlFromPlainText_withSurroundingWhitespaceAndNewlines_trimsAndReturnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("\n  https://example.com  \n")
-        XCTAssertEqual(result?.absoluteString, "https://example.com")
+    func testNoURL_thenImageAttachment_returnsImageURL() async throws {
+        let sourceImageURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("jpg")
+        try Data([0x01, 0x02, 0x03]).write(to: sourceImageURL)
+
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.image.identifier],
+            loadFileRepresentationResults: [UTType.image.identifier: .success(sourceImageURL)]
+        )
+
+        let extractedURL = await ShareImportExtractor.extractImageFileURL(from: [provider])
+        XCTAssertNotNil(extractedURL)
+        if let extractedURL {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: extractedURL.path))
+            try? FileManager.default.removeItem(at: extractedURL)
+        }
+        try? FileManager.default.removeItem(at: sourceImageURL)
     }
 
-    func testUrlFromPlainText_withoutScheme_returnsNil() {
-        let result = ShareImportExtractor.urlFromPlainText("example.com/recipe")
-        XCTAssertNil(result)
+    func testNoUsableAttachments_returnsNoneOrNil() async {
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: ["com.example.unknown"]
+        )
+
+        let webResult = await ShareImportExtractor.extractWebPageData(from: [provider])
+        if case .none = webResult {
+            // expected
+        } else {
+            XCTFail("Expected .none but got \(webResult)")
+        }
+        let extractedURL = await ShareImportExtractor.extractURL(from: [provider])
+        XCTAssertNil(extractedURL)
+        let extractedImageURL = await ShareImportExtractor.extractImageFileURL(from: [provider])
+        XCTAssertNil(extractedImageURL)
     }
 
-    func testUrlFromPlainText_emptyString_returnsNil() {
-        let result = ShareImportExtractor.urlFromPlainText("")
-        XCTAssertNil(result)
+    func testPropertyList_withError_doesNotCrash_andFallsBack() async {
+        struct TestError: Error {}
+
+        let propertyListProvider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [UTType.propertyList.identifier: .failure(TestError())]
+        )
+        let plainTextURL = URL(string: "https://example.com/fallback-after-error")!
+        let plainTextProvider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.plainText.identifier],
+            loadItemResults: [UTType.plainText.identifier: .success(plainTextURL.absoluteString as NSString)]
+        )
+
+        let webResult = await ShareImportExtractor.extractWebPageData(from: [propertyListProvider, plainTextProvider])
+        if case .none = webResult {
+            // expected
+        } else {
+            XCTFail("Expected .none after property-list error but got \(webResult)")
+        }
+
+        let url = await ShareImportExtractor.extractURL(from: [propertyListProvider, plainTextProvider])
+        XCTAssertEqual(url, plainTextURL)
     }
 
-    func testUrlFromPlainText_whitespaceOnly_returnsNil() {
-        let result = ShareImportExtractor.urlFromPlainText("   ")
-        XCTAssertNil(result)
+    func testPropertyList_urlFallbackSearch_recoversNestedURLWithinDepthLimit() async {
+        let fallbackURL = URL(string: "https://example.com/deep-url")!
+        let nested = makeDeepNestedDictionary(depth: 12, leafKey: "url", leafValue: fallbackURL.absoluteString)
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [
+                UTType.propertyList.identifier: .success([
+                    NSExtensionJavaScriptPreprocessingResultsKey: nested
+                ] as NSDictionary)
+            ]
+        )
+
+        let result = await ShareImportExtractor.extractWebPageData(from: [provider])
+        guard case .urlOnly(let url) = result else {
+            return XCTFail("Expected .urlOnly but got \(result)")
+        }
+
+        XCTAssertEqual(url, fallbackURL)
     }
 
-    func testUrlFromPlainText_plainText_returnsNil() {
-        let result = ShareImportExtractor.urlFromPlainText("This is just some text about a recipe")
-        XCTAssertNil(result)
+    func testPropertyList_urlFallbackSearch_stopsBeyondDepthLimit() async {
+        let fallbackURL = URL(string: "https://example.com/too-deep")!
+        let nested = makeDeepNestedDictionary(depth: 25, leafKey: "url", leafValue: fallbackURL.absoluteString)
+        let provider = FakeShareItemProvider(
+            registeredTypeIdentifiers: [UTType.propertyList.identifier],
+            loadItemResults: [
+                UTType.propertyList.identifier: .success([
+                    NSExtensionJavaScriptPreprocessingResultsKey: nested
+                ] as NSDictionary)
+            ]
+        )
+
+        let result = await ShareImportExtractor.extractWebPageData(from: [provider])
+        guard case .none = result else {
+            return XCTFail("Expected .none but got \(result)")
+        }
     }
 
-    func testUrlFromPlainText_invalidUrl_returnsNil() {
-        let result = ShareImportExtractor.urlFromPlainText("not a valid url at all")
-        XCTAssertNil(result)
+    private func makePropertyList(jsValues: [String: Any]) -> NSDictionary {
+        [NSExtensionJavaScriptPreprocessingResultsKey: jsValues] as NSDictionary
     }
 
-    func testUrlFromPlainText_fileScheme_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("file:///path/to/file")
-        XCTAssertEqual(result?.scheme, "file")
+    private func makeDeepNestedDictionary(depth: Int, leafKey: String, leafValue: String) -> NSDictionary {
+        var current: NSDictionary = [leafKey: leafValue]
+        for _ in 0..<depth {
+            current = ["child": current]
+        }
+        return current
+    }
+}
+
+private final class FakeShareItemProvider: ShareItemProviding {
+    let registeredTypeIdentifiers: [String]
+    private let loadItemResults: [String: Result<NSSecureCoding?, Error>]
+    private let loadFileRepresentationResults: [String: Result<URL?, Error>]
+
+    init(
+        registeredTypeIdentifiers: [String],
+        loadItemResults: [String: Result<NSSecureCoding?, Error>] = [:],
+        loadFileRepresentationResults: [String: Result<URL?, Error>] = [:]
+    ) {
+        self.registeredTypeIdentifiers = registeredTypeIdentifiers
+        self.loadItemResults = loadItemResults
+        self.loadFileRepresentationResults = loadFileRepresentationResults
     }
 
-    func testUrlFromPlainText_customScheme_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("hauptgang://recipe/123")
-        XCTAssertEqual(result?.scheme, "hauptgang")
+    func hasItemConformingToTypeIdentifier(_ typeIdentifier: String) -> Bool {
+        registeredTypeIdentifiers.contains(typeIdentifier)
     }
 
-    func testUrlFromPlainText_urlWithQueryParams_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("https://example.com/recipe?id=123&name=test")
-        XCTAssertEqual(result?.absoluteString, "https://example.com/recipe?id=123&name=test")
+    func loadItem(forTypeIdentifier typeIdentifier: String, options: [AnyHashable: Any]?) async throws -> NSSecureCoding? {
+        guard let result = loadItemResults[typeIdentifier] else {
+            return nil
+        }
+        return try result.get()
     }
 
-    func testUrlFromPlainText_urlWithFragment_returnsUrl() {
-        let result = ShareImportExtractor.urlFromPlainText("https://example.com/recipe#ingredients")
-        XCTAssertEqual(result?.absoluteString, "https://example.com/recipe#ingredients")
-    }
-
-    // MARK: - extractURL with NSItemProvider Tests
-
-    // Note: NSItemProvider-based async tests are unreliable in XCTest because
-    // loadItem returns serialized data differently than in the actual share extension context.
-    // The pure urlFromPlainText tests above cover the core parsing logic.
-
-    func testExtractURL_withEmptyAttachments_returnsNil() async {
-        let result = await ShareImportExtractor.extractURL(from: [])
-        XCTAssertNil(result)
+    func loadFileRepresentation(forTypeIdentifier typeIdentifier: String) async throws -> URL? {
+        guard let result = loadFileRepresentationResults[typeIdentifier] else {
+            return nil
+        }
+        return try result.get()
     }
 }

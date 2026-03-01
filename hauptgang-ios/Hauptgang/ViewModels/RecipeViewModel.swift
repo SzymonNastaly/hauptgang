@@ -182,7 +182,7 @@ extension RecipeViewModel {
         if await self.searchIndex.isAvailable() {
             let ids = await self.searchIndex.search(trimmed, limit: 50)
             if !ids.isEmpty {
-                let results = await self.fetchRecipesByIds(ids)
+                let results = self.fetchRecipesByIds(ids)
                 self.searchResults = self.sortResults(results, by: ids)
                 return
             }
@@ -203,15 +203,13 @@ extension RecipeViewModel {
         }
         let query = trimmed
 
-        self.searchTask = Task.detached { [weak self] in
-            let rankedIds = RecipeFuzzyScorer.rankedIds(query: query, snapshots: snapshots)
+        self.searchTask = Task { [weak self, snapshots, query] in
+            let rankedIds = await Task.detached(priority: .utility) {
+                RecipeFuzzyScorer.rankedIds(query: query, snapshots: snapshots)
+            }.value
 
             guard !Task.isCancelled else { return }
-
-            await MainActor.run {
-                guard !Task.isCancelled else { return }
-                self?.applySearchResults(rankedIds: rankedIds)
-            }
+            self?.applySearchResults(rankedIds: rankedIds)
         }
     }
 
@@ -232,12 +230,10 @@ extension RecipeViewModel {
         let maxDuration = self.maxPollingDuration
         let interval = self.pollingInterval
 
-        self.pollingTask = Task.detached { [weak self] in
+        self.pollingTask = Task { [weak self] in
             guard let self else { return }
             await self.runPollingLoop(startTime: startTime, maxDuration: maxDuration, interval: interval)
-            await MainActor.run {
-                self.pollingTask = nil
-            }
+            self.pollingTask = nil
         }
     }
 
@@ -292,7 +288,7 @@ extension RecipeViewModel {
 
     private func applyPollingRecipes(_ apiRecipes: [RecipeListItem]) -> Bool {
         do {
-            try self.repository.saveRecipes(apiRecipes)
+            _ = try self.repository.saveRecipes(apiRecipes)
             self.loadCachedRecipes()
         } catch {
             self.logger.error("Polling save failed: \(error.localizedDescription)")
@@ -412,16 +408,14 @@ extension RecipeViewModel {
         let searchIndex = self.searchIndex
         let cursorKey = self.detailCursorKey(for: userId)
 
-        self.detailSyncTask = Task.detached(priority: .utility) { [weak self] in
+        self.detailSyncTask = Task(priority: .utility) { [weak self] in
             await self?.runDetailSyncLoop(
                 recipeService: recipeService,
                 repository: repository,
                 searchIndex: searchIndex,
                 cursorKey: cursorKey
             )
-            await MainActor.run {
-                self?.detailSyncTask = nil
-            }
+            self?.detailSyncTask = nil
         }
     }
 

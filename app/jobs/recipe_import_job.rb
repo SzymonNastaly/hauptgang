@@ -40,6 +40,10 @@ class RecipeImportJob < ApplicationJob
   private
 
   def attach_cover_image(recipe, image_url)
+    unless valid_cover_image_url?(recipe, image_url)
+      return
+    end
+
     response = cover_image_client.get(image_url)
 
     unless response.success?
@@ -66,6 +70,16 @@ class RecipeImportJob < ApplicationJob
     )
   rescue => error
     Rails.logger.error "[RecipeImportJob] Cover image attach failed for recipe #{recipe.id}: #{error.class} - #{error.message}"
+  end
+
+  def valid_cover_image_url?(recipe, image_url)
+    validation = RecipeImporters::UrlValidator.new(image_url).validate
+    return true if validation.success?
+
+    Rails.logger.info(
+      "[RecipeImportJob] Skipping cover image for recipe #{recipe.id}: #{validation.error}"
+    )
+    false
   end
 
   def cover_image_client

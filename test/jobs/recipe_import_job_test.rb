@@ -62,7 +62,7 @@ class RecipeImportJobTest < ActiveSupport::TestCase
     response_body = [
       {
         "caption" => "Test Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
-        "displayUrl" => "https://cdn.example.com/cover.jpg"
+        "displayUrl" => "https://example.com/cover.jpg"
       }
     ]
 
@@ -74,7 +74,7 @@ class RecipeImportJobTest < ActiveSupport::TestCase
       )
       .to_return(status: 200, body: response_body.to_json, headers: { "Content-Type" => "application/json" })
 
-    stub_request(:get, "https://cdn.example.com/cover.jpg")
+    stub_request(:get, "https://example.com/cover.jpg")
       .to_return(status: 200, body: "fake-image-bytes", headers: { "Content-Type" => "image/jpeg" })
 
     stub_llm_response(name: "Test Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
@@ -103,6 +103,30 @@ class RecipeImportJobTest < ActiveSupport::TestCase
     assert_equal :failed, @recipe.import_status.to_sym
     assert_not_nil @recipe.error_message
     assert_equal "Import from example.com failed.", @recipe.error_message
+  end
+
+  test "skips cover image download when cover_image_url points to private host" do
+    result = RecipeImporter::Result.new(
+      success?: true,
+      recipe_attributes: { name: "Imported Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ] },
+      cover_image_url: "http://127.0.0.1/cover.jpg",
+      error: nil,
+      error_code: nil
+    )
+    importer = Minitest::Mock.new
+    importer.expect(:import, result)
+
+    RecipeImporter.stub(:new, importer) do
+      RecipeImportJob.perform_now(@user.id, @recipe.id, "https://example.com/recipe")
+    end
+
+    importer.verify
+    assert_not_requested(:get, "http://127.0.0.1/cover.jpg")
+
+    @recipe.reload
+    assert_equal :completed, @recipe.import_status.to_sym
+    assert_equal "Imported Recipe", @recipe.name
+    assert_not @recipe.cover_image.attached?
   end
 
   test "does nothing when recipe no longer exists" do

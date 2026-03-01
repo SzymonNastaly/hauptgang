@@ -25,6 +25,30 @@ actor RecipeImportService {
         )
     }
 
+    /// Import a recipe from a URL with pre-extracted page content (JS preprocessing)
+    func importRecipe(from url: URL, pageContent: PageContent) async throws -> ImportRecipeResponse {
+        struct ImportWithContentRequest: Encodable {
+            let url: String
+            let jsonLd: [String]
+            let metaTags: [String: String]
+            let coverImageCandidates: [String]
+            let html: String
+        }
+
+        return try await self.apiClient.request(
+            endpoint: "recipes/import_with_content",
+            method: .post,
+            body: ImportWithContentRequest(
+                url: url.absoluteString,
+                jsonLd: pageContent.jsonLd,
+                metaTags: pageContent.metaTags,
+                coverImageCandidates: pageContent.coverImageCandidates,
+                html: pageContent.html
+            ),
+            authenticated: true
+        )
+    }
+
     /// Import a recipe from image data
     func importRecipe(from imageData: Data, mimeType: String = "image/jpeg") async throws -> ImportRecipeResponse {
         try await self.apiClient.uploadMultipart(

@@ -55,8 +55,6 @@ enum RecipeSearchStore {
     }
 
     static func upsertNames(_ recipes: [SearchIndexNameInput], in db: Database) throws {
-        let dateFormatter = Self.iso8601Formatter
-
         for recipe in recipes {
             try db.execute(
                 sql: """
@@ -66,7 +64,7 @@ enum RecipeSearchStore {
                     name = excluded.name,
                     updated_at = excluded.updated_at
                 """,
-                arguments: [recipe.id, recipe.name, dateFormatter.string(from: recipe.updatedAt)]
+                arguments: [recipe.id, recipe.name, Self.iso8601String(from: recipe.updatedAt)]
             )
 
             try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid = ?", arguments: [recipe.id])
@@ -86,8 +84,6 @@ enum RecipeSearchStore {
     }
 
     static func upsertPersisted(_ recipes: [SearchIndexDetailInput], in db: Database) throws {
-        let dateFormatter = Self.iso8601Formatter
-
         for recipe in recipes {
             let ingredients = recipe.ingredients.joined(separator: "\n")
             let instructions = recipe.instructions.joined(separator: "\n")
@@ -107,7 +103,7 @@ enum RecipeSearchStore {
                     recipe.name,
                     ingredients,
                     instructions,
-                    dateFormatter.string(from: recipe.updatedAt)
+                    Self.iso8601String(from: recipe.updatedAt)
                 ]
             )
 
@@ -126,9 +122,7 @@ enum RecipeSearchStore {
         try self.upsertPersisted(details, in: db)
     }
 
-    private static let iso8601Formatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+    private static func iso8601String(from date: Date) -> String {
+        date.formatted(Date.ISO8601FormatStyle(includingFractionalSeconds: true))
+    }
 }

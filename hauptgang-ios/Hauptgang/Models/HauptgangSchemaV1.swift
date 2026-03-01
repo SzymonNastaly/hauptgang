@@ -3,7 +3,7 @@ import SwiftData
 
 /// Original schema — matches what's on TestFlight users' devices (no cookbookId)
 enum HauptgangSchemaV1: VersionedSchema {
-    static var versionIdentifier = Schema.Version(1, 0, 0)
+    static let versionIdentifier = Schema.Version(1, 0, 0)
 
     static var models: [any PersistentModel.Type] {
         [PersistedRecipe.self, PersistedShoppingListItem.self]

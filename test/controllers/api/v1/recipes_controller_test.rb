@@ -228,6 +228,70 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "import_with_content enqueues job with meta tags for cover fallback" do
+    payload = {
+      url: "https://example.com/recipe",
+      json_ld: [ "{\"@type\":\"Recipe\"}" ],
+      html: "<body><article>Recipe</article></body>",
+      meta_tags: { "og:image" => "https://example.com/og-cover.jpg", "og:title" => "Example Recipe" },
+      cover_image_candidates: [ "https://example.com/dom-cover.jpg", "https://example.com/dom-cover-2.jpg" ]
+    }
+
+    assert_enqueued_jobs 1, only: RecipeContentImportJob do
+      post import_with_content_api_v1_recipes_url,
+        params: payload,
+        headers: @auth_headers,
+        as: :json
+    end
+
+    assert_response :accepted
+
+    job = enqueued_jobs.find { |entry| entry[:job] == RecipeContentImportJob }
+    assert_not_nil job
+
+    args = job[:args]
+    assert_equal @user.id, args[0]
+    assert_equal "https://example.com/recipe", args[2]
+    assert_equal [ "{\"@type\":\"Recipe\"}" ], args[3]
+    assert_equal "<body><article>Recipe</article></body>", args[4]
+    assert_equal "https://example.com/og-cover.jpg", args[5]["og:image"]
+    assert_equal "Example Recipe", args[5]["og:title"]
+    assert_equal [ "https://example.com/dom-cover.jpg", "https://example.com/dom-cover-2.jpg" ], args[6]
+  end
+
+  test "import_with_content returns error for blank URL" do
+    post import_with_content_api_v1_recipes_url,
+      params: { url: "", json_ld: [], html: "<body></body>" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "URL is required", json["error"]
+  end
+
+  test "import_with_content returns 413 when payload exceeds 2MB" do
+    validation_result = Struct.new(:success?, :error).new(true, nil)
+    validator = Struct.new(:result) do
+      def validate
+        result
+      end
+    end.new(validation_result)
+
+    large_html = "a" * (2.megabytes + 1)
+
+    RecipeImporters::UrlValidator.stub(:new, ->(*) { validator }) do
+      assert_no_enqueued_jobs only: RecipeContentImportJob do
+        post import_with_content_api_v1_recipes_url,
+          params: { url: "https://example.com/recipe", json_ld: [], html: large_html },
+          headers: @auth_headers,
+          as: :json
+      end
+    end
+
+    assert_response :payload_too_large
+  end
+
   # extract_from_text tests
 
   test "extract_from_text creates recipe and enqueues job" do

@@ -14,12 +14,13 @@ module RecipeImporters
 
     def extract
       doc = Nokogiri::HTML(@html)
-
       # Find all JSON-LD scripts
-      json_ld_scripts = doc.css('script[type="application/ld+json"]')
+      extract_from_json_ld_strings(doc.css('script[type="application/ld+json"]').map(&:text))
+    end
 
-      json_ld_scripts.each do |script|
-        data = parse_json(script.text)
+    def extract_from_json_ld_strings(json_ld_strings)
+      Array(json_ld_strings).each do |json_ld_string|
+        data = parse_json(json_ld_string)
         next unless data
 
         recipe = find_recipe(data)

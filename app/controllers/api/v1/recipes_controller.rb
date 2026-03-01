@@ -6,7 +6,7 @@ module Api
     class RecipesController < BaseController
       class ImportLimitReachedError < StandardError; end
 
-      before_action :check_import_limit!, only: [ :import, :extract_from_text, :extract_from_image ]
+      before_action :check_import_limit!, only: [ :import, :import_with_content, :extract_from_text, :extract_from_image ]
       after_action :cleanup_old_failed_recipes, only: [ :index ]
 
       rescue_from ImportLimitReachedError, with: :render_import_limit_reached
@@ -83,6 +83,54 @@ module Api
         end
 
         RecipeImportJob.perform_later(current_user.id, recipe.id, url)
+
+        render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
+      end
+
+      def import_with_content
+        url = params[:url].to_s.strip
+        if url.blank?
+          return render json: { error: "URL is required" }, status: :unprocessable_entity
+        end
+
+        validation = RecipeImporters::UrlValidator.new(url).validate
+        unless validation.success?
+          return render json: { error: validation.error }, status: :unprocessable_entity
+        end
+
+        json_ld = params[:json_ld] || []
+        html = params[:html].to_s
+        meta_tags = normalize_meta_tags(params[:meta_tags])
+        cover_image_candidates = normalize_cover_image_candidates(params[:cover_image_candidates])
+
+        # Reject oversized payloads (2MB combined limit for pre-extracted content)
+        total_size = json_ld.sum { |s| s.to_s.bytesize } +
+          html.bytesize +
+          meta_tags.sum { |key, value| key.to_s.bytesize + value.to_s.bytesize } +
+          cover_image_candidates.sum { |value| value.to_s.bytesize }
+        if total_size > 2.megabytes
+          return head :payload_too_large
+        end
+
+        recipe = current_user.with_lock do
+          check_import_limit_locked!
+          current_cookbook.recipes.create!(
+            name: "Importing...",
+            source_url: url,
+            import_status: :pending,
+            user: current_user
+          )
+        end
+
+        RecipeContentImportJob.perform_later(
+          current_user.id,
+          recipe.id,
+          url,
+          json_ld.map(&:to_s),
+          html,
+          meta_tags,
+          cover_image_candidates
+        )
 
         render json: { id: recipe.id, import_status: recipe.import_status }, status: :accepted
       end
@@ -180,6 +228,32 @@ module Api
         limit = raw_limit.to_i
         limit = 100 if limit <= 0
         [ limit, 500 ].min
+      end
+
+      def normalize_meta_tags(raw_meta_tags)
+        return {} unless raw_meta_tags.respond_to?(:to_unsafe_h) || raw_meta_tags.is_a?(Hash)
+
+        meta_tags_hash = if raw_meta_tags.respond_to?(:to_unsafe_h)
+          raw_meta_tags.to_unsafe_h
+        else
+          raw_meta_tags
+        end
+
+        meta_tags_hash.each_with_object({}) do |(key, value), result|
+          next if key.blank? || value.blank?
+
+          result[key.to_s] = value.to_s
+        end
+      end
+
+      def normalize_cover_image_candidates(raw_candidates)
+        candidates = raw_candidates.is_a?(Array) ? raw_candidates : []
+
+        candidates
+          .map { |value| value.to_s.strip }
+          .reject(&:blank?)
+          .uniq
+          .first(5)
       end
 
       def encode_cursor(updated_at, id)

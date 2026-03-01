@@ -9,6 +9,7 @@ Rails.application.routes.draw do
         collection do
           get :batch
           post :import
+          post :import_with_content
           post :extract_from_text
           post :extract_from_image
         end

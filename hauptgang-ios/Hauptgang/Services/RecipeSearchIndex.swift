@@ -194,7 +194,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
     }
 
     func reset() async {
-        await self.resetDatabaseFile()
+        self.resetDatabaseFile()
     }
 
     // MARK: - Private
@@ -252,7 +252,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         guard isCorrupt else { return false }
 
         self.logger.error("Search index corrupted; rebuilding: \(dbError.message ?? "unknown error")")
-        await self.resetDatabaseFile()
+        self.resetDatabaseFile()
         await self.configure(userId: userId, cookbookId: cookbookId)
         return self.available
     }

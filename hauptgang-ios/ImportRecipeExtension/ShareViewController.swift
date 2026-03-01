@@ -1,6 +1,9 @@
+import os
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
+
+private let logger = Logger(subsystem: "app.hauptgang.ios.share-extension", category: "ShareViewController")
 
 @objc(ShareViewController)
 class ShareViewController: UIViewController {
@@ -49,35 +52,72 @@ class ShareViewController: UIViewController {
     }
 
     private func extractContent() {
-        guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem,
-              let attachments = extensionItem.attachments
+        guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem]
         else {
+            logger.error("No extension item or attachments found")
             self.updateState(.failed("No content found"))
             return
         }
 
+        let attachments = extensionItems.flatMap { $0.attachments ?? [] }
+        guard attachments.isEmpty == false else {
+            logger.error("No attachments found across \(extensionItems.count) extension items")
+            self.updateState(.failed("No content found"))
+            return
+        }
+
+        for (index, provider) in attachments.enumerated() {
+            logger.info("Attachment \(index): \(provider.registeredTypeIdentifiers)")
+        }
+
         self.importTask = Task {
-            // Try URL first — URL scraping gives better results than photo OCR
+            // Try JS preprocessing results first (Safari shares with page content)
+            let webPageResult = await ShareImportExtractor.extractWebPageData(from: attachments)
+            switch webPageResult {
+            case .success(let pageContent):
+                logger.info("JS preprocessing succeeded — URL: \(pageContent.url.absoluteString), JSON-LD blocks: \(pageContent.jsonLd.count), HTML size: \(pageContent.html.utf8.count) bytes")
+                await self.handleExtractedPageContent(pageContent)
+                return
+            case .urlOnly(let url):
+                logger.info("JS preprocessing failed, but got URL from web page item: \(url.absoluteString)")
+                await self.handleExtractedURL(url)
+                return
+            case .none:
+                break
+            }
+
+            // Try URL (non-Safari apps, or when JS preprocessing unavailable)
             if let url = await ShareImportExtractor.extractURL(from: attachments) {
+                logger.info("URL extracted: \(url.absoluteString)")
                 await self.handleExtractedURL(url)
                 return
             }
 
             // Fall back to image
             if let imageFileURL = await ShareImportExtractor.extractImageFileURL(from: attachments) {
+                logger.info("Image extracted: \(imageFileURL.lastPathComponent)")
                 await self.handleExtractedImage(imageFileURL)
                 return
             }
 
+            logger.error("Could not extract any content from attachments")
             await MainActor.run {
                 self.updateState(.failed("Could not extract recipe content"))
             }
         }
     }
 
-    private func handleExtractedURL(_ url: URL) async {
+    private func handleExtractedPageContent(_ pageContent: PageContent) async {
+        if let unsupportedDomain = self.unsupportedDomain(for: pageContent.url) {
+            logger.info("Unsupported domain detected: \(unsupportedDomain, privacy: .public)")
+            await MainActor.run {
+                self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
+            }
+            return
+        }
+
         await MainActor.run {
-            self.updateState(.importing(url))
+            self.updateState(.importing(pageContent.url))
         }
 
         guard await KeychainService.shared.getToken() != nil else {
@@ -88,7 +128,50 @@ class ShareViewController: UIViewController {
         }
 
         do {
+            _ = try await RecipeImportService.shared.importRecipe(from: pageContent.url, pageContent: pageContent)
+            logger.info("Import with content succeeded for \(pageContent.url.absoluteString)")
+            await MainActor.run {
+                self.updateState(.success)
+            }
+            try? await Task.sleep(for: .seconds(2))
+            await MainActor.run {
+                self.close()
+            }
+        } catch APIError.payloadTooLarge {
+            logger.warning("Payload too large for \(pageContent.url.absoluteString), falling back to URL-only import")
+            await self.handleExtractedURL(pageContent.url)
+        } catch {
+            logger.error("Import with content failed for \(pageContent.url.absoluteString): \(error.localizedDescription)")
+            await MainActor.run {
+                self.updateState(.failed(error.localizedDescription))
+            }
+        }
+    }
+
+    private func handleExtractedURL(_ url: URL) async {
+        if let unsupportedDomain = self.unsupportedDomain(for: url) {
+            logger.info("Unsupported domain detected: \(unsupportedDomain, privacy: .public)")
+            await MainActor.run {
+                self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
+            }
+            return
+        }
+
+        await MainActor.run {
+            self.updateState(.importing(url))
+        }
+
+        guard await KeychainService.shared.getToken() != nil else {
+            logger.error("Not authenticated — no token found")
+            await MainActor.run {
+                self.updateState(.notAuthenticated)
+            }
+            return
+        }
+
+        do {
             _ = try await RecipeImportService.shared.importRecipe(from: url)
+            logger.info("URL-only import succeeded for \(url.absoluteString)")
             await MainActor.run {
                 self.updateState(.success)
             }
@@ -97,6 +180,7 @@ class ShareViewController: UIViewController {
                 self.close()
             }
         } catch {
+            logger.error("URL-only import failed for \(url.absoluteString): \(error.localizedDescription)")
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }
@@ -111,6 +195,7 @@ class ShareViewController: UIViewController {
         }
 
         guard await KeychainService.shared.getToken() != nil else {
+            logger.error("Not authenticated — no token found")
             await MainActor.run {
                 self.updateState(.notAuthenticated)
             }
@@ -118,6 +203,7 @@ class ShareViewController: UIViewController {
         }
 
         guard let compressed = ImageCompressor.compressToJPEG(from: fileURL) else {
+            logger.error("Image compression failed for \(fileURL.lastPathComponent)")
             await MainActor.run {
                 self.updateState(.failed("Could not process image"))
             }
@@ -126,6 +212,7 @@ class ShareViewController: UIViewController {
 
         do {
             _ = try await RecipeImportService.shared.importRecipe(from: compressed)
+            logger.info("Image import succeeded")
             await MainActor.run {
                 self.updateState(.success)
             }
@@ -134,6 +221,7 @@ class ShareViewController: UIViewController {
                 self.close()
             }
         } catch {
+            logger.error("Image import failed: \(error.localizedDescription)")
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }
@@ -143,12 +231,27 @@ class ShareViewController: UIViewController {
     private func openMainApp() {
         guard let appURL = URL(string: "hauptgang://") else { return }
         extensionContext?.open(appURL) { [weak self] _ in
-            self?.close()
+            Task { @MainActor [weak self] in
+                self?.close()
+            }
         }
     }
 
     private func close() {
         self.importTask?.cancel()
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    private func unsupportedDomain(for url: URL) -> String? {
+        guard let host = url.host?.lowercased() else {
+            return nil
+        }
+
+        for domain in UnsupportedImportDomains.all {
+            if host == domain || host.hasSuffix(".\(domain)") {
+                return domain
+            }
+        }
+        return nil
     }
 }

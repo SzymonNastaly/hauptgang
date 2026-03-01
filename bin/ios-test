@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 cd "$(dirname "$0")/../hauptgang-ios"
 
@@ -18,8 +19,15 @@ echo "==> Regenerating Xcode project..."
 xcodegen generate
 
 echo "==> Running iOS tests..."
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
+LOG_FILE=$(mktemp /tmp/ios-test.XXXXXX.log)
+if xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-  test 2>&1 | grep -E "(Test Suite|passed|failed|BUILD|TEST)"
+  test 2>&1 | tee "$LOG_FILE" | grep -E "(Test Suite|passed|failed|BUILD|TEST)"; then
+  echo "==> Done!"
+  exit 0
+fi
 
-echo "==> Done!"
+echo "==> xcodebuild failed. Key error lines:"
+rg -n "error:|FAILED|Testing cancelled|The following build commands failed|BUILD FAILED|TEST FAILED" "$LOG_FILE" || true
+echo "==> Full log: $LOG_FILE"
+exit 1

@@ -7,5 +7,10 @@
         "paths": ["/invite/*"]
       }
     ]
+  },
+  "webcredentials": {
+    "apps": [
+      "R69J54A3P5.app.hauptgang.ios"
+    ]
   }
 }

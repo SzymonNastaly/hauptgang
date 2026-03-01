@@ -9,6 +9,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:cook.hauptgang.app</string>
+		<string>webcredentials:cook.hauptgang.app</string>
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>

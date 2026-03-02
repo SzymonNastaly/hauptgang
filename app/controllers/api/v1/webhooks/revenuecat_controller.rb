@@ -37,14 +37,13 @@ module Api
         end
 
         def entitlement_active?
-          entitlements = params.dig(:event, :subscriber_info, :entitlements) || {}
-          entitlement = entitlements["Hauptgang Pro"]
-          return false unless entitlement
+          entitlement_ids = params.dig(:event, :entitlement_ids) || []
+          return false unless entitlement_ids.include?("Hauptgang Pro")
 
-          expires = entitlement["expires_date"]
-          return true if expires.blank? # Lifetime entitlement
+          expiration_ms = params.dig(:event, :expiration_at_ms)
+          return true if expiration_ms.blank? # Lifetime entitlement
 
-          Time.parse(expires) > Time.current
+          Time.at(expiration_ms / 1000.0) > Time.current
         end
       end
     end

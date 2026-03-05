@@ -56,6 +56,7 @@ struct LoginView: View {
             self.errorBanner
             self.submitButton
         }
+        .id(self.viewModel.isSignUp)
     }
 
     private var emailField: some View {

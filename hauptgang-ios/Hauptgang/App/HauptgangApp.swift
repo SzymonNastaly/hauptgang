@@ -51,6 +51,7 @@ struct HauptgangApp: App {
                 .environment(self.deepLinkRouter)
                 .preferredColorScheme(.light)
                 .task {
+                    self.subscriptionManager.startListening()
                     await self.subscriptionManager.refreshStatus()
                 }
                 .onOpenURL { url in

@@ -7,6 +7,7 @@ struct ThemeTextFieldStyle: TextFieldStyle {
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding(Theme.Spacing.md)
+            .contentShape(Rectangle())
             .background(Color.hauptgangCard)
             .cornerRadius(Theme.CornerRadius.md)
             .overlay(

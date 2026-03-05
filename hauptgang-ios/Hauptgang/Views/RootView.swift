@@ -34,6 +34,7 @@ struct RootView: View {
                     self.cookbookViewModel.configure(userId: user.id)
                     await self.cookbookViewModel.loadCookbooks()
                     await self.subscriptionManager.identify(userId: String(user.id))
+                    await self.subscriptionManager.refreshStatus()
 
                     // Check for invitation stored while unauthenticated
                     if let storedToken = self.deepLinkRouter.consumeStoredToken() {

@@ -104,7 +104,7 @@ module Api
         cover_image_candidates = normalize_cover_image_candidates(params[:cover_image_candidates])
 
         # Reject oversized payloads (2MB combined limit for pre-extracted content)
-        total_size = json_ld.sum { |s| s.to_s.bytesize } +
+        total_size = json_ld.sum { |json_ld_string| json_ld_string.to_s.bytesize } +
           html.bytesize +
           meta_tags.sum { |key, value| key.to_s.bytesize + value.to_s.bytesize } +
           cover_image_candidates.sum { |value| value.to_s.bytesize }

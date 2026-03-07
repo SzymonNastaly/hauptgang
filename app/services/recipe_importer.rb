@@ -26,6 +26,11 @@ class RecipeImporter
       return result
     end
 
+    if RecipeImporters::TiktokVideoExtractor.supports_url?(@url)
+      result = RecipeImporters::TiktokVideoExtractor.new(@url).extract
+      return result
+    end
+
     fetch_result = fetch_html
     return failure(fetch_result[:error], fetch_result[:error_code]) unless fetch_result[:success]
 

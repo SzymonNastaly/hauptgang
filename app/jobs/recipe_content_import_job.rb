@@ -2,6 +2,7 @@ require "stringio"
 
 class RecipeContentImportJob < ApplicationJob
   queue_as :default
+  CoverImageSource = Data.define(:url, :source)
 
   def perform(user_id, recipe_id, source_url, json_ld_strings, html, meta_tags = {}, cover_image_candidates = [])
     user = User.find_by(id: user_id)
@@ -39,6 +40,10 @@ class RecipeContentImportJob < ApplicationJob
   private
 
   def extract_from_content(source_url, json_ld_strings, html)
+    if RecipeImporters::TiktokVideoExtractor.supports_url?(source_url)
+      return RecipeImporters::TiktokVideoExtractor.new(source_url).extract
+    end
+
     # Try JSON-LD first: parse provided blocks directly (no HTML reconstruction)
     if json_ld_strings.present?
       result = RecipeImporters::JsonLdExtractor.new("", source_url).extract_from_json_ld_strings(json_ld_strings)
@@ -71,8 +76,8 @@ class RecipeContentImportJob < ApplicationJob
       "[RecipeContentImportJob] Cover image candidates for recipe #{recipe.id}: total=#{sources.size}"
     )
 
-    sources.each_with_index do |source, attempt_index|
-      if attach_cover_image(recipe, source[:url], source[:source], attempt_index)
+    sources.each_with_index do |source_candidate, attempt_index|
+      if attach_cover_image(recipe, source_candidate, attempt_index)
         return
       end
     end
@@ -80,11 +85,13 @@ class RecipeContentImportJob < ApplicationJob
     Rails.logger.info("[RecipeContentImportJob] Could not attach cover image for recipe #{recipe.id} after #{sources.size} attempts")
   end
 
-  def attach_cover_image(recipe, image_url, source, attempt_index)
-    unless valid_cover_image_url?(recipe, image_url, source, attempt_index)
+  def attach_cover_image(recipe, source_candidate, attempt_index)
+    unless valid_cover_image_url?(recipe, source_candidate, attempt_index)
       return false
     end
 
+    image_url = source_candidate.url
+    source = source_candidate.source
     Rails.logger.info("[RecipeContentImportJob] Cover image attempt=#{attempt_index} source=#{source} fetching")
 
     response = cover_image_client.get(image_url)
@@ -122,9 +129,8 @@ class RecipeContentImportJob < ApplicationJob
     sources = []
     dedupe = {}
 
-    if extracted_cover_image_url.present?
-      push_cover_image_source(sources, dedupe, extracted_cover_image_url, "json_ld_or_extractor")
-    end
+    source_candidate = build_cover_image_source(extracted_cover_image_url, "json_ld_or_extractor", dedupe)
+    sources << source_candidate if source_candidate
 
     meta_values = [
       meta_tags["og:image:secure_url"],
@@ -132,31 +138,32 @@ class RecipeContentImportJob < ApplicationJob
       meta_tags["twitter:image"]
     ]
     meta_values.each do |meta_url|
-      push_cover_image_source(sources, dedupe, meta_url, "meta_tag")
+      source_candidate = build_cover_image_source(meta_url, "meta_tag", dedupe)
+      sources << source_candidate if source_candidate
     end
 
     Array(cover_image_candidates).each do |candidate_url|
-      push_cover_image_source(sources, dedupe, candidate_url, "dom_candidate")
+      source_candidate = build_cover_image_source(candidate_url, "dom_candidate", dedupe)
+      sources << source_candidate if source_candidate
     end
 
     sources
   end
 
-  def push_cover_image_source(sources, dedupe, raw_url, source)
+  def build_cover_image_source(raw_url, source, dedupe)
     image_url = raw_url.to_s.strip
-    return if image_url.blank?
-    return if dedupe[image_url]
+    return if image_url.blank? || dedupe[image_url]
 
     dedupe[image_url] = true
-    sources << { url: image_url, source: source }
+    CoverImageSource.new(url: image_url, source:)
   end
 
-  def valid_cover_image_url?(recipe, image_url, source, attempt_index)
-    validation = RecipeImporters::UrlValidator.new(image_url).validate
+  def valid_cover_image_url?(recipe, source_candidate, attempt_index)
+    validation = RecipeImporters::UrlValidator.new(source_candidate.url).validate
     return true if validation.success?
 
     Rails.logger.info(
-      "[RecipeContentImportJob] Cover image attempt=#{attempt_index} source=#{source} validation_failed recipe=#{recipe.id}: #{validation.error}"
+      "[RecipeContentImportJob] Cover image attempt=#{attempt_index} source=#{source_candidate.source} validation_failed recipe=#{recipe.id}: #{validation.error}"
     )
     false
   end

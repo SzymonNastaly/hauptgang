@@ -196,6 +196,175 @@ class RecipeImporterTest < ActiveSupport::TestCase
     ENV["APIFY_API_KEY"] = previous_key
   end
 
+  test "imports tiktok video via oembed" do
+    url = "https://www.tiktok.com/@creator/video/1234567890"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Test Recipe\n\nIngredients:\n- 1 cup flour\n\nInstructions:\n- Mix",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/cover.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_llm_response(name: "Test Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
+
+    result = RecipeImporter.new(url).import
+
+    assert result.success?
+    assert_equal "Test Recipe", result.recipe_attributes[:name]
+    assert_equal "https://p16-sign-va.tiktokcdn.com/cover.jpeg", result.cover_image_url
+  end
+
+  test "imports tiktok short link by resolving to canonical video url" do
+    short_url = "https://vm.tiktok.com/ZNRu1v3Hq/"
+    canonical_url = "https://www.tiktok.com/@creator/video/1234567890"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => short_url })
+      .to_return(status: 404, body: "", headers: { "Content-Type" => "text/plain" })
+
+    stub_request(:get, short_url)
+      .to_return(status: 302, headers: { "Location" => canonical_url })
+
+    stub_request(:get, canonical_url)
+      .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => canonical_url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Redirected Recipe\n\nIngredients:\n- 2 eggs\n\nInstructions:\n- Whisk",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/redirected.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_llm_response(name: "Redirected Recipe", ingredients: [ "2 eggs" ], instructions: [ "Whisk" ])
+
+    result = RecipeImporter.new(short_url).import
+
+    assert result.success?
+    assert_equal "Redirected Recipe", result.recipe_attributes[:name]
+    assert_equal "https://p16-sign-va.tiktokcdn.com/redirected.jpeg", result.cover_image_url
+  end
+
+  test "imports tiktok short link directly via oembed without resolving redirect" do
+    short_url = "https://vm.tiktok.com/ZNRu1v3Hq/"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => short_url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Short Link Recipe\n\nIngredients:\n- 1 onion\n\nInstructions:\n- Cook",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/direct-shortlink.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_llm_response(name: "Short Link Recipe", ingredients: [ "1 onion" ], instructions: [ "Cook" ])
+
+    result = RecipeImporter.new(short_url).import
+
+    assert result.success?
+    assert_equal "Short Link Recipe", result.recipe_attributes[:name]
+    assert_equal "https://p16-sign-va.tiktokcdn.com/direct-shortlink.jpeg", result.cover_image_url
+    assert_not_requested(:get, short_url)
+  end
+
+  test "imports tiktok short link when first oembed response is invalid JSON" do
+    short_url = "https://vm.tiktok.com/ZNRu1v3Hq/"
+    canonical_url = "https://www.tiktok.com/@creator/video/1234567890"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => short_url })
+      .to_return(status: 200, body: "{not-json", headers: { "Content-Type" => "application/json" })
+
+    stub_request(:get, short_url)
+      .to_return(status: 302, headers: { "Location" => canonical_url })
+
+    stub_request(:get, canonical_url)
+      .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => canonical_url })
+      .to_return(
+        status: 200,
+        body: {
+          title: "Recovered Recipe\n\nIngredients:\n- 3 tomatoes\n\nInstructions:\n- Simmer",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/recovered.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_llm_response(name: "Recovered Recipe", ingredients: [ "3 tomatoes" ], instructions: [ "Simmer" ])
+
+    result = RecipeImporter.new(short_url).import
+
+    assert result.success?
+    assert_equal "Recovered Recipe", result.recipe_attributes[:name]
+    assert_equal "https://p16-sign-va.tiktokcdn.com/recovered.jpeg", result.cover_image_url
+  end
+
+  test "ignores non-tiktok redirect target for tiktok short link" do
+    short_url = "https://vm.tiktok.com/ZNRu1v3Hq/"
+    redirected_url = "https://example.com/not-tiktok"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => short_url })
+      .to_return(status: 404, body: "", headers: { "Content-Type" => "text/plain" })
+
+    stub_request(:get, short_url)
+      .to_return(status: 302, headers: { "Location" => redirected_url })
+
+    stub_request(:get, redirected_url)
+      .to_return(status: 200, body: "<html></html>", headers: { "Content-Type" => "text/html" })
+
+    result = RecipeImporter.new(short_url).import
+
+    assert_not result.success?
+    assert_equal :tiktok_fetch_failed, result.error_code
+    assert_not_requested(:get, "https://www.tiktok.com/oembed", query: { "url" => redirected_url })
+  end
+
+  test "returns error when tiktok caption is missing" do
+    url = "https://www.tiktok.com/@creator/video/1234567890"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => url })
+      .to_return(
+        status: 200,
+        body: {
+          title: " ",
+          thumbnail_url: "https://p16-sign-va.tiktokcdn.com/cover.jpeg"
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    result = RecipeImporter.new(url).import
+
+    assert_not result.success?
+    assert_equal :tiktok_no_caption, result.error_code
+  end
+
+  test "returns error when tiktok oembed response is invalid" do
+    url = "https://www.tiktok.com/@creator/video/1234567890"
+
+    stub_request(:get, "https://www.tiktok.com/oembed")
+      .with(query: { "url" => url })
+      .to_return(status: 200, body: "{not-json", headers: { "Content-Type" => "application/json" })
+
+    result = RecipeImporter.new(url).import
+
+    assert_not result.success?
+    assert_equal :tiktok_invalid_response, result.error_code
+  end
+
   test "returns error when apify key is missing for instagram" do
     url = "https://www.instagram.com/p/DRUf_pBiPdh/"
     previous_key = ENV["APIFY_API_KEY"]

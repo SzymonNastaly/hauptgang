@@ -98,24 +98,17 @@ class Api::V1::Webhooks::RevenuecatControllerTest < ActionDispatch::IntegrationT
   end
 
   def webhook_payload(app_user_id:, entitlement_active:, expires_date: nil)
-    entitlements = if entitlement_active
-      {
-        "Hauptgang Pro" => {
-          "expires_date" => expires_date,
-          "purchase_date" => 1.month.ago.iso8601
-        }
-      }
-    else
-      {}
-    end
+    entitlement_ids = entitlement_active ? [ "Hauptgang Pro" ] : []
+    expiration_at_ms = expires_date ? (Time.parse(expires_date).to_f * 1000).to_i : nil
 
     {
+      api_version: "1.0",
       event: {
-        type: "RENEWAL",
+        type: "INITIAL_PURCHASE",
         app_user_id: app_user_id.to_s,
-        subscriber_info: {
-          entitlements: entitlements
-        }
+        entitlement_ids: entitlement_ids,
+        expiration_at_ms: expiration_at_ms,
+        product_id: "yearly_v2"
       }
     }
   end

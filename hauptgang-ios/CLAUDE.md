@@ -82,6 +82,7 @@ The iOS app consumes the Rails JSON API at `/api/v1/`. When working on iOS featu
 - Use `#Preview` macro for SwiftUI previews
 - Keep views simple; move logic to ViewModels
 - Use `Constants` enum for magic strings/URLs
+- **Always use `Color.hauptgangPrimary` (explicit `Color.` prefix), never `.hauptgangPrimary`** — static member lookup without the type fails in `ShapeStyle` contexts (e.g. `foregroundStyle`, `background`, `tint`)
 
 ## Testing
 

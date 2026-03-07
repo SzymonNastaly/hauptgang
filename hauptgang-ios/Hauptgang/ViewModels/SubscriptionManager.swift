@@ -50,7 +50,7 @@ final class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
     func refreshStatus() async {
         logger.info("refreshStatus() called — current appUserID: \(Purchases.shared.appUserID)")
         do {
-            let customerInfo = try await Purchases.shared.customerInfo()
+            let customerInfo = try await Purchases.shared.customerInfo(fetchPolicy: .fetchCurrent)
             logger.info("refreshStatus() fetched customerInfo for: \(customerInfo.originalAppUserId)")
             self.updateProStatus(from: customerInfo)
         } catch {
@@ -66,7 +66,6 @@ final class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
         updateProStatus() — entitlementID: \(Constants.RevenueCat.entitlementID), \
         found: \(entitlement != nil), \
         isActive: \(isActive), \
-        allEntitlements: \(customerInfo.entitlements.all.keys.joined(separator: ", ")), \
         isPro: \(self.isPro) → \(isActive)
         """)
         self.isPro = isActive

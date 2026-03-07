@@ -33,6 +33,12 @@ struct SettingsView: View {
             }
             .sheet(isPresented: self.$showingPaywall) {
                 PaywallView()
+                    .onPurchaseCompleted { _ in
+                        Task { await self.subscriptionManager.refreshStatus() }
+                    }
+                    .onRestoreCompleted { _ in
+                        Task { await self.subscriptionManager.refreshStatus() }
+                    }
             }
             .sheet(isPresented: self.$showingCustomerCenter) {
                 CustomerCenterView()

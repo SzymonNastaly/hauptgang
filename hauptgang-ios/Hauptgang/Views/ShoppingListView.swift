@@ -115,15 +115,6 @@ struct ShoppingListView: View {
                         endPoint: .bottom
                     )
                 )
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.35), .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    ),
-                    lineWidth: 1
-                )
         }
     }
 

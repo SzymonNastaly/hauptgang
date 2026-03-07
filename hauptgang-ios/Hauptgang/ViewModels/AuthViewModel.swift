@@ -13,8 +13,16 @@ final class AuthViewModel: ObservableObject {
         didSet {
             self.errorMessage = nil
             self.passwordConfirmation = ""
+            self.emailDirty = false
+            self.passwordConfirmationDirty = false
+            self.passwordDirty = false
         }
     }
+
+    /// Tracks whether fields have been blurred at least once
+    @Published var emailDirty = false
+    @Published var passwordDirty = false
+    @Published var passwordConfirmationDirty = false
 
     private let authService: AuthServiceProtocol
 
@@ -40,6 +48,7 @@ final class AuthViewModel: ObservableObject {
     }
 
     var emailError: String? {
+        guard self.emailDirty else { return nil }
         let trimmed = self.email.trimmingCharacters(in: .whitespaces)
         if trimmed.isEmpty { return nil }
         if !self.isValidEmail(trimmed) { return "Please enter a valid email" }
@@ -47,11 +56,17 @@ final class AuthViewModel: ObservableObject {
     }
 
     var passwordConfirmationError: String? {
-        guard self.isSignUp, !self.passwordConfirmation.isEmpty else { return nil }
+        guard self.isSignUp, self.passwordConfirmationDirty, !self.passwordConfirmation.isEmpty else { return nil }
         if self.password != self.passwordConfirmation {
             return "Passwords don't match"
         }
         return nil
+    }
+
+    func markAllDirty() {
+        self.emailDirty = true
+        self.passwordDirty = true
+        self.passwordConfirmationDirty = true
     }
 
     // MARK: - Login

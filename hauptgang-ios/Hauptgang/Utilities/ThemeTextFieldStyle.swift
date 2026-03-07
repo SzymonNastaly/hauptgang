@@ -1,22 +1,18 @@
 import SwiftUI
 
-struct ThemeTextFieldStyle: TextFieldStyle {
+struct ThemeTextFieldModifier: ViewModifier {
     var isError: Bool = false
+    @FocusState private var isFocused: Bool
 
-    // swiftlint:disable:next identifier_name
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
+    func body(content: Content) -> some View {
+        content
+            .textFieldStyle(.plain)
+            .focused(self.$isFocused)
             .padding(Theme.Spacing.md)
+            .background(self.isError ? Color.hauptgangError.opacity(0.1) : Color.hauptgangCard)
+            .clipShape(.rect(cornerRadius: Theme.CornerRadius.md))
             .contentShape(Rectangle())
-            .background(Color.hauptgangCard)
-            .cornerRadius(Theme.CornerRadius.md)
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                    .stroke(
-                        self.isError ? Color.hauptgangError : Color.hauptgangBorderSubtle,
-                        lineWidth: 1
-                    )
-            )
+            .onTapGesture { self.isFocused = true }
     }
 }
 
@@ -45,15 +41,20 @@ struct PrimaryButtonStyle: ButtonStyle {
 
 struct PuffyButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .brightness(configuration.isPressed ? -0.08 : 0)
+            .scaleEffect(pressed ? 0.90 : 1.0)
+            .brightness(pressed ? -0.12 : 0)
             .shadow(
-                color: Color.hauptgangPrimary.opacity(configuration.isPressed ? 0.15 : 0.4),
-                radius: configuration.isPressed ? 1 : 4,
-                y: configuration.isPressed ? 1 : 3
+                color: Color.hauptgangPrimary.opacity(pressed ? 0.08 : 0.2),
+                radius: pressed ? 1 : 3,
+                y: pressed ? 1 : 2
             )
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    .fill(Color.black.opacity(pressed ? 0.15 : 0))
+            )
+            .animation(.easeInOut(duration: 0.15), value: pressed)
     }
 }
 
@@ -61,7 +62,7 @@ struct PuffyButtonStyle: ButtonStyle {
 
 extension View {
     func themeTextField(isError: Bool = false) -> some View {
-        self.textFieldStyle(ThemeTextFieldStyle(isError: isError))
+        self.modifier(ThemeTextFieldModifier(isError: isError))
     }
 
     func primaryButton() -> some View {

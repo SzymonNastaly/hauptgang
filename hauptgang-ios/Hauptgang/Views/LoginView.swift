@@ -15,6 +15,14 @@ struct LoginView: View {
             self.content
         }
         .onTapGesture { self.focusedField = nil }
+        .onChange(of: self.focusedField) { old, _ in
+            switch old {
+            case .email: self.viewModel.emailDirty = true
+            case .password: self.viewModel.passwordDirty = true
+            case .passwordConfirmation: self.viewModel.passwordConfirmationDirty = true
+            case nil: break
+            }
+        }
     }
 
     private var content: some View {
@@ -74,7 +82,7 @@ struct LoginView: View {
             if let error = self.viewModel.emailError {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.hauptgangError)
+                    .foregroundStyle(Color.hauptgangError)
             }
         }
     }
@@ -91,7 +99,7 @@ struct LoginView: View {
             if self.showPasswordLengthError {
                 Text("Password must be at least 12 characters")
                     .font(.caption)
-                    .foregroundColor(.hauptgangError)
+                    .foregroundStyle(Color.hauptgangError)
             }
         }
     }
@@ -110,7 +118,7 @@ struct LoginView: View {
                 if let error = self.viewModel.passwordConfirmationError {
                     Text(error)
                         .font(.caption)
-                        .foregroundColor(.hauptgangError)
+                        .foregroundStyle(Color.hauptgangError)
                 }
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -196,7 +204,8 @@ struct LoginView: View {
     }
 
     private var showPasswordLengthError: Bool {
-        self.viewModel.isSignUp && !self.viewModel.password.isEmpty && self.viewModel.password.count < 12
+        self.viewModel.isSignUp && self.viewModel.passwordDirty &&
+            !self.viewModel.password.isEmpty && self.viewModel.password.count < 12
     }
 
     private func handlePasswordSubmit() {
@@ -215,6 +224,7 @@ struct LoginView: View {
     }
 
     private func submitForm() {
+        self.viewModel.markAllDirty()
         guard self.viewModel.isFormValid, !self.viewModel.isLoading else { return }
         self.focusedField = nil
 

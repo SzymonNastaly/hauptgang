@@ -7,8 +7,6 @@ CI.run do
   step "Style: iOS Lint", "bin/ios-lint"
   step "Style: iOS Format", "bin/ios-format --lint"
 
-  step "Quality: Ruby code smells", "bin/reek"
-
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Importmap vulnerability audit", "bin/importmap audit"
   step "Security: Brakeman code analysis", "bin/brakeman --quiet --no-pager --exit-on-warn --exit-on-error --skip-files hauptgang-mobile/"

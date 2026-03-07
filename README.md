@@ -33,7 +33,7 @@ bin/rails test   # run Rails tests
 bin/ios-test     # run iOS tests
 ```
 
-`bin/ci` runs rubocop, reek, brakeman, bundler-audit, importmap audit, iOS linting, Rails tests, system tests, and seed verification.
+`bin/ci` runs rubocop, brakeman, bundler-audit, importmap audit, iOS linting, Rails tests, system tests, and seed verification.
 
 ## Deployment
 

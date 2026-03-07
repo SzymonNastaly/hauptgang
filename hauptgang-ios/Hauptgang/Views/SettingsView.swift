@@ -19,18 +19,6 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-            .confirmationDialog(
-                "Sign out?",
-                isPresented: self.$showingLogoutConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Sign out", role: .destructive) {
-                    Task { await self.authManager.signOut() }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("You'll need to sign in again to access your account.")
-            }
             .sheet(isPresented: self.$showingPaywall) {
                 PaywallView()
                     .onPurchaseCompleted { _ in
@@ -140,6 +128,18 @@ struct SettingsView: View {
                     Image(systemName: "rectangle.portrait.and.arrow.right")
                     Text("Sign Out")
                 }
+            }
+            .confirmationDialog(
+                "Sign out?",
+                isPresented: self.$showingLogoutConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Sign out", role: .destructive) {
+                    Task { await self.authManager.signOut() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("You'll need to sign in again to access your account.")
             }
         }
     }

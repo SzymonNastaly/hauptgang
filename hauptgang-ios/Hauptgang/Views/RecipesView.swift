@@ -13,7 +13,6 @@ struct RecipesView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var recipeViewModel = RecipeViewModel()
 
-    @State private var showingImportOptions = false
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -139,21 +138,22 @@ struct RecipesView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    self.showingImportOptions = true
+                Menu {
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button {
+                            self.showingCamera = true
+                        } label: {
+                            Label("Take Photo", systemImage: "camera")
+                        }
+                    }
+                    Button {
+                        self.showingPhotoPicker = true
+                    } label: {
+                        Label("Choose from Library", systemImage: "photo.on.rectangle")
+                    }
                 } label: {
                     Image(systemName: "plus")
                 }
-            }
-        }
-        .confirmationDialog("Import Recipe", isPresented: self.$showingImportOptions) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("Take Photo") {
-                    self.showingCamera = true
-                }
-            }
-            Button("Choose from Library") {
-                self.showingPhotoPicker = true
             }
         }
         .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)

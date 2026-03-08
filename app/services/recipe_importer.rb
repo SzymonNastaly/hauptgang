@@ -6,9 +6,8 @@ require "faraday/follow_redirects"
 class RecipeImporter
   Result = Data.define(:success?, :recipe_attributes, :cover_image_url, :error, :error_code)
 
-  MAX_RESPONSE_SIZE = 5.megabytes
   MAX_REDIRECTS = 5
-  ALLOWED_CONTENT_TYPES = %w[text/html application/xhtml+xml].freeze
+  USER_AGENT = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
 
   def initialize(url, http_client: nil)
     @url = url
@@ -51,60 +50,25 @@ class RecipeImporter
   private
 
   def fetch_html
-    response = @http_client.get(@url)
+    fetch_result = RecipeImporters::HtmlFetcher.new(
+      @url,
+      http_client: @http_client,
+      log_prefix: "RecipeImporter"
+    ).fetch
 
-    unless response.success?
-      Rails.logger.info "[RecipeImporter] HTTP #{response.status} for #{sanitized_url}"
-      return { success: false, error: "Could not fetch the page", error_code: :fetch_failed }
-    end
+    return { success: false, error: fetch_result.error, error_code: fetch_result.error_code } unless fetch_result.success?
 
-    unless valid_content_type?(response)
-      Rails.logger.info "[RecipeImporter] Invalid content-type for #{sanitized_url}: #{response.headers['content-type']}"
-      return { success: false, error: "The URL does not appear to be a web page", error_code: :invalid_content_type }
-    end
-
-    body = response.body
-    body_size = body.bytesize
-
-    if body_size > MAX_RESPONSE_SIZE
-      Rails.logger.info "[RecipeImporter] Response too large for #{sanitized_url}: #{body_size} bytes"
-      return { success: false, error: "The page is too large to process", error_code: :response_too_large }
-    end
-
-    { success: true, body: body }
-  rescue Faraday::FollowRedirects::RedirectLimitReached
-    Rails.logger.info "[RecipeImporter] Too many redirects for #{sanitized_url}"
-    { success: false, error: "Too many redirects", error_code: :too_many_redirects }
-  rescue Faraday::TimeoutError
-    Rails.logger.info "[RecipeImporter] Timeout for #{sanitized_url}"
-    { success: false, error: "The page took too long to load", error_code: :timeout }
-  rescue Faraday::ConnectionFailed
-    Rails.logger.info "[RecipeImporter] Connection failed for #{sanitized_url}"
-    { success: false, error: "Could not connect to the server", error_code: :connection_failed }
-  rescue Faraday::Error, URI::InvalidURIError, Addressable::URI::InvalidURIError => error
-    Rails.logger.info "[RecipeImporter] Fetch error for #{sanitized_url}: #{error.class}"
-    { success: false, error: "Could not fetch the page", error_code: :fetch_failed }
+    { success: true, body: fetch_result.body }
   end
 
   def build_http_client
     Faraday.new do |conn|
       conn.options.timeout = 10
       conn.options.open_timeout = 5
-      conn.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"
+      conn.headers["User-Agent"] = USER_AGENT
       conn.headers["Accept"] = "text/html"
       conn.response :follow_redirects, limit: MAX_REDIRECTS
     end
-  end
-
-  def valid_content_type?(response)
-    content_type = response.headers["content-type"].to_s.downcase
-    ALLOWED_CONTENT_TYPES.any? { |allowed| content_type.start_with?(allowed) }
-  end
-
-  def sanitized_url
-    URI.parse(@url).tap { |uri| uri.query = nil; uri.fragment = nil }.to_s
-  rescue URI::InvalidURIError
-    "[invalid URL]"
   end
 
   def failure(message, code)

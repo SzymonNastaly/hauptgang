@@ -193,7 +193,7 @@ actor RecipeSearchIndex: RecipeSearchIndexProtocol {
         }
     }
 
-    func reset() async {
+    func reset() {
         self.resetDatabaseFile()
     }
 

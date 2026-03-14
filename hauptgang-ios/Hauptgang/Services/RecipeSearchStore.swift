@@ -64,7 +64,7 @@ enum RecipeSearchStore {
                     name = excluded.name,
                     updated_at = excluded.updated_at
                 """,
-                arguments: [recipe.id, recipe.name, Self.iso8601String(from: recipe.updatedAt)]
+                arguments: [recipe.id, recipe.name, self.iso8601String(from: recipe.updatedAt)]
             )
 
             try db.execute(sql: "DELETE FROM recipes_fts WHERE rowid = ?", arguments: [recipe.id])

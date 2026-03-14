@@ -1,6 +1,7 @@
 import Foundation
 import os
 import SwiftData
+import SwiftUI
 
 /// Manages recipe state for the UI
 @MainActor @Observable
@@ -10,6 +11,7 @@ final class RecipeViewModel {
     private(set) var isOffline = false
     private(set) var isImporting = false
     private(set) var searchResults: [PersistedRecipe] = []
+    private(set) var pendingDeletionIDs: Set<Int> = []
     var importError: String?
     var shouldShowPaywall: Bool = false
     var didReceiveForbidden = false
@@ -74,10 +76,13 @@ final class RecipeViewModel {
 }
 
 extension RecipeViewModel {
-    /// Load recipes from local cache
+    /// Load recipes from local cache, filtering out any pending deletions
     private func loadCachedRecipes() {
         do {
-            self.recipes = try self.repository.getAllRecipes()
+            let all = try self.repository.getAllRecipes()
+            self.recipes = self.pendingDeletionIDs.isEmpty
+                ? all
+                : all.filter { !self.pendingDeletionIDs.contains($0.id) }
             self.logger.info("Loaded \(self.recipes.count) recipes from cache")
         } catch {
             self.logger.error("Failed to load cached recipes: \(error.localizedDescription)")
@@ -375,26 +380,34 @@ extension RecipeViewModel {
 
     /// Dismiss a failed recipe (optimistic delete)
     func dismissFailedRecipe(_ recipe: PersistedRecipe) async {
-        let recipeId = recipe.id
-        self.logger.info("Dismissing failed recipe: \(recipeId)")
+        await self.deleteRecipe(id: recipe.id)
+    }
 
-        // Optimistic: delete from local cache immediately
+    /// Delete a recipe (optimistic local delete + background server delete)
+    func deleteRecipe(id recipeId: Int) async {
+        self.logger.info("Deleting recipe: \(recipeId)")
+        self.pendingDeletionIDs.insert(recipeId)
+
         do {
             try self.repository.deleteRecipe(id: recipeId)
-            self.loadCachedRecipes()
+            withAnimation {
+                self.loadCachedRecipes()
+                self.searchResults.removeAll { $0.id == recipeId }
+            }
         } catch {
             self.logger.error("Failed to delete recipe locally: \(error.localizedDescription)")
         }
 
-        // Background: delete from server
+        await self.searchIndex.delete(ids: [recipeId])
+
         do {
             try await self.recipeService.deleteRecipe(id: recipeId)
             self.logger.info("Deleted recipe from server: \(recipeId)")
         } catch {
-            // Server delete failed, but local is already removed
-            // Next refresh will re-sync if needed (or auto-cleanup handles it)
             self.logger.error("Failed to delete recipe from server: \(error.localizedDescription)")
         }
+
+        self.pendingDeletionIDs.remove(recipeId)
     }
 
     // MARK: - Detail Sync

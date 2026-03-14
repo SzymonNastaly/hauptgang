@@ -74,11 +74,16 @@ class ShareViewController: UIViewController {
             // Try JS preprocessing results first (Safari shares with page content)
             let webPageResult = await ShareImportExtractor.extractWebPageData(from: attachments)
             switch webPageResult {
-            case .success(let pageContent):
-                logger.info("JS preprocessing succeeded — URL: \(pageContent.url.absoluteString), JSON-LD blocks: \(pageContent.jsonLd.count), HTML size: \(pageContent.html.utf8.count) bytes")
+            case let .success(pageContent):
+                let url = pageContent.url.absoluteString
+                let jsonLdCount = pageContent.jsonLd.count
+                let htmlSize = pageContent.html.utf8.count
+                logger.info(
+                    "JS preprocessing succeeded — URL: \(url), JSON-LD blocks: \(jsonLdCount), HTML size: \(htmlSize) bytes"
+                )
                 await self.handleExtractedPageContent(pageContent)
                 return
-            case .urlOnly(let url):
+            case let .urlOnly(url):
                 logger.info("JS preprocessing failed, but got URL from web page item: \(url.absoluteString)")
                 await self.handleExtractedURL(url)
                 return
@@ -138,10 +143,15 @@ class ShareViewController: UIViewController {
                 self.close()
             }
         } catch APIError.payloadTooLarge {
-            logger.warning("Payload too large for \(pageContent.url.absoluteString), falling back to URL-only import")
+            logger.warning(
+                "Payload too large for \(pageContent.url.absoluteString), falling back to URL-only import"
+            )
             await self.handleExtractedURL(pageContent.url)
         } catch {
-            logger.error("Import with content failed for \(pageContent.url.absoluteString): \(error.localizedDescription)")
+            logger
+                .error(
+                    "Import with content failed for \(pageContent.url.absoluteString): \(error.localizedDescription)"
+                )
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }

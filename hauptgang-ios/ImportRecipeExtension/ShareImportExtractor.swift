@@ -6,13 +6,22 @@ private let logger = Logger(subsystem: "app.hauptgang.ios.share-extension", cate
 
 protocol ShareItemProviding {
     var registeredTypeIdentifiers: [String] { get }
+
     func hasItemConformingToTypeIdentifier(_ typeIdentifier: String) -> Bool
-    func loadItem(forTypeIdentifier typeIdentifier: String, options: [AnyHashable: Any]?) async throws -> NSSecureCoding?
+    func loadItem(
+        forTypeIdentifier typeIdentifier: String,
+        // swiftlint:disable:next discouraged_optional_collection
+        options: [AnyHashable: Any]?
+    ) async throws -> NSSecureCoding?
     func loadFileRepresentation(forTypeIdentifier typeIdentifier: String) async throws -> URL?
 }
 
 extension NSItemProvider: ShareItemProviding {
-    func loadItem(forTypeIdentifier typeIdentifier: String, options: [AnyHashable: Any]?) async throws -> NSSecureCoding? {
+    func loadItem(
+        forTypeIdentifier typeIdentifier: String,
+        // swiftlint:disable:next discouraged_optional_collection
+        options: [AnyHashable: Any]?
+    ) async throws -> NSSecureCoding? {
         try await withCheckedThrowingContinuation { continuation in
             self.loadItem(forTypeIdentifier: typeIdentifier, options: options) { item, error in
                 if let error {
@@ -38,9 +47,6 @@ extension NSItemProvider: ShareItemProviding {
 }
 
 enum ShareImportExtractor {
-    private static let maxPropertyListTraversalDepth = 16
-    private static let maxPropertyListTraversalNodes = 2_000
-
     /// Result of attempting to extract JS preprocessing data from a web page share.
     /// When JS preprocessing returns data, we get a full PageContent.
     /// When it fails, we may still get the URL from the property list provider.
@@ -50,16 +56,18 @@ enum ShareImportExtractor {
         case none
     }
 
-    static func extractPageContent<Provider: ShareItemProviding>(from attachments: [Provider]) async -> PageContent? {
-        switch await extractWebPageData(from: attachments) {
-        case .success(let pageContent):
-            return pageContent
+    static func extractPageContent(
+        from attachments: [some ShareItemProviding]
+    ) async -> PageContent? {
+        switch await self.extractWebPageData(from: attachments) {
+        case let .success(pageContent):
+            pageContent
         case .urlOnly, .none:
-            return nil
+            nil
         }
     }
 
-    static func extractWebPageData<Provider: ShareItemProviding>(from attachments: [Provider]) async -> PageContentResult {
+    static func extractWebPageData(from attachments: [some ShareItemProviding]) async -> PageContentResult {
         let propertyListType = UTType.propertyList.identifier
         let urlType = UTType.url.identifier
 
@@ -83,7 +91,7 @@ enum ShareImportExtractor {
         return .none
     }
 
-    static func extractURL<Provider: ShareItemProviding>(from attachments: [Provider]) async -> URL? {
+    static func extractURL(from attachments: [some ShareItemProviding]) async -> URL? {
         let urlType = UTType.url.identifier
         let plainTextType = UTType.plainText.identifier
 
@@ -105,7 +113,7 @@ enum ShareImportExtractor {
         return nil
     }
 
-    static func extractImageFileURL<Provider: ShareItemProviding>(from attachments: [Provider]) async -> URL? {
+    static func extractImageFileURL(from attachments: [some ShareItemProviding]) async -> URL? {
         let imageType = UTType.image.identifier
 
         for provider in attachments where provider.hasItemConformingToTypeIdentifier(imageType) {
@@ -129,14 +137,19 @@ enum ShareImportExtractor {
 
     // MARK: - Private
 
-    private static func loadPageContent<Provider: ShareItemProviding>(from provider: Provider, typeIdentifier: String) async -> PageContent? {
+    private static func loadPageContent(
+        from provider: some ShareItemProviding,
+        typeIdentifier: String
+    ) async -> PageContent? {
         do {
             let item = try await provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil)
             guard let dictionary = item as? NSDictionary else {
-                logger.debug("Property list item is not NSDictionary (type: \(String(describing: type(of: item))))")
+                let itemType = String(describing: type(of: item))
+                logger.debug("Property list item is not NSDictionary (type: \(itemType))")
                 return nil
             }
-            guard let jsValues = dictionary[NSExtensionJavaScriptPreprocessingResultsKey] as? [String: Any] else {
+            let jsKey = NSExtensionJavaScriptPreprocessingResultsKey
+            guard let jsValues = dictionary[jsKey] as? [String: Any] else {
                 logger.debug("No JS preprocessing results key in property list")
                 return nil
             }
@@ -148,10 +161,13 @@ enum ShareImportExtractor {
                 return nil
             }
             guard let pageContent = PageContent(from: jsValues) else {
-                logger.error("Failed to parse PageContent from JS values (keys: \(Array(jsValues.keys)))")
+                let keys = Array(jsValues.keys)
+                logger.error("Failed to parse PageContent from JS values (keys: \(keys))")
                 return nil
             }
-            logger.info("Parsed PageContent from JS preprocessing results")
+            logger.info(
+                "Parsed PageContent from JS preprocessing results"
+            )
             return pageContent
         } catch {
             logger.error("Failed to load property list item: \(error.localizedDescription)")
@@ -159,18 +175,28 @@ enum ShareImportExtractor {
         }
     }
 
-    private static func loadURLFromPropertyList<Provider: ShareItemProviding>(from provider: Provider, typeIdentifier: String) async -> URL? {
+    private static func loadURLFromPropertyList(
+        from provider: some ShareItemProviding,
+        typeIdentifier: String
+    ) async -> URL? {
         do {
             let item = try await provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil)
             guard let dictionary = item as? NSDictionary else {
-                logger.debug("Property-list URL fallback: item is not NSDictionary (type: \(String(describing: type(of: item))))")
+                let itemType = String(describing: type(of: item))
+                logger.debug(
+                    "Property-list URL fallback: item is not NSDictionary (type: \(itemType))"
+                )
                 return nil
             }
 
             // Safari usually nests results under NSExtensionJavaScriptPreprocessingResultsKey,
             // but some hosts provide URL values at different depths.
-            if let jsValues = dictionary[NSExtensionJavaScriptPreprocessingResultsKey],
-               let match = urlFromPropertyListValue(jsValues, path: "$.NSExtensionJavaScriptPreprocessingResultsKey") {
+            let jsKey = NSExtensionJavaScriptPreprocessingResultsKey
+            if let jsValues = dictionary[jsKey],
+               let match = urlFromPropertyListValue(
+                   jsValues,
+                   path: "$.\(jsKey)"
+               ) {
                 logger.debug("Recovered URL from property-list JS values at \(match.path)")
                 return match.url
             }
@@ -188,18 +214,123 @@ enum ShareImportExtractor {
         }
     }
 
-    private static func urlFromPropertyListValue(_ value: Any, path: String) -> (url: URL, path: String)? {
-        var remainingNodes = maxPropertyListTraversalNodes
-        return urlFromPropertyListValue(value, path: path, depth: 0, remainingNodes: &remainingNodes)
+    private static func loadURL(
+        from provider: some ShareItemProviding,
+        typeIdentifier: String
+    ) async -> URL? {
+        do {
+            let item = try await provider.loadItem(
+                forTypeIdentifier: typeIdentifier,
+                options: nil
+            )
+            if let url = item as? URL {
+                return url
+            }
+            if let nsurl = item as? NSURL, let url = nsurl as URL? {
+                return url
+            }
+            if let data = item as? Data,
+               let url = URL(dataRepresentation: data, relativeTo: nil) {
+                return url
+            }
+            let itemType = String(describing: type(of: item))
+            logger.debug(
+                "URL load failed for type \(typeIdentifier). Item type: \(itemType)"
+            )
+            return nil
+        } catch {
+            logger.error(
+                "Failed to load URL item for type \(typeIdentifier): \(error.localizedDescription)"
+            )
+            return nil
+        }
     }
 
-    private static func urlFromPropertyListValue(
+    private static func loadURLFromPlainText(
+        from provider: some ShareItemProviding,
+        typeIdentifier: String
+    ) async -> URL? {
+        do {
+            let item = try await provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil)
+            let text: String? = if let str = item as? String {
+                str
+            } else if let data = item as? Data {
+                String(data: data, encoding: .utf8)
+            } else {
+                nil
+            }
+
+            if text == nil {
+                let itemType = String(describing: type(of: item))
+                logger.debug(
+                    "Plain-text URL load failed for type \(typeIdentifier). Item type: \(itemType)"
+                )
+            }
+            return text.flatMap { self.urlFromPlainText($0) }
+        } catch {
+            logger.error(
+                "Failed to load plain-text item for type \(typeIdentifier): \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+
+    private static func loadImageFileURL(
+        from provider: some ShareItemProviding,
+        typeIdentifier: String
+    ) async -> URL? {
+        do {
+            guard let url = try await provider.loadFileRepresentation(forTypeIdentifier: typeIdentifier) else {
+                logger.debug("Image file representation returned nil URL for type \(typeIdentifier)")
+                return nil
+            }
+
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension("jpg")
+            do {
+                try FileManager.default.copyItem(at: url, to: tempURL)
+                return tempURL
+            } catch {
+                logger.error("Failed to copy image file representation: \(error.localizedDescription)")
+                return nil
+            }
+        } catch {
+            logger.error(
+                "Failed to load image file representation for type \(typeIdentifier): \(error.localizedDescription)"
+            )
+            return nil
+        }
+    }
+}
+
+// MARK: - Property List URL Traversal
+
+private extension ShareImportExtractor {
+    static let maxPropertyListTraversalDepth = 16
+    static let maxPropertyListTraversalNodes = 2000
+
+    static func urlFromPropertyListValue(
+        _ value: Any,
+        path: String
+    ) -> (url: URL, path: String)? {
+        var remainingNodes = self.maxPropertyListTraversalNodes
+        return self.urlFromPropertyListValue(
+            value,
+            path: path,
+            depth: 0,
+            remainingNodes: &remainingNodes
+        )
+    }
+
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
+    static func urlFromPropertyListValue(
         _ value: Any,
         path: String,
         depth: Int,
         remainingNodes: inout Int
     ) -> (url: URL, path: String)? {
-        guard depth <= maxPropertyListTraversalDepth else {
+        guard depth <= self.maxPropertyListTraversalDepth else {
             return nil
         }
         guard remainingNodes > 0 else {
@@ -213,25 +344,26 @@ enum ShareImportExtractor {
         if let nsurl = value as? NSURL, let url = nsurl as URL? {
             return (url, path)
         }
-        if let text = value as? String, let url = urlFromPlainText(text) {
+        if let text = value as? String,
+           let url = urlFromPlainText(text) {
             return (url, path)
         }
         if let dictionary = value as? NSDictionary {
             if let lowercaseURL = dictionary["url"],
                let match = urlFromPropertyListValue(
-                lowercaseURL,
-                path: "\(path).url",
-                depth: depth + 1,
-                remainingNodes: &remainingNodes
+                   lowercaseURL,
+                   path: "\(path).url",
+                   depth: depth + 1,
+                   remainingNodes: &remainingNodes
                ) {
                 return match
             }
             if let uppercaseURL = dictionary["URL"],
                let match = urlFromPropertyListValue(
-                uppercaseURL,
-                path: "\(path).URL",
-                depth: depth + 1,
-                remainingNodes: &remainingNodes
+                   uppercaseURL,
+                   path: "\(path).URL",
+                   depth: depth + 1,
+                   remainingNodes: &remainingNodes
                ) {
                 return match
             }
@@ -261,69 +393,5 @@ enum ShareImportExtractor {
             }
         }
         return nil
-    }
-
-    private static func loadURL<Provider: ShareItemProviding>(from provider: Provider, typeIdentifier: String) async -> URL? {
-        do {
-            let item = try await provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil)
-            if let url = item as? URL {
-                return url
-            }
-            if let nsurl = item as? NSURL, let url = nsurl as URL? {
-                return url
-            }
-            if let data = item as? Data, let url = URL(dataRepresentation: data, relativeTo: nil) {
-                return url
-            }
-            logger.debug("URL load failed for type \(typeIdentifier). Item type: \(String(describing: type(of: item)))")
-            return nil
-        } catch {
-            logger.error("Failed to load URL item for type \(typeIdentifier): \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    private static func loadURLFromPlainText<Provider: ShareItemProviding>(from provider: Provider, typeIdentifier: String) async -> URL? {
-        do {
-            let item = try await provider.loadItem(forTypeIdentifier: typeIdentifier, options: nil)
-            let text: String? = if let str = item as? String {
-                str
-            } else if let data = item as? Data {
-                String(data: data, encoding: .utf8)
-            } else {
-                nil
-            }
-
-            if text == nil {
-                logger.debug("Plain-text URL load failed for type \(typeIdentifier). Item type: \(String(describing: type(of: item)))")
-            }
-            return text.flatMap { self.urlFromPlainText($0) }
-        } catch {
-            logger.error("Failed to load plain-text item for type \(typeIdentifier): \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    private static func loadImageFileURL<Provider: ShareItemProviding>(from provider: Provider, typeIdentifier: String) async -> URL? {
-        do {
-            guard let url = try await provider.loadFileRepresentation(forTypeIdentifier: typeIdentifier) else {
-                logger.debug("Image file representation returned nil URL for type \(typeIdentifier)")
-                return nil
-            }
-
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension("jpg")
-            do {
-                try FileManager.default.copyItem(at: url, to: tempURL)
-                return tempURL
-            } catch {
-                logger.error("Failed to copy image file representation: \(error.localizedDescription)")
-                return nil
-            }
-        } catch {
-            logger.error("Failed to load image file representation for type \(typeIdentifier): \(error.localizedDescription)")
-            return nil
-        }
     }
 }

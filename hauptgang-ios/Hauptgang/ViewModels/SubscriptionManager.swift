@@ -17,7 +17,7 @@ final class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
         logger.info("startListening() — set as PurchasesDelegate")
     }
 
-    nonisolated func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+    nonisolated func purchases(_: Purchases, receivedUpdated customerInfo: CustomerInfo) {
         logger.info("delegate receivedUpdated customerInfo for: \(customerInfo.originalAppUserId)")
         Task { @MainActor in
             self.updateProStatus(from: customerInfo)
@@ -28,7 +28,8 @@ final class SubscriptionManager: NSObject, ObservableObject, PurchasesDelegate {
         logger.info("identify() called with userId: \(userId)")
         do {
             let (customerInfo, created) = try await Purchases.shared.logIn(userId)
-            logger.info("identify() logIn succeeded — created: \(created), appUserID: \(customerInfo.originalAppUserId)")
+            logger
+                .info("identify() logIn succeeded — created: \(created), appUserID: \(customerInfo.originalAppUserId)")
             self.updateProStatus(from: customerInfo)
         } catch {
             logger.error("identify() logIn failed: \(error.localizedDescription)")

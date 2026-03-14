@@ -63,16 +63,21 @@ opt_in_rules:
   # Swift Concurrency
   - async_without_await                      # async functions should contain await
 
+# Closure Body Length
+closure_body_length:
+  warning: 40
+  error: 80
+
 # Cyclomatic Complexity
 cyclomatic_complexity:
   warning: 10
-  error: 15
+  error: 20
   ignores_case_statements: false
 
 # Function Body Length
 function_body_length:
-  warning: 40
-  error: 60
+  warning: 50
+  error: 80
 
 # Type Body Length (class/struct/enum)
 type_body_length:

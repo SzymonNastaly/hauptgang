@@ -28,6 +28,9 @@ struct ShoppingListView: View {
         }
         .padding(.top, Theme.Spacing.sm)
         .background(Color.hauptgangBackground.ignoresSafeArea())
+        .onTapGesture {
+            self.isAddItemFocused = false
+        }
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {

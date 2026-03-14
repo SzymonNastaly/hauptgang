@@ -19,6 +19,14 @@ struct RecipeDetailView: View {
     /// Hero image height matching design spec
     private let heroImageHeight: CGFloat = 280
 
+    /// Whether we're running on iOS 26+ (where Liquid Glass nav bar is translucent)
+    private var isIOS26: Bool {
+        if #available(iOS 26, *) {
+            return true
+        }
+        return false
+    }
+
     var body: some View {
         Group {
             if self.viewModel.isLoading && self.viewModel.recipe == nil {
@@ -138,11 +146,12 @@ struct RecipeDetailView: View {
                         self.notesSection(notes)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.lg)
             }
         }
         .scrollContentBackground(.hidden)
-        .ignoresSafeArea(edges: recipe.coverImageUrl != nil ? .top : [])
+        .ignoresSafeArea(edges: recipe.coverImageUrl != nil && self.isIOS26 ? .top : [])
     }
 
     // MARK: - Hero Image
@@ -172,18 +181,15 @@ struct RecipeDetailView: View {
             .frame(height: self.heroImageHeight)
             .frame(maxWidth: .infinity)
             .clipped()
-            // Top gradient for status bar readability
             .overlay(alignment: .top) {
-                LinearGradient(
-                    stops: [
-                        .init(color: .black.opacity(0.5), location: 0),
-                        .init(color: .black.opacity(0.25), location: 0.4),
-                        .init(color: .clear, location: 1.0)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 120) // Covers status bar + Dynamic Island + some extra
+                if self.isIOS26 {
+                    LinearGradient(
+                        colors: [.black.opacity(0.4), .clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                    .frame(height: 100)
+                }
             }
         }
     }

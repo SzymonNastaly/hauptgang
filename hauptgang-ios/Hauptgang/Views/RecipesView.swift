@@ -6,6 +6,13 @@ import SwiftUI
 
 private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesView")
 
+/// Lightweight value capturing the info needed for the delete confirmation dialog,
+/// avoiding holding a SwiftData model object in @State after deletion.
+private struct DeleteCandidate: Identifiable {
+    let id: Int
+    let name: String
+}
+
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
@@ -20,6 +27,7 @@ struct RecipesView: View {
     @State private var searchQuery = ""
     @State private var isSearching = false
     @State private var navigationPath = NavigationPath()
+    @State private var recipeToDelete: DeleteCandidate?
 
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
@@ -210,15 +218,7 @@ struct RecipesView: View {
                         ? self.recipeViewModel.successfulRecipes
                         : self.recipeViewModel.searchResults
                     ForEach(displayedRecipes) { recipe in
-                        Button {
-                            if self.searchQuery.isEmpty {
-                                self.isSearching = false
-                            }
-                            self.navigationPath.append(recipe.id)
-                        } label: {
-                            RecipeCardView(recipe: recipe)
-                        }
-                        .buttonStyle(.plain)
+                        self.recipeRow(recipe)
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
@@ -237,8 +237,43 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
+        .confirmationDialog(
+            "Delete Recipe",
+            isPresented: Binding(
+                get: { self.recipeToDelete != nil },
+                set: { if !$0 { self.recipeToDelete = nil } }
+            ),
+            presenting: self.recipeToDelete
+        ) { candidate in
+            Button("Delete", role: .destructive) {
+                Task {
+                    await self.recipeViewModel.deleteRecipe(id: candidate.id)
+                }
+            }
+        } message: { _ in
+            Text("Are you sure?")
+        }
         .overlay(alignment: .bottom) {
             self.failedRecipeBanners
+        }
+    }
+
+    private func recipeRow(_ recipe: PersistedRecipe) -> some View {
+        Button {
+            if self.searchQuery.isEmpty {
+                self.isSearching = false
+            }
+            self.navigationPath.append(recipe.id)
+        } label: {
+            RecipeCardView(recipe: recipe)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                self.recipeToDelete = DeleteCandidate(id: recipe.id, name: recipe.name)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
         }
     }
 

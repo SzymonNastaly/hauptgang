@@ -18,6 +18,16 @@ Rails.application.routes.draw do
       resources :cookbooks, only: [ :index, :create, :destroy ] do
         post :leave, on: :member
         resources :invitations, controller: "cookbook_invitations", only: [ :create ]
+        resources :meal_plans, only: [ :index ] do
+          collection do
+            post ":date/entries", to: "meal_plan_entries#create", as: :date_entries
+            patch ":date/select", to: "meal_plan_selections#update", as: :date_select
+            delete ":date/select", to: "meal_plan_selections#destroy"
+          end
+        end
+      end
+      resources :meal_plan_entries, only: [ :destroy ] do
+        resource :vote, controller: "meal_plan_votes", only: [ :create, :destroy ]
       end
       resources :invitations, controller: "cookbook_invitations", only: [ :show ], param: :token do
         member do

@@ -11,6 +11,7 @@ protocol APIClientProtocol: Actor {
         endpoint: String,
         method: HTTPMethod,
         body: Encodable?,
+        queryItems: [URLQueryItem]?,
         authenticated: Bool
     ) async throws -> T
 
@@ -18,6 +19,7 @@ protocol APIClientProtocol: Actor {
         endpoint: String,
         method: HTTPMethod,
         body: Encodable?,
+        queryItems: [URLQueryItem]?,
         authenticated: Bool
     ) async throws
 
@@ -29,4 +31,36 @@ protocol APIClientProtocol: Actor {
         paramName: String,
         authenticated: Bool
     ) async throws -> T
+}
+
+extension APIClientProtocol {
+    func request<T: Decodable>(
+        endpoint: String,
+        method: HTTPMethod,
+        body: Encodable? = nil,
+        authenticated: Bool = false
+    ) async throws -> T {
+        try await self.request(
+            endpoint: endpoint,
+            method: method,
+            body: body,
+            queryItems: nil,
+            authenticated: authenticated
+        )
+    }
+
+    func requestVoid(
+        endpoint: String,
+        method: HTTPMethod,
+        body: Encodable? = nil,
+        authenticated: Bool = false
+    ) async throws {
+        try await self.requestVoid(
+            endpoint: endpoint,
+            method: method,
+            body: body,
+            queryItems: nil,
+            authenticated: authenticated
+        )
+    }
 }

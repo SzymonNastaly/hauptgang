@@ -283,6 +283,36 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertNotNil(result.createdAt)
     }
+
+    func testRequest_withQueryItems_buildsURLWithQueryParameters() async throws {
+        MockURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url?.path, "/api/v1/cookbooks/12/meal_plans")
+
+            let components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)
+            let items = components?.queryItems ?? []
+            XCTAssertTrue(items.contains(URLQueryItem(name: "from", value: "2026-03-18")))
+            XCTAssertTrue(items.contains(URLQueryItem(name: "to", value: "2026-03-19")))
+
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, "{}".data(using: .utf8)!)
+        }
+
+        let _: EmptyDecodable = try await sut.request(
+            endpoint: "cookbooks/12/meal_plans",
+            method: .get,
+            body: nil,
+            queryItems: [
+                URLQueryItem(name: "from", value: "2026-03-18"),
+                URLQueryItem(name: "to", value: "2026-03-19")
+            ],
+            authenticated: false
+        )
+    }
 }
 
 // MARK: - Test Helpers

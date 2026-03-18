@@ -4,6 +4,7 @@ class Cookbook < ApplicationRecord
   has_many :recipes, dependent: :destroy
   has_many :shopping_list_items, dependent: :destroy
   has_many :cookbook_invitations, dependent: :destroy
+  has_many :meal_plans, dependent: :destroy
 
   scope :personal, -> { where(personal: true) }
   scope :shared, -> { where(personal: false) }

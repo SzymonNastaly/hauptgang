@@ -477,6 +477,16 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_nil Recipe.find_by(id: recipe.id)
   end
 
+  test "destroy returns 422 when recipe is still planned" do
+    recipe = recipes(:one)
+
+    delete api_v1_recipe_url(recipe), headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "Could not delete recipe", response.parsed_body["error"]
+    assert Recipe.exists?(recipe.id)
+  end
+
   test "destroy returns 404 for non-existent recipe" do
     delete api_v1_recipe_url(id: 999999), headers: @auth_headers, as: :json
 

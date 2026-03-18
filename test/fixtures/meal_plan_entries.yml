@@ -1,0 +1,19 @@
+today_entry_one:
+  meal_plan: today_plan
+  recipe: one
+  proposed_by_user: one
+
+today_entry_three:
+  meal_plan: today_plan
+  recipe: three
+  proposed_by_user: one
+
+selected_entry:
+  meal_plan: selected_plan
+  recipe: one
+  proposed_by_user: one
+
+other_cookbook_entry:
+  meal_plan: other_cookbook_plan
+  recipe: two
+  proposed_by_user: two

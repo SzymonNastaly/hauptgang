@@ -7,6 +7,7 @@ struct MainTabView: View {
     enum Tab: Hashable {
         case recipes
         case shoppingList
+        case mealPlan
         case settings
     }
 
@@ -18,6 +19,10 @@ struct MainTabView: View {
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
                 ShoppingListView()
+            }
+
+            SwiftUI.Tab("Meal Plan", systemImage: "calendar", value: Tab.mealPlan) {
+                MealPlanView()
             }
 
             SwiftUI.Tab("Settings", systemImage: "gearshape", value: Tab.settings) {
@@ -34,7 +39,7 @@ struct MainTabView: View {
     return MainTabView()
         .environmentObject(authManager)
         .environment(CookbookViewModel())
-        .modelContainer(for: [PersistedRecipe.self, PersistedShoppingListItem.self], inMemory: true)
+        .modelContainer(for: [PersistedRecipe.self, PersistedShoppingListItem.self, PersistedMealPlanDay.self, PersistedMealPlanEntry.self], inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))
         }

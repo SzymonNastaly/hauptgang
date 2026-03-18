@@ -1,0 +1,49 @@
+module Api
+  module V1
+    class MealPlanVotesController < BaseController
+      before_action :set_entry
+
+      def create
+        if @entry.meal_plan.selected?
+          return render json: { error: "Meal plan has already been finalized" }, status: :unprocessable_entity
+        end
+
+        @entry.votes.find_or_create_by!(user: current_user)
+
+        render json: MealPlanSerializer.new(
+          @entry.meal_plan.reload,
+          current_user: current_user
+        ).as_json
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { error: e.message }, status: :unprocessable_entity
+      end
+
+      def destroy
+        if @entry.meal_plan.selected?
+          return render json: { error: "Meal plan has already been finalized" }, status: :unprocessable_entity
+        end
+
+        vote = @entry.votes.find_by(user: current_user)
+        vote&.destroy!
+
+        render json: MealPlanSerializer.new(
+          @entry.meal_plan.reload,
+          current_user: current_user
+        ).as_json
+      end
+
+      private
+
+      def set_entry
+        @entry = MealPlanEntry.find(params[:meal_plan_entry_id])
+        meal_plan = @entry.meal_plan
+
+        unless meal_plan.cookbook_id == current_cookbook.id
+          render json: { error: "Not found" }, status: :not_found
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Entry not found" }, status: :not_found
+      end
+    end
+  end
+end

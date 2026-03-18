@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_21_231554) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_15_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -81,6 +81,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_231554) do
     t.string "name", null: false
     t.boolean "personal", default: false, null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "meal_plan_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "meal_plan_id", null: false
+    t.integer "proposed_by_user_id"
+    t.integer "recipe_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["meal_plan_id", "recipe_id"], name: "index_meal_plan_entries_on_meal_plan_id_and_recipe_id", unique: true
+    t.index ["meal_plan_id"], name: "index_meal_plan_entries_on_meal_plan_id"
+    t.index ["proposed_by_user_id"], name: "index_meal_plan_entries_on_proposed_by_user_id"
+    t.index ["recipe_id"], name: "index_meal_plan_entries_on_recipe_id"
+  end
+
+  create_table "meal_plan_votes", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "meal_plan_entry_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["meal_plan_entry_id", "user_id"], name: "index_meal_plan_votes_on_meal_plan_entry_id_and_user_id", unique: true
+    t.index ["meal_plan_entry_id"], name: "index_meal_plan_votes_on_meal_plan_entry_id"
+    t.index ["user_id"], name: "index_meal_plan_votes_on_user_id"
+  end
+
+  create_table "meal_plans", force: :cascade do |t|
+    t.integer "cookbook_id", null: false
+    t.datetime "created_at", null: false
+    t.date "date", null: false
+    t.datetime "selected_at"
+    t.integer "selected_by_user_id"
+    t.integer "selected_entry_id"
+    t.datetime "updated_at", null: false
+    t.index ["cookbook_id", "date"], name: "index_meal_plans_on_cookbook_id_and_date", unique: true
+    t.index ["cookbook_id"], name: "index_meal_plans_on_cookbook_id"
+    t.index ["selected_by_user_id"], name: "index_meal_plans_on_selected_by_user_id"
+    t.index ["selected_entry_id"], name: "index_meal_plans_on_selected_entry_id"
   end
 
   create_table "recipe_tags", force: :cascade do |t|
@@ -165,6 +201,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_21_231554) do
   add_foreign_key "cookbook_invitations", "users", column: "inviter_id", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "users", on_delete: :cascade
+  add_foreign_key "meal_plan_entries", "meal_plans", on_delete: :cascade
+  add_foreign_key "meal_plan_entries", "recipes", on_delete: :restrict
+  add_foreign_key "meal_plan_entries", "users", column: "proposed_by_user_id", on_delete: :nullify
+  add_foreign_key "meal_plan_votes", "meal_plan_entries", on_delete: :cascade
+  add_foreign_key "meal_plan_votes", "users", on_delete: :cascade
+  add_foreign_key "meal_plans", "cookbooks", on_delete: :cascade
+  add_foreign_key "meal_plans", "meal_plan_entries", column: "selected_entry_id", on_delete: :nullify
+  add_foreign_key "meal_plans", "users", column: "selected_by_user_id", on_delete: :nullify
   add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
   add_foreign_key "recipes", "cookbooks", on_delete: :cascade

@@ -8,6 +8,7 @@ class Recipe < ApplicationRecord
   has_many :recipe_tags, dependent: :destroy
   has_many :tags, through: :recipe_tags
   has_many :shopping_list_items, foreign_key: :source_recipe_id, dependent: :nullify
+  has_many :meal_plan_entries, dependent: :restrict_with_error
 
   # File attachments
   has_one_attached :cover_image, dependent: :purge_later do |attachable|

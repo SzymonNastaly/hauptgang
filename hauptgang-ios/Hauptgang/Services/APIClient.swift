@@ -75,9 +75,10 @@ actor APIClient: APIClientProtocol {
         endpoint: String,
         method: HTTPMethod = .get,
         body: Encodable? = nil,
+        queryItems: [URLQueryItem]? = nil,
         authenticated: Bool = false
     ) async throws -> T {
-        let url = Constants.API.baseURL.appendingPathComponent(endpoint)
+        let url = try self.buildURL(endpoint: endpoint, queryItems: queryItems)
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -121,9 +122,10 @@ actor APIClient: APIClientProtocol {
         endpoint: String,
         method: HTTPMethod = .get,
         body: Encodable? = nil,
+        queryItems: [URLQueryItem]? = nil,
         authenticated: Bool = false
     ) async throws {
-        let url = Constants.API.baseURL.appendingPathComponent(endpoint)
+        let url = try self.buildURL(endpoint: endpoint, queryItems: queryItems)
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -211,6 +213,18 @@ actor APIClient: APIClientProtocol {
     }
 
     // MARK: - Private
+
+    private func buildURL(endpoint: String, queryItems: [URLQueryItem]? = nil) throws -> URL {
+        let url = Constants.API.baseURL.appendingPathComponent(endpoint)
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidURL
+        }
+        components.queryItems = queryItems?.isEmpty == false ? queryItems : nil
+        guard let resolvedURL = components.url else {
+            throw APIError.invalidURL
+        }
+        return resolvedURL
+    }
 
     private func validateResponse(_ response: HTTPURLResponse, data: Data) throws {
         let json = self.parseJSONObject(data)

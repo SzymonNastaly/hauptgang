@@ -107,9 +107,10 @@ final class PersistedRecipe {
     }
 
     /// Convenience initializer from API list response
-    convenience init(from listItem: RecipeListItem) {
+    convenience init(from listItem: RecipeListItem, cookbookId: Int = 0) {
         self.init(
             id: listItem.id,
+            cookbookId: cookbookId,
             name: listItem.name,
             prepTime: listItem.prepTime,
             cookTime: listItem.cookTime,
@@ -122,9 +123,10 @@ final class PersistedRecipe {
     }
 
     /// Convenience initializer from API detail response
-    convenience init(from detail: RecipeDetail) {
+    convenience init(from detail: RecipeDetail, cookbookId: Int = 0) {
         self.init(
             id: detail.id,
+            cookbookId: cookbookId,
             name: detail.name,
             prepTime: detail.prepTime,
             cookTime: detail.cookTime,
@@ -138,7 +140,10 @@ final class PersistedRecipe {
     // MARK: - Update Methods
 
     /// Update this model from a newer API list response
-    func update(from listItem: RecipeListItem) {
+    func update(from listItem: RecipeListItem, cookbookId: Int? = nil) {
+        if let cookbookId {
+            self.cookbookId = cookbookId
+        }
         self.name = listItem.name
         self.prepTime = listItem.prepTime
         self.cookTime = listItem.cookTime
@@ -151,7 +156,10 @@ final class PersistedRecipe {
     }
 
     /// Update this model with full detail data from API
-    func update(from detail: RecipeDetail) {
+    func update(from detail: RecipeDetail, cookbookId: Int? = nil) {
+        if let cookbookId {
+            self.cookbookId = cookbookId
+        }
         self.name = detail.name
         self.prepTime = detail.prepTime
         self.cookTime = detail.cookTime

@@ -18,14 +18,32 @@ enum RepositoryError: Error, LocalizedError {
 @MainActor
 protocol RecipeRepositoryProtocol {
     func configure(modelContext: ModelContext)
-    func saveRecipes(_ recipes: [RecipeListItem]) throws -> [Int]
-    func getAllRecipes() throws -> [PersistedRecipe]
+    func saveRecipes(_ recipes: [RecipeListItem], cookbookId: Int?) throws -> [Int]
+    func getAllRecipes(cookbookId: Int?) throws -> [PersistedRecipe]
     func getRecipes(ids: [Int]) throws -> [PersistedRecipe]
     func clearAllRecipes() throws
     func getRecipe(id: Int) throws -> PersistedRecipe?
-    func saveRecipeDetail(_ detail: RecipeDetail) throws
-    func saveRecipeDetails(_ details: [RecipeDetail]) throws
+    func saveRecipeDetail(_ detail: RecipeDetail, cookbookId: Int?) throws
+    func saveRecipeDetails(_ details: [RecipeDetail], cookbookId: Int?) throws
     func deleteRecipe(id: Int) throws
+}
+
+extension RecipeRepositoryProtocol {
+    func saveRecipes(_ recipes: [RecipeListItem]) throws -> [Int] {
+        try self.saveRecipes(recipes, cookbookId: nil)
+    }
+
+    func getAllRecipes() throws -> [PersistedRecipe] {
+        try self.getAllRecipes(cookbookId: nil)
+    }
+
+    func saveRecipeDetail(_ detail: RecipeDetail) throws {
+        try self.saveRecipeDetail(detail, cookbookId: nil)
+    }
+
+    func saveRecipeDetails(_ details: [RecipeDetail]) throws {
+        try self.saveRecipeDetails(details, cookbookId: nil)
+    }
 }
 
 /// Handles local persistence of recipes using SwiftData
@@ -41,7 +59,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     }
 
     /// Save recipes from API response, updating existing or inserting new, and removing stale entries
-    func saveRecipes(_ recipes: [RecipeListItem]) throws -> [Int] {
+    func saveRecipes(_ recipes: [RecipeListItem], cookbookId: Int?) throws -> [Int] {
         guard let modelContext else {
             self.logger.error("Attempted to save recipes without model context")
             throw RepositoryError.notConfigured
@@ -49,11 +67,12 @@ final class RecipeRepository: RecipeRepositoryProtocol {
 
         self.logger.info("Syncing \(recipes.count) recipes to local storage")
 
+        let scopedCookbookId = cookbookId ?? 0
         let apiRecipeIds = Set(recipes.map(\.id))
 
-        // Remove stale recipes not in the API response (fetch only stale ones, not all)
+        // Remove stale recipes not in the API response for this cookbook only.
         let staleDescriptor = FetchDescriptor<PersistedRecipe>(
-            predicate: #Predicate { !apiRecipeIds.contains($0.id) }
+            predicate: #Predicate { $0.cookbookId == scopedCookbookId && !apiRecipeIds.contains($0.id) }
         )
         let staleRecipes = try modelContext.fetch(staleDescriptor)
         let deletedIds = staleRecipes.map(\.id)
@@ -72,9 +91,9 @@ final class RecipeRepository: RecipeRepositoryProtocol {
 
         for apiRecipe in recipes {
             if let existing = existingById[apiRecipe.id] {
-                existing.update(from: apiRecipe)
+                existing.update(from: apiRecipe, cookbookId: scopedCookbookId)
             } else {
-                modelContext.insert(PersistedRecipe(from: apiRecipe))
+                modelContext.insert(PersistedRecipe(from: apiRecipe, cookbookId: scopedCookbookId))
             }
         }
 
@@ -84,15 +103,23 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     }
 
     /// Retrieve all cached recipes, sorted by most recent update
-    func getAllRecipes() throws -> [PersistedRecipe] {
+    func getAllRecipes(cookbookId: Int?) throws -> [PersistedRecipe] {
         guard let modelContext else {
             self.logger.error("Attempted to fetch recipes without model context")
             throw RepositoryError.notConfigured
         }
 
-        let descriptor = FetchDescriptor<PersistedRecipe>(
-            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
-        )
+        let descriptor: FetchDescriptor<PersistedRecipe>
+        if let cookbookId {
+            descriptor = FetchDescriptor<PersistedRecipe>(
+                predicate: #Predicate { $0.cookbookId == cookbookId },
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            )
+        } else {
+            descriptor = FetchDescriptor<PersistedRecipe>(
+                sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+            )
+        }
 
         let recipes = try modelContext.fetch(descriptor)
         self.logger.info("Loaded \(recipes.count) cached recipes")
@@ -152,7 +179,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     }
 
     /// Save full recipe detail from API
-    func saveRecipeDetail(_ detail: RecipeDetail) throws {
+    func saveRecipeDetail(_ detail: RecipeDetail, cookbookId: Int?) throws {
         guard let modelContext else {
             self.logger.error("Attempted to save recipe detail without model context")
             throw RepositoryError.notConfigured
@@ -165,9 +192,9 @@ final class RecipeRepository: RecipeRepositoryProtocol {
         )
 
         if let existing = try modelContext.fetch(descriptor).first {
-            existing.update(from: detail)
+            existing.update(from: detail, cookbookId: cookbookId)
         } else {
-            let newRecipe = PersistedRecipe(from: detail)
+            let newRecipe = PersistedRecipe(from: detail, cookbookId: cookbookId ?? 0)
             modelContext.insert(newRecipe)
         }
 
@@ -176,7 +203,7 @@ final class RecipeRepository: RecipeRepositoryProtocol {
     }
 
     /// Save full recipe details from API in bulk
-    func saveRecipeDetails(_ details: [RecipeDetail]) throws {
+    func saveRecipeDetails(_ details: [RecipeDetail], cookbookId: Int?) throws {
         guard let modelContext else {
             self.logger.error("Attempted to save recipe details without model context")
             throw RepositoryError.notConfigured
@@ -195,9 +222,9 @@ final class RecipeRepository: RecipeRepositoryProtocol {
 
         for detail in details {
             if let existing = existingById[detail.id] {
-                existing.update(from: detail)
+                existing.update(from: detail, cookbookId: cookbookId)
             } else {
-                modelContext.insert(PersistedRecipe(from: detail))
+                modelContext.insert(PersistedRecipe(from: detail, cookbookId: cookbookId ?? 0))
             }
         }
 

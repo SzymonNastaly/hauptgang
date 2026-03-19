@@ -172,6 +172,20 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipes.count, 0)
     }
 
+    func testConfigureSearchIndex_filtersCachedRecipesToActiveCookbook() async {
+        let personalRecipe = self.createMockPersistedRecipe(id: 1, name: "Personal", cookbookId: 1)
+        let sharedRecipe = self.createMockPersistedRecipe(id: 2, name: "Shared", cookbookId: 2)
+        self.mockRepository.allRecipes = [personalRecipe, sharedRecipe]
+
+        self.loadCachedRecipesIntoViewModel()
+        XCTAssertEqual(self.sut.recipes.count, 2)
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 2)
+
+        XCTAssertEqual(self.sut.recipes.map(\.id), [2])
+        XCTAssertEqual(self.sut.recipes.first?.cookbookId, 2)
+    }
+
     // MARK: - refreshRecipes Cancellation Tests
 
     func testRefreshRecipes_cancelsPreviousRefresh() async {
@@ -391,9 +405,13 @@ final class RecipeViewModelTests: XCTestCase {
     private func createMockPersistedRecipe(
         id: Int,
         name: String,
-        importStatus: String? = nil
+        importStatus: String? = nil,
+        cookbookId: Int = 0
     ) -> PersistedRecipe {
-        PersistedRecipe(from: RecipeListItem.mock(id: id, name: name, importStatus: importStatus))
+        PersistedRecipe(
+            from: RecipeListItem.mock(id: id, name: name, importStatus: importStatus),
+            cookbookId: cookbookId
+        )
     }
 
     private func createMockPersistedRecipe(from listItem: RecipeListItem) -> PersistedRecipe {

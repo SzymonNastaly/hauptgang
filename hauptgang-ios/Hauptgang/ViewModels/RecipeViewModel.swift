@@ -71,15 +71,16 @@ final class RecipeViewModel {
     func configureSearchIndex(userId: Int, cookbookId: Int = 0) async {
         self.currentUserId = userId
         self.currentCookbookId = cookbookId
+        self.loadCachedRecipes()
         await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
     }
 }
 
 extension RecipeViewModel {
-    /// Load recipes from local cache, filtering out any pending deletions
+    /// Load recipes from local cache for the active cookbook, filtering out pending deletions
     private func loadCachedRecipes() {
         do {
-            let all = try self.repository.getAllRecipes()
+            let all = try self.repository.getAllRecipes(cookbookId: self.currentCookbookId)
             self.recipes = self.pendingDeletionIDs.isEmpty
                 ? all
                 : all.filter { !self.pendingDeletionIDs.contains($0.id) }
@@ -135,7 +136,7 @@ extension RecipeViewModel {
         let apiRecipes = try await self.recipeService.fetchRecipes()
         try Task.checkCancellation()
 
-        let deletedIds = try self.repository.saveRecipes(apiRecipes)
+        let deletedIds = try self.repository.saveRecipes(apiRecipes, cookbookId: self.currentCookbookId)
         self.loadCachedRecipes()
 
         let visibleRecipes = self.successfulRecipes
@@ -293,7 +294,7 @@ extension RecipeViewModel {
 
     private func applyPollingRecipes(_ apiRecipes: [RecipeListItem]) -> Bool {
         do {
-            _ = try self.repository.saveRecipes(apiRecipes)
+            _ = try self.repository.saveRecipes(apiRecipes, cookbookId: self.currentCookbookId)
             self.loadCachedRecipes()
         } catch {
             self.logger.error("Polling save failed: \(error.localizedDescription)")
@@ -466,7 +467,7 @@ extension RecipeViewModel {
 
     private func applyDetailSyncRecipes(_ recipes: [RecipeDetail], repository: RecipeRepositoryProtocol) {
         do {
-            try repository.saveRecipeDetails(recipes)
+            try repository.saveRecipeDetails(recipes, cookbookId: self.currentCookbookId)
         } catch {
             self.logger.error("Detail sync save failed: \(error.localizedDescription)")
         }

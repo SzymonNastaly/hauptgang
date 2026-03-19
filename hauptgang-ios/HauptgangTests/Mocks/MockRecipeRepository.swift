@@ -16,7 +16,7 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
         self.configuredCalled = true
     }
 
-    func saveRecipes(_ recipes: [RecipeListItem]) throws -> [Int] {
+    func saveRecipes(_ recipes: [RecipeListItem], cookbookId _: Int?) throws -> [Int] {
         if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }
@@ -24,11 +24,12 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
         return []
     }
 
-    func getAllRecipes() throws -> [PersistedRecipe] {
+    func getAllRecipes(cookbookId: Int?) throws -> [PersistedRecipe] {
         if self.shouldThrowOnGet {
             throw MockRecipeError.networkError
         }
-        return self.allRecipes
+        guard let cookbookId else { return self.allRecipes }
+        return self.allRecipes.filter { $0.cookbookId == cookbookId }
     }
 
     func getRecipes(ids: [Int]) throws -> [PersistedRecipe] {
@@ -53,14 +54,14 @@ final class MockRecipeRepository: RecipeRepositoryProtocol {
         return nil
     }
 
-    func saveRecipeDetail(_ detail: RecipeDetail) throws {
+    func saveRecipeDetail(_ detail: RecipeDetail, cookbookId _: Int?) throws {
         if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }
         self.savedRecipeDetail = detail
     }
 
-    func saveRecipeDetails(_ details: [RecipeDetail]) throws {
+    func saveRecipeDetails(_ details: [RecipeDetail], cookbookId _: Int?) throws {
         if self.shouldThrowOnSave {
             throw MockRecipeError.networkError
         }

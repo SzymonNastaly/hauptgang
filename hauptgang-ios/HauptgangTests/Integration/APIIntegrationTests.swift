@@ -182,10 +182,10 @@ final class APIIntegrationTests: XCTestCase {
         let repository = RecipeRepository()
         repository.configure(modelContext: context)
 
-        try repository.saveRecipes(apiRecipes)
+        try repository.saveRecipes(apiRecipes, cookbookId: 42)
 
         // Then: recipes can be loaded from SwiftData
-        let loadedRecipes = try repository.getAllRecipes()
+        let loadedRecipes = try repository.getAllRecipes(cookbookId: 42)
 
         // And: count matches what was saved
         XCTAssertEqual(loadedRecipes.count, apiRecipes.count, "Should load same number of recipes")
@@ -194,6 +194,7 @@ final class APIIntegrationTests: XCTestCase {
         for apiRecipe in apiRecipes {
             let persisted = loadedRecipes.first { $0.id == apiRecipe.id }
             XCTAssertNotNil(persisted, "Recipe \(apiRecipe.id) should be persisted")
+            XCTAssertEqual(persisted?.cookbookId, 42, "Recipe cookbook scope should match the active cookbook")
             XCTAssertEqual(persisted?.name, apiRecipe.name, "Recipe name should match")
             XCTAssertEqual(persisted?.favorite, apiRecipe.favorite, "Recipe favorite should match")
         }

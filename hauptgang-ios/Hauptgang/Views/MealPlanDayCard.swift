@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct MealPlanDayCard: View {
+    private static let recipeThumbnailSize: CGFloat = 64
+    /// Matches thumbnail + row padding + list row insets so the embedded list does not clip or scroll internally.
+    private static let entryRowHeight: CGFloat = 84
+
     let dateString: String
     let day: PersistedMealPlanDay?
     let entries: [PersistedMealPlanEntry]
@@ -24,7 +28,7 @@ struct MealPlanDayCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             self.header
 
             if self.isSelected, let entry = self.selectedEntry {
@@ -35,7 +39,8 @@ struct MealPlanDayCard: View {
                 self.votingView
             }
         }
-        .padding(Theme.Spacing.md)
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.sm)
         .background(Color.hauptgangCard)
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
         .shadow(
@@ -83,7 +88,7 @@ struct MealPlanDayCard: View {
             }
             .foregroundStyle(Color.hauptgangPrimary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Theme.Spacing.md)
+            .padding(.vertical, Theme.Spacing.sm)
         }
         .buttonStyle(.plain)
     }
@@ -126,17 +131,16 @@ struct MealPlanDayCard: View {
             }
             .listStyle(.plain)
             .scrollDisabled(true)
-            .frame(height: CGFloat(self.entries.count) * 72)
+            .frame(height: CGFloat(self.entries.count) * Self.entryRowHeight)
 
             Button {
                 self.onAddTapped()
             } label: {
-                HStack(spacing: Theme.Spacing.xs) {
+                HStack(spacing: Theme.Spacing.sm) {
                     Image(systemName: "plus")
                     Text("Add meal")
                 }
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.footnote.weight(.medium))
                 .foregroundStyle(Color.hauptgangPrimary)
             }
             .buttonStyle(.plain)
@@ -155,13 +159,13 @@ struct MealPlanDayCard: View {
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text(entry.recipeName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(Color.hauptgangTextPrimary)
                         .lineLimit(2)
 
                     if entry.syncState == .pendingCreate {
                         Text("Syncing...")
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundStyle(Color.hauptgangTextMuted)
                     }
                 }
@@ -170,7 +174,7 @@ struct MealPlanDayCard: View {
 
                 self.voteButton(entry)
             }
-            .padding(.vertical, Theme.Spacing.xs)
+            .padding(.vertical, Theme.Spacing.sm)
         }
     }
 
@@ -190,11 +194,11 @@ struct MealPlanDayCard: View {
                     .overlay {
                         Image(systemName: "fork.knife")
                             .foregroundStyle(Color.hauptgangTextMuted)
-                            .font(.subheadline)
+                            .font(.body)
                     }
             }
         }
-        .frame(width: 56, height: 56)
+        .frame(width: Self.recipeThumbnailSize, height: Self.recipeThumbnailSize)
         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
     }
 
@@ -204,13 +208,13 @@ struct MealPlanDayCard: View {
         } label: {
             HStack(spacing: Theme.Spacing.xs) {
                 Text(entry.voteCount > 0 ? "\(entry.voteCount)" : "")
-                    .font(.body)
+                    .font(.body.weight(.medium))
                     .foregroundStyle(Color.hauptgangTextSecondary)
-                    .frame(minWidth: 16, alignment: .trailing)
+                    .frame(minWidth: 20, alignment: .trailing)
                 Image(systemName: entry.votedByCurrentUser ? "heart.fill" : "heart")
                     .foregroundStyle(entry.votedByCurrentUser ? Color.hauptgangPrimary : Color.hauptgangTextMuted)
             }
-            .font(.title3)
+            .font(.title2)
         }
         .disabled(self.isOffline || entry.syncState == .pendingCreate)
         .buttonStyle(.plain)
@@ -219,19 +223,18 @@ struct MealPlanDayCard: View {
     // MARK: - Selected State
 
     private func selectedView(entry: PersistedMealPlanEntry) -> some View {
-        VStack(spacing: Theme.Spacing.md) {
+        VStack(spacing: Theme.Spacing.sm) {
             NavigationLink(value: entry.recipeId) {
                 HStack(spacing: Theme.Spacing.md) {
                     self.recipeImage(entry)
 
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                         Text("Selected")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(Color.hauptgangSuccess)
 
                         Text(entry.recipeName)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.body.weight(.semibold))
                             .foregroundStyle(Color.hauptgangTextPrimary)
                             .lineLimit(2)
                     }

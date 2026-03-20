@@ -16,7 +16,7 @@ struct MealPlanView: View {
 
     private var screenContent: some View {
         ScrollView {
-            VStack(spacing: Theme.Spacing.lg) {
+            VStack(spacing: Theme.Spacing.md) {
                 MealPlanDayCard(
                     dateString: self.viewModel.todayDateString,
                     day: self.viewModel.todayDay,
@@ -43,7 +43,8 @@ struct MealPlanView: View {
                     onDeselect: { self.deselectDay(self.viewModel.tomorrowDateString) }
                 )
             }
-            .padding(Theme.Spacing.lg)
+            .padding(.horizontal, Theme.Spacing.md)
+            .padding(.vertical, Theme.Spacing.sm)
         }
         .background(Color.hauptgangBackground.ignoresSafeArea())
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Meal Plan")

@@ -159,24 +159,19 @@ struct RecipeDetailView: View {
     @ViewBuilder
     private func heroImage(_ recipe: RecipeDetail) -> some View {
         if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
+            CachedRecipeImage(url: url) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
                     Color.gray.opacity(0.2)
                         .overlay {
                             ProgressView()
                                 .tint(.hauptgangTextMuted)
                         }
-                case let .success(image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                case .failure:
-                    // Show muted background on load failure
-                    Color.hauptgangSurfaceRaised
-                @unknown default:
-                    Color.hauptgangSurfaceRaised
-                }
+            } failure: {
+                // Show muted background on load failure.
+                Color.hauptgangSurfaceRaised
             }
             .frame(height: self.heroImageHeight)
             .frame(maxWidth: .infinity)

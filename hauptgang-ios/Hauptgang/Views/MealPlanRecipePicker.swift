@@ -79,13 +79,12 @@ struct MealPlanRecipePicker: View {
     private func recipeImage(_ recipe: PersistedRecipe) -> some View {
         Group {
             if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    default:
-                        Color.hauptgangSurfaceRaised
-                    }
+                CachedRecipeImage(url: url) { image in
+                    image.resizable().aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Color.hauptgangSurfaceRaised
+                } failure: {
+                    Color.hauptgangSurfaceRaised
                 }
             } else {
                 Color.hauptgangSurfaceRaised

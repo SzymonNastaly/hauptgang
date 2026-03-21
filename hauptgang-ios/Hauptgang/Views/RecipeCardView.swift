@@ -42,20 +42,15 @@ struct RecipeCardView: View {
         // AsyncImage in .background doesn't affect layout, .clipped clips overflow
         Color.clear
             .background {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        Color.hauptgangSurfaceRaised
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
-                        // Fall back to solid background on error
-                        Color.hauptgangCard
-                    @unknown default:
-                        Color.hauptgangCard
-                    }
+                CachedRecipeImage(url: url) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Color.hauptgangSurfaceRaised
+                } failure: {
+                    // Fall back to solid background on error.
+                    Color.hauptgangCard
                 }
             }
             .clipped()

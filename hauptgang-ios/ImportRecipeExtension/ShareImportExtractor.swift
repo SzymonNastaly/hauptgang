@@ -28,7 +28,8 @@ extension NSItemProvider: ShareItemProviding {
                     continuation.resume(throwing: error)
                     return
                 }
-                continuation.resume(returning: item as? NSSecureCoding)
+                nonisolated(unsafe) let value = item
+                continuation.resume(returning: value)
             }
         }
     }

@@ -194,7 +194,6 @@ struct RecipeDetailView: View {
     private func durationCard(_ recipe: RecipeDetail) -> some View {
         let hasPrep = (recipe.prepTime ?? 0) > 0
         let hasCook = (recipe.cookTime ?? 0) > 0
-        let hasServings = (recipe.servings ?? 0) > 0
 
         return HStack(spacing: 0) {
             if let prepTime = recipe.prepTime, prepTime > 0 {

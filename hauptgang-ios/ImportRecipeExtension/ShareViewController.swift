@@ -71,6 +71,11 @@ class ShareViewController: UIViewController {
         }
 
         self.importTask = Task {
+            // Restore cookbook context so extension imports into the user's active cookbook
+            if let user = await KeychainService.shared.getUser() {
+                await CookbookContext.shared.configure(userId: user.id)
+            }
+
             // Try JS preprocessing results first (Safari shares with page content)
             let webPageResult = await ShareImportExtractor.extractWebPageData(from: attachments)
             switch webPageResult {

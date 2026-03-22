@@ -54,6 +54,10 @@ gem "image_processing", "~> 1.2"
 # S3-compatible storage (Hetzner Object Storage) [https://github.com/aws/aws-sdk-ruby]
 gem "aws-sdk-s3", require: false
 
+# Error tracking and performance monitoring [https://docs.sentry.io/platforms/ruby/guides/rails/]
+gem "sentry-ruby"
+gem "sentry-rails"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

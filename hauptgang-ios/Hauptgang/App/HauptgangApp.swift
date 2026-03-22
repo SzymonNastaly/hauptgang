@@ -1,5 +1,6 @@
 import os
 import RevenueCat
+import Sentry
 import SwiftData
 import SwiftUI
 
@@ -13,6 +14,23 @@ struct HauptgangApp: App {
     init() {
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: Constants.RevenueCat.apiKey)
+
+        SentrySDK.start { options in
+            options.dsn = Constants.Sentry.dsn
+            options.environment = Constants.Sentry.environment
+            options.tracesSampleRate = 0.1
+            options.profilesSampleRate = 0.1
+            options.enableMetricKit = true
+            options.enableTimeToFullDisplayTracing = true
+
+            // GDPR: do not send PII
+            options.sendDefaultPii = false
+
+            #if DEBUG
+            options.debug = true
+            options.enabled = false
+            #endif
+        }
     }
 
     var sharedModelContainer: ModelContainer = {

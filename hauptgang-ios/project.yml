@@ -13,6 +13,9 @@ packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift.git
     from: 6.29.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa.git
+    from: 8.0.0
 
 settings:
   SWIFT_VERSION: "5.9"
@@ -54,6 +57,8 @@ targets:
         product: RevenueCatUI
       - package: GRDB
         product: GRDB
+      - package: Sentry
+        product: SentrySwiftUI
 
   ImportRecipeExtension:
     type: app-extension

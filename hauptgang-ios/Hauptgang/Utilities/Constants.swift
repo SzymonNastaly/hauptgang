@@ -57,6 +57,21 @@ enum Constants {
         static let entitlementID = "Hauptgang Pro"
     }
 
+    enum Sentry {
+        #if DEBUG
+        static let dsn = ""
+        #else
+        static let dsn = "https://d992f788cc33b152950416b88608b4f7@o4511087849766912.ingest.de.sentry.io/4511087853895760"
+        #endif
+        static let environment: String = {
+            #if DEBUG
+            return "development"
+            #else
+            return "production"
+            #endif
+        }()
+    }
+
     enum Keychain {
         static let service = "com.hauptgang.ios"
         static let tokenKey = "auth_token"

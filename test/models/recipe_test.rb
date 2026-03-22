@@ -147,8 +147,9 @@ class RecipeTest < ActiveSupport::TestCase
     blob_id = recipe.cover_image.blob.id
 
     # purge_later enqueues a job, so we need to perform it
+    recipe.meal_plan_entries.destroy_all
     perform_enqueued_jobs do
-      recipe.destroy
+      recipe.destroy!
     end
 
     assert_nil ActiveStorage::Blob.find_by(id: blob_id)

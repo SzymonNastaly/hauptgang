@@ -61,6 +61,21 @@ class CookbookTest < ActiveSupport::TestCase
     end
   end
 
+  test "destroying cookbook with planned recipes succeeds" do
+    cookbook = cookbooks(:one_personal)
+    recipe = cookbook.recipes.first
+    meal_plan = cookbook.meal_plans.create!(date: 1.year.from_now.to_date)
+    meal_plan.entries.create!(recipe: recipe, proposed_by_user: users(:one))
+
+    assert_nothing_raised do
+      cookbook.destroy!
+    end
+
+    assert_not MealPlan.exists?(meal_plan.id)
+    assert_not MealPlanEntry.exists?(meal_plan_id: meal_plan.id)
+    assert_not Recipe.exists?(recipe.id)
+  end
+
   test "destroying cookbook cascades to shopping list items" do
     cookbook = cookbooks(:one_personal)
     item_ids = cookbook.shopping_list_items.pluck(:id)

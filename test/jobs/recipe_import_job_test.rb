@@ -131,7 +131,8 @@ class RecipeImportJobTest < ActiveSupport::TestCase
 
   test "does nothing when recipe no longer exists" do
     deleted_id = @recipe.id
-    @recipe.destroy
+    @recipe.meal_plan_entries.destroy_all
+    @recipe.destroy!
 
     assert_nothing_raised do
       RecipeImportJob.perform_now(@user.id, deleted_id, "https://example.com/recipe")

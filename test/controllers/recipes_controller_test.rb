@@ -110,11 +110,31 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should destroy recipe" do
+    deletable = @user.personal_cookbook.recipes.create!(
+      user: @user,
+      name: "Deletable recipe",
+      ingredients: [],
+      instructions: [],
+      servings: 1
+    )
+
     assert_difference("Recipe.count", -1) do
-      delete recipe_url(@recipe)
+      delete recipe_url(deletable)
     end
 
     assert_redirected_to recipes_url
+  end
+
+  test "cannot destroy recipe that is on a meal plan" do
+    planned = recipes(:one)
+
+    assert_no_difference("Recipe.count") do
+      delete recipe_url(planned)
+    end
+
+    assert_redirected_to recipes_url
+    assert_match(/meal plan/i, flash[:alert])
+    assert Recipe.exists?(planned.id)
   end
 
   # ===================

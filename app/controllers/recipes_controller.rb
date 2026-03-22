@@ -98,6 +98,12 @@ class RecipesController < ApplicationController
       format.html { redirect_to recipes_path, notice: "Recipe was successfully destroyed.", status: :see_other }
       format.json { head :no_content }
     end
+  rescue ActiveRecord::RecordNotDestroyed => e
+    alert = e.record.errors.full_messages.to_sentence.presence || "Could not delete recipe."
+    respond_to do |format|
+      format.html { redirect_to recipes_path, alert: alert, status: :see_other }
+      format.json { render json: { error: alert }, status: :unprocessable_entity }
+    end
   end
 
   # PATCH /recipes/1/toggle_favorite

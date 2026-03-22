@@ -149,6 +149,7 @@ struct RecipeDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.lg)
             }
+            .frame(maxWidth: .infinity)
         }
         .scrollContentBackground(.hidden)
         .ignoresSafeArea(edges: recipe.coverImageUrl != nil && self.isIOS26 ? .top : [])
@@ -159,33 +160,35 @@ struct RecipeDetailView: View {
     @ViewBuilder
     private func heroImage(_ recipe: RecipeDetail) -> some View {
         if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-            CachedRecipeImage(url: url) { image in
-                image
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } placeholder: {
-                    Color.gray.opacity(0.2)
-                        .overlay {
-                            ProgressView()
-                                .tint(.hauptgangTextMuted)
-                        }
-            } failure: {
-                // Show muted background on load failure.
-                Color.hauptgangSurfaceRaised
-            }
-            .frame(height: self.heroImageHeight)
-            .frame(maxWidth: .infinity)
-            .clipped()
-            .overlay(alignment: .top) {
-                if self.isIOS26 {
-                    LinearGradient(
-                        colors: [.black.opacity(0.4), .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    )
-                    .frame(height: 100)
+            Color.clear
+                .frame(height: self.heroImageHeight)
+                .frame(maxWidth: .infinity)
+                .background {
+                    CachedRecipeImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.gray.opacity(0.2)
+                            .overlay {
+                                ProgressView()
+                                    .tint(.hauptgangTextMuted)
+                            }
+                    } failure: {
+                        Color.hauptgangSurfaceRaised
+                    }
                 }
-            }
+                .clipped()
+                .overlay(alignment: .top) {
+                    if self.isIOS26 {
+                        LinearGradient(
+                            colors: [.black.opacity(0.4), .clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                        .frame(height: 100)
+                    }
+                }
         }
     }
 
@@ -266,6 +269,8 @@ struct RecipeDetailView: View {
             Text(ingredient)
                 .font(.body)
                 .foregroundColor(.hauptgangTextPrimary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -316,6 +321,8 @@ struct RecipeDetailView: View {
                         Text(instruction)
                             .font(.body)
                             .foregroundColor(.hauptgangTextPrimary)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

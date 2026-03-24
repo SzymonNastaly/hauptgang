@@ -10,6 +10,7 @@ struct RecipeDetailView: View {
     @State private var viewModel: RecipeDetailViewModel
     @State private var shoppingListViewModel = ShoppingListViewModel()
     @State private var showShoppingListConfirmation = false
+    @State private var isCookingMode = false
 
     init(recipeId: Int, viewModel: RecipeDetailViewModel? = nil) {
         self.recipeId = recipeId
@@ -54,6 +55,12 @@ struct RecipeDetailView: View {
             self.viewModel.configure(modelContext: self.modelContext)
             self.shoppingListViewModel.configure(modelContext: self.modelContext)
             await self.viewModel.loadRecipe(id: self.recipeId)
+        }
+        .onDisappear {
+            if self.isCookingMode {
+                self.isCookingMode = false
+                UIApplication.shared.isIdleTimerDisabled = false
+            }
         }
     }
 
@@ -109,13 +116,28 @@ struct RecipeDetailView: View {
     private func recipeContent(_ recipe: RecipeDetail) -> some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Hero image - only show if recipe has a cover image
+                // Hero image with cooking mode button straddling the boundary
                 if recipe.coverImageUrl != nil {
-                    self.heroImage(recipe)
+                    ZStack(alignment: .bottomTrailing) {
+                        self.heroImage(recipe)
+
+                        self.cookingModeButton
+                            .padding(.trailing, Theme.Spacing.lg)
+                            .offset(y: 18)
+                    }
+                    .zIndex(1)
                 }
 
                 // Content sections
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    // Cooking mode button when no hero image
+                    if recipe.coverImageUrl == nil {
+                        HStack {
+                            Spacer()
+                            self.cookingModeButton
+                        }
+                    }
+
                     // Recipe name
                     Text(recipe.name)
                         .font(.system(.title2, design: .serif))
@@ -246,16 +268,17 @@ struct RecipeDetailView: View {
 
     private func ingredientsSection(_ ingredients: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            self.sectionHeader("Ingredients")
+            HStack {
+                self.sectionHeader("Ingredients")
+                Spacer()
+                self.addIngredientsButton(ingredients)
+            }
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
                     self.ingredientRow(ingredient)
                 }
             }
-
-            self.addIngredientsButton(ingredients)
-            self.shoppingListAddedBanner
         }
     }
 
@@ -276,28 +299,34 @@ struct RecipeDetailView: View {
 
     private func addIngredientsButton(_ ingredients: [String]) -> some View {
         Button {
-            self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
-            self.showShoppingListConfirmation = true
-            Task {
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
-                self.showShoppingListConfirmation = false
-            }
-        } label: {
-            Label("Add to shopping list", systemImage: "cart.badge.plus")
-                .font(.subheadline)
-        }
-        .buttonStyle(.bordered)
-        .tint(.hauptgangPrimary)
-    }
-
-    @ViewBuilder
-    private var shoppingListAddedBanner: some View {
-        if self.showShoppingListConfirmation {
-            Label("Added to shopping list", systemImage: "checkmark.circle.fill")
+                withAnimation(.smooth(duration: 0.4)) {
+                    self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+                    self.showShoppingListConfirmation = true
+                }
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                    withAnimation(.smooth(duration: 0.4)) {
+                        self.showShoppingListConfirmation = false
+                    }
+                }
+            } label: {
+                Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
                 .font(.caption)
-                .foregroundColor(.hauptgangSuccess)
-                .transition(.opacity)
-        }
+                .fontWeight(.medium)
+                .foregroundColor(self.showShoppingListConfirmation ? .white : Color.hauptgangTextSecondary)
+                .padding(.horizontal, Theme.Spacing.sm + 4)
+                .padding(.vertical, Theme.Spacing.xs + 2)
+                .background(
+                    Capsule()
+                        .fill(self.showShoppingListConfirmation ? Color.hauptgangSuccess : Color.hauptgangBackground)
+                )
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(Color.hauptgangTextMuted.opacity(self.showShoppingListConfirmation ? 0 : 0.4), lineWidth: 1)
+                )
+            }
+        .buttonStyle(PressDownButtonStyle())
     }
 
     // MARK: - Instructions Section
@@ -343,12 +372,58 @@ struct RecipeDetailView: View {
         }
     }
 
+    // MARK: - Cooking Mode
+
+    private var cookingModeButton: some View {
+        Button {
+            withAnimation(.smooth(duration: 0.4)) {
+                self.isCookingMode.toggle()
+            }
+            UIApplication.shared.isIdleTimerDisabled = self.isCookingMode
+        } label: {
+            HStack(spacing: 4) {
+                Text("Cooking Mode")
+
+                if self.isCookingMode {
+                    Text("On")
+                        .transition(.push(from: .bottom))
+                }
+            }
+            .font(.subheadline)
+            .fontWeight(.medium)
+            .foregroundColor(self.isCookingMode ? .white : Color.hauptgangPrimary)
+            .padding(.horizontal, Theme.Spacing.md)
+            .padding(.vertical, Theme.Spacing.sm)
+            .background(
+                Capsule()
+                    .fill(self.isCookingMode ? Color.hauptgangPrimary : Color.hauptgangSurfaceRaised)
+            )
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .strokeBorder(Color.hauptgangPrimary.opacity(self.isCookingMode ? 0 : 0.3), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.1), radius: 4, y: 2)
+        }
+        .buttonStyle(PressDownButtonStyle())
+    }
+
     // MARK: - Helpers
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.headline)
             .foregroundColor(.hauptgangTextPrimary)
+    }
+}
+
+// MARK: - Press Down Button Style
+
+private struct PressDownButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

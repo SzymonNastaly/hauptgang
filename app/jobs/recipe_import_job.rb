@@ -14,15 +14,19 @@ class RecipeImportJob < ApplicationJob
 
     result = RecipeImporter.new(source_url).import
 
+    domain = extract_domain(source_url)
+
     if result.success?
       recipe.update!(result.recipe_attributes.merge(import_status: :completed))
       attach_cover_image(recipe, result.cover_image_url) if result.cover_image_url.present?
+      Sentry.logger.info("recipe.import.success", domain: domain, channel: "url", recipe_id: recipe_id)
     else
       error_message = build_error_message(source_url, result.error_code)
       recipe.update!(
         import_status: :failed,
         error_message: error_message
       )
+      Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "url", recipe_id: recipe_id, error_code: result.error_code.to_s)
       Rails.logger.error "[RecipeImportJob] Import failed for recipe #{recipe_id}: #{result.error}"
     end
   rescue => error

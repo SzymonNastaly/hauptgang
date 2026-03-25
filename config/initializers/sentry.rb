@@ -4,6 +4,7 @@ Sentry.init do |config|
   config.traces_sample_rate = 0.1
   config.profiles_sample_rate = 0.1
 
+  config.enable_logs = true
   config.enabled_environments = %w[production]
 
   # GDPR: do not store PII

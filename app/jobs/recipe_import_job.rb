@@ -26,8 +26,8 @@ class RecipeImportJob < ApplicationJob
         import_status: :failed,
         error_message: error_message
       )
-      Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "url", recipe_id: recipe_id, error_code: result.error_code.to_s)
-      Rails.logger.error "[RecipeImportJob] Import failed for recipe #{recipe_id}: #{result.error}"
+      Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "url", recipe_id: recipe_id, error_code: result.error_code.to_s, error: result.error)
+      Rails.logger.error "[RecipeImportJob] Import failed for recipe #{recipe_id} (#{source_url}): #{result.error}"
     end
   rescue => error
     if recipe

@@ -36,15 +36,20 @@ class RecipeImporter
     html = fetch_result[:body]
 
     # Try JSON-LD extraction first (most recipe sites use this)
-    result = RecipeImporters::JsonLdExtractor.new(html, @url).extract
-    return result if result.success?
+    json_ld_result = RecipeImporters::JsonLdExtractor.new(html, @url).extract
+    return json_ld_result if json_ld_result.success?
+    Rails.logger.info "[RecipeImporter] JSON-LD extraction failed for #{@url}: #{json_ld_result.error_code}: #{json_ld_result.error}"
 
-    # Fall back to LLM extraction (placeholder for now)
-    result = RecipeImporters::LlmExtractor.new(html, @url).extract
-    return result if result.success?
+    # Fall back to LLM extraction
+    llm_result = RecipeImporters::LlmExtractor.new(html, @url).extract
+    return llm_result if llm_result.success?
+    Rails.logger.info "[RecipeImporter] LLM extraction failed for #{@url}: #{llm_result.error_code}: #{llm_result.error}"
 
     # Nothing worked
-    failure("Could not extract recipe from this page. The site may not have structured recipe data.", :no_recipe_found)
+    failure(
+      "All extraction methods failed — json_ld: [#{json_ld_result.error_code}: #{json_ld_result.error}], llm: [#{llm_result.error_code}: #{llm_result.error}]",
+      :no_recipe_found
+    )
   end
 
   private

@@ -25,8 +25,8 @@ class RecipeContentImportJob < ApplicationJob
         import_status: :failed,
         error_message: error_message
       )
-      Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "share_extension", recipe_id: recipe_id, error_code: result.error_code.to_s)
-      Rails.logger.error "[RecipeContentImportJob] Import failed for recipe #{recipe_id}: #{result.error}"
+      Sentry.logger.warn("recipe.import.failure", domain: domain, channel: "share_extension", recipe_id: recipe_id, error_code: result.error_code.to_s, error: result.error)
+      Rails.logger.error "[RecipeContentImportJob] Import failed for recipe #{recipe_id} (#{source_url}): #{result.error}"
     end
   rescue => error
     if recipe
@@ -47,23 +47,34 @@ class RecipeContentImportJob < ApplicationJob
       return RecipeImporters::TiktokVideoExtractor.new(source_url).extract
     end
 
+    json_ld_error = nil
+    llm_error = nil
+
     # Try JSON-LD first: parse provided blocks directly (no HTML reconstruction)
     if json_ld_strings.present?
       result = RecipeImporters::JsonLdExtractor.new("", source_url).extract_from_json_ld_strings(json_ld_strings)
       return result if result.success?
+      json_ld_error = "#{result.error_code}: #{result.error}"
+      Rails.logger.info "[RecipeContentImportJob] JSON-LD extraction failed for #{source_url}: #{json_ld_error}"
+    else
+      json_ld_error = "no json_ld_strings provided"
     end
 
     # Fall back to LLM extraction with the cleaned HTML
     if html.present?
       result = RecipeImporters::LlmExtractor.new(html, source_url).extract
       return result if result.success?
+      llm_error = "#{result.error_code}: #{result.error}"
+      Rails.logger.info "[RecipeContentImportJob] LLM extraction failed for #{source_url}: #{llm_error}"
+    else
+      llm_error = "no html provided"
     end
 
     RecipeImporter::Result.new(
       success?: false,
       recipe_attributes: {},
       cover_image_url: nil,
-      error: "Could not extract recipe from provided content",
+      error: "All extraction methods failed — json_ld: [#{json_ld_error}], llm: [#{llm_error}]",
       error_code: :no_recipe_found
     )
   end

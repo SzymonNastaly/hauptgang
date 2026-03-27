@@ -72,6 +72,12 @@ volumes:
 # version inside the asset_path.
 asset_path: /rails/public/assets
 
+logging:
+  driver: json-file
+  options:
+    max-size: 50m
+    max-file: "3"
+
 
 # Configure the image builder.
 builder:

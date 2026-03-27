@@ -1,5 +1,6 @@
 import Foundation
 import os
+import Sentry
 import SwiftData
 import SwiftUI
 
@@ -15,6 +16,7 @@ final class RecipeViewModel {
     var importError: String?
     var shouldShowPaywall: Bool = false
     var didReceiveForbidden = false
+    private var reportedFailedRecipeIds: Set<Int> = []
 
     /// Whether any recipes are currently being imported
     var hasPendingImports: Bool {
@@ -85,8 +87,27 @@ extension RecipeViewModel {
                 ? all
                 : all.filter { !self.pendingDeletionIDs.contains($0.id) }
             self.logger.info("Loaded \(self.recipes.count) recipes from cache")
+            self.reportNewlyFailedRecipes()
         } catch {
             self.logger.error("Failed to load cached recipes: \(error.localizedDescription)")
+        }
+    }
+
+    /// Report any newly-failed recipe imports to Sentry (deduplicated by recipe ID)
+    private func reportNewlyFailedRecipes() {
+        for recipe in self.failedRecipes where !self.reportedFailedRecipeIds.contains(recipe.id) {
+            self.reportedFailedRecipeIds.insert(recipe.id)
+            let event = Event(level: .error)
+            event.message = SentryMessage(formatted: "Recipe import failed")
+            event.extra = [
+                "recipe_id": recipe.id,
+                "recipe_name": recipe.name,
+                "error_message": recipe.errorMessage ?? "unknown",
+                "source_url": recipe.sourceUrl ?? "unknown",
+                "import_status": recipe.importStatus ?? "unknown",
+                "cookbook_id": recipe.cookbookId,
+            ]
+            SentrySDK.capture(event: event)
         }
     }
 
@@ -374,6 +395,12 @@ extension RecipeViewModel {
                 self.importError = "Failed to import recipe from photo."
             }
             self.logger.error("Image import failed: \(error.localizedDescription)")
+            SentrySDK.capture(error: error) { scope in
+                scope.setContext(value: [
+                    "source": "image_import",
+                    "error_description": self.importError ?? "unknown",
+                ], key: "import")
+            }
         }
 
         self.isImporting = false

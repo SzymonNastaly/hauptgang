@@ -116,16 +116,9 @@ struct RecipeDetailView: View {
     private func recipeContent(_ recipe: RecipeDetail) -> some View {
         ScrollView {
             VStack(spacing: 0) {
-                // Hero image with cooking mode button straddling the boundary
+                // Hero image
                 if recipe.coverImageUrl != nil {
-                    ZStack(alignment: .bottomTrailing) {
-                        self.heroImage(recipe)
-
-                        self.cookingModeButton
-                            .padding(.trailing, Theme.Spacing.lg)
-                            .offset(y: 18)
-                    }
-                    .zIndex(1)
+                    self.heroImage(recipe)
                 }
 
                 // Content sections
@@ -145,11 +138,10 @@ struct RecipeDetailView: View {
                         .foregroundColor(.hauptgangTextPrimary)
 
                     // Duration card - only show if any duration data exists
-                    let hasDurationData = (recipe.prepTime ?? 0) > 0
+                    if (recipe.prepTime ?? 0) > 0
                         || (recipe.cookTime ?? 0) > 0
                         || (recipe.servings ?? 0) > 0
-
-                    if hasDurationData {
+                    {
                         self.durationCard(recipe)
                     }
 
@@ -170,6 +162,13 @@ struct RecipeDetailView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Theme.Spacing.lg)
+                .overlay(alignment: .topTrailing) {
+                    if recipe.coverImageUrl != nil {
+                        self.cookingModeButton
+                            .padding(.trailing, Theme.Spacing.lg)
+                            .offset(y: -18)
+                    }
+                }
             }
             .frame(maxWidth: .infinity)
         }

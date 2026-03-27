@@ -1,4 +1,5 @@
 import os
+import Sentry
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -13,6 +14,15 @@ class ShareViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        SentrySDK.start { options in
+            options.dsn = Constants.Sentry.dsn
+            options.environment = Constants.Sentry.environment
+            options.sendDefaultPii = false
+            #if DEBUG
+            options.debug = true
+            options.enabled = false
+            #endif
+        }
         self.setupUI()
         self.extractContent()
     }
@@ -111,6 +121,7 @@ class ShareViewController: UIViewController {
             }
 
             logger.error("Could not extract any content from attachments")
+            self.reportImportFailure(message: "Could not extract content from attachments", source: "extraction")
             await MainActor.run {
                 self.updateState(.failed("Could not extract recipe content"))
             }
@@ -120,6 +131,12 @@ class ShareViewController: UIViewController {
     private func handleExtractedPageContent(_ pageContent: PageContent) async {
         if let unsupportedDomain = self.unsupportedDomain(for: pageContent.url) {
             logger.info("Unsupported domain detected: \(unsupportedDomain, privacy: .public)")
+            self.reportImportFailure(
+                message: "Unsupported domain",
+                source: "web_page_with_content",
+                url: pageContent.url.absoluteString,
+                host: unsupportedDomain
+            )
             await MainActor.run {
                 self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
             }
@@ -157,6 +174,13 @@ class ShareViewController: UIViewController {
                 .error(
                     "Import with content failed for \(pageContent.url.absoluteString): \(error.localizedDescription)"
                 )
+            SentrySDK.capture(error: error) { scope in
+                scope.setContext(value: [
+                    "source": "web_page_with_content",
+                    "url": pageContent.url.absoluteString,
+                    "host": pageContent.url.host ?? "unknown",
+                ], key: "import")
+            }
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }
@@ -166,6 +190,12 @@ class ShareViewController: UIViewController {
     private func handleExtractedURL(_ url: URL) async {
         if let unsupportedDomain = self.unsupportedDomain(for: url) {
             logger.info("Unsupported domain detected: \(unsupportedDomain, privacy: .public)")
+            self.reportImportFailure(
+                message: "Unsupported domain",
+                source: "url_only",
+                url: url.absoluteString,
+                host: unsupportedDomain
+            )
             await MainActor.run {
                 self.updateState(.failed("Importing from \(unsupportedDomain) is currently not supported."))
             }
@@ -196,6 +226,13 @@ class ShareViewController: UIViewController {
             }
         } catch {
             logger.error("URL-only import failed for \(url.absoluteString): \(error.localizedDescription)")
+            SentrySDK.capture(error: error) { scope in
+                scope.setContext(value: [
+                    "source": "url_only",
+                    "url": url.absoluteString,
+                    "host": url.host ?? "unknown",
+                ], key: "import")
+            }
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }
@@ -219,6 +256,7 @@ class ShareViewController: UIViewController {
 
         guard let compressed = ImageCompressor.compressToJPEG(from: fileURL) else {
             logger.error("Image compression failed for \(fileURL.lastPathComponent)")
+            self.reportImportFailure(message: "Image compression failed", source: "image")
             await MainActor.run {
                 self.updateState(.failed("Could not process image"))
             }
@@ -237,6 +275,9 @@ class ShareViewController: UIViewController {
             }
         } catch {
             logger.error("Image import failed: \(error.localizedDescription)")
+            SentrySDK.capture(error: error) { scope in
+                scope.setContext(value: ["source": "image"], key: "import")
+            }
             await MainActor.run {
                 self.updateState(.failed(error.localizedDescription))
             }
@@ -268,5 +309,15 @@ class ShareViewController: UIViewController {
             }
         }
         return nil
+    }
+
+    private func reportImportFailure(message: String, source: String, url: String? = nil, host: String? = nil) {
+        let event = Event(level: .error)
+        event.message = SentryMessage(formatted: "Recipe import failed: \(message)")
+        var extra: [String: Any] = ["source": source]
+        if let url { extra["url"] = url }
+        if let host { extra["host"] = host }
+        event.extra = extra
+        SentrySDK.capture(event: event)
     }
 }

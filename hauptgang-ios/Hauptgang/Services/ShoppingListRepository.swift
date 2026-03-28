@@ -17,7 +17,7 @@ enum ShoppingListRepositoryError: Error, LocalizedError {
 protocol ShoppingListRepositoryProtocol {
     func configure(modelContext: ModelContext)
     func getAllItems() throws -> [PersistedShoppingListItem]
-    func saveItems(_ items: [ShoppingListItemResponse]) throws
+    func saveItems(_ items: [ShoppingListItemResponse], pruneOrphans: Bool) throws
     func addLocalItems(_ items: [ShoppingListItemCreate]) throws
     func updateItem(clientId: String, checkedAt: Date?) throws
     func deleteItem(clientId: String) throws
@@ -60,18 +60,20 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
         }
     }
 
-    func saveItems(_ items: [ShoppingListItemResponse]) throws {
+    func saveItems(_ items: [ShoppingListItemResponse], pruneOrphans: Bool = true) throws {
         guard let modelContext else {
             throw ShoppingListRepositoryError.notConfigured
         }
 
-        let serverClientIds = Set(items.map(\.clientId))
+        if pruneOrphans {
+            let serverClientIds = Set(items.map(\.clientId))
 
-        let allDescriptor = FetchDescriptor<PersistedShoppingListItem>()
-        let localItems = try modelContext.fetch(allDescriptor)
+            let allDescriptor = FetchDescriptor<PersistedShoppingListItem>()
+            let localItems = try modelContext.fetch(allDescriptor)
 
-        for local in localItems where local.syncState == .synced && !serverClientIds.contains(local.clientId) {
-            modelContext.delete(local)
+            for local in localItems where local.syncState == .synced && !serverClientIds.contains(local.clientId) {
+                modelContext.delete(local)
+            }
         }
 
         for response in items {

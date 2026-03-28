@@ -46,7 +46,7 @@ final class ShoppingListViewModel {
 
         do {
             let apiItems = try await service.fetchItems()
-            try self.repository.saveItems(apiItems)
+            try self.repository.saveItems(apiItems, pruneOrphans: true)
             try self.repository.deleteStaleItems()
             self.loadCachedItems()
         } catch {
@@ -189,7 +189,7 @@ final class ShoppingListViewModel {
                 }
 
                 let created = try await service.createItems(payload)
-                try self.repository.saveItems(created)
+                try self.repository.saveItems(created, pruneOrphans: false)
             }
 
             let pendingUpdates = try repository.getPendingUpdates()

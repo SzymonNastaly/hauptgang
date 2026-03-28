@@ -13,6 +13,11 @@ private struct DeleteCandidate: Identifiable {
     let name: String
 }
 
+private struct ClipboardContent: Identifiable {
+    let id = UUID()
+    let text: String
+}
+
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
@@ -28,6 +33,7 @@ struct RecipesView: View {
     @State private var isSearching = false
     @State private var navigationPath = NavigationPath()
     @State private var recipeToDelete: DeleteCandidate?
+    @State private var clipboardContent: ClipboardContent?
 
     var body: some View {
         NavigationStack(path: self.$navigationPath) {
@@ -117,6 +123,12 @@ struct RecipesView: View {
             )) {
                 PaywallView()
             }
+            .sheet(item: self.$clipboardContent) { content in
+                ClipboardPreviewSheet(text: content.text) {
+                    self.clipboardContent = nil
+                    Task { await self.recipeViewModel.importRecipeFromText(content.text) }
+                }
+            }
     }
 
     private var recipeLayout: some View {
@@ -158,6 +170,15 @@ struct RecipesView: View {
                         self.showingPhotoPicker = true
                     } label: {
                         Label("Choose from Library", systemImage: "photo.on.rectangle")
+                    }
+                    Button {
+                        if let text = UIPasteboard.general.string, !text.isEmpty {
+                            self.clipboardContent = ClipboardContent(text: text)
+                        } else {
+                            self.recipeViewModel.importError = "Nothing to paste. Copy a recipe to your clipboard first."
+                        }
+                    } label: {
+                        Label("Paste from Clipboard", systemImage: "doc.on.clipboard")
                     }
                 } label: {
                     Image(systemName: "plus")

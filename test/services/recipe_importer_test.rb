@@ -561,7 +561,7 @@ class RecipeImporterTest < ActiveSupport::TestCase
     result = RecipeImporter.new("https://example.com/page").import
 
     assert_not result.success?
-    assert_match(/could not extract recipe/i, result.error)
+    assert_match(/all extraction methods failed/i, result.error)
     assert_equal :no_recipe_found, result.error_code
   end
 

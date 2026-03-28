@@ -6,7 +6,7 @@ class RecipeLlmService
   include Llm::RecipeExtraction
 
   MAX_TEXT_LENGTH = 15_000
-  MODEL = "openai/gpt-oss-120b"
+  MODEL = "google/gemini-3.1-flash-lite-preview"
   PROMPT_TYPES = %i[webpage raw_text].freeze
 
   def initialize(text, prompt_type: :webpage, source_url: nil)

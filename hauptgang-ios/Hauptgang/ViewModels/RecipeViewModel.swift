@@ -367,6 +367,35 @@ extension RecipeViewModel {
         }
     }
 
+    /// Import a recipe from pasted text
+    func importRecipeFromText(_ text: String) async {
+        self.isImporting = true
+        self.importError = nil
+
+        do {
+            _ = try await RecipeImportService.shared.importRecipe(fromText: text)
+            await self.refreshRecipes()
+        } catch APIError.importLimitReached {
+            self.shouldShowPaywall = true
+            self.logger.info("Import limit reached, showing paywall")
+        } catch {
+            if let apiError = error as? APIError {
+                self.importError = apiError.errorDescription ?? "Failed to import recipe from text."
+            } else {
+                self.importError = "Failed to import recipe from text."
+            }
+            self.logger.error("Text import failed: \(error.localizedDescription)")
+            SentrySDK.capture(error: error) { scope in
+                scope.setContext(value: [
+                    "source": "text_import",
+                    "error_description": self.importError ?? "unknown",
+                ], key: "import")
+            }
+        }
+
+        self.isImporting = false
+    }
+
     /// Import a recipe from image data (compress, upload, refresh)
     func importRecipeFromImage(_ imageData: Data) async {
         self.isImporting = true

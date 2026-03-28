@@ -49,6 +49,20 @@ actor RecipeImportService {
         )
     }
 
+    /// Import a recipe from pasted text
+    func importRecipe(fromText text: String) async throws -> ImportRecipeResponse {
+        struct TextImportRequest: Encodable {
+            let text: String
+        }
+
+        return try await self.apiClient.request(
+            endpoint: "recipes/extract_from_text",
+            method: .post,
+            body: TextImportRequest(text: text),
+            authenticated: true
+        )
+    }
+
     /// Import a recipe from image data
     func importRecipe(from imageData: Data, mimeType: String = "image/jpeg") async throws -> ImportRecipeResponse {
         try await self.apiClient.uploadMultipart(

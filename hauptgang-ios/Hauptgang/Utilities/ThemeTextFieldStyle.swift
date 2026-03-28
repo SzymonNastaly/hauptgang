@@ -46,7 +46,7 @@ struct PuffyButtonStyle: ButtonStyle {
             .scaleEffect(pressed ? 0.90 : 1.0)
             .brightness(pressed ? -0.12 : 0)
             .shadow(
-                color: Color.hauptgangPrimary.opacity(pressed ? 0.08 : 0.2),
+                color: Color.black.opacity(pressed ? 0.05 : 0.15),
                 radius: pressed ? 1 : 3,
                 y: pressed ? 1 : 2
             )

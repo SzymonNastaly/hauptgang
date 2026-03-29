@@ -30,6 +30,10 @@ class RecipeImporter
       return result
     end
 
+    if RecipeImporters::YoutubeVideoExtractor.supports_url?(@url)
+      return RecipeImporters::YoutubeVideoExtractor.new(@url).extract
+    end
+
     fetch_result = fetch_html
     return failure(fetch_result[:error], fetch_result[:error_code]) unless fetch_result[:success]
 

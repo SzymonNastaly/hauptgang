@@ -154,7 +154,9 @@ struct MealPlanView: View {
 // MARK: - String + Identifiable for sheet binding
 
 extension String: @retroactive Identifiable {
-    public var id: String { self }
+    public var id: String {
+        self
+    }
 }
 
 #Preview {

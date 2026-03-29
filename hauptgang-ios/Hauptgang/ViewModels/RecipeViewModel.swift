@@ -105,7 +105,7 @@ extension RecipeViewModel {
                 "error_message": recipe.errorMessage ?? "unknown",
                 "source_url": recipe.sourceUrl ?? "unknown",
                 "import_status": recipe.importStatus ?? "unknown",
-                "cookbook_id": recipe.cookbookId,
+                "cookbook_id": recipe.cookbookId
             ]
             SentrySDK.capture(event: event)
         }
@@ -388,7 +388,7 @@ extension RecipeViewModel {
             SentrySDK.capture(error: error) { scope in
                 scope.setContext(value: [
                     "source": "text_import",
-                    "error_description": self.importError ?? "unknown",
+                    "error_description": self.importError ?? "unknown"
                 ], key: "import")
             }
         }
@@ -427,7 +427,7 @@ extension RecipeViewModel {
             SentrySDK.capture(error: error) { scope in
                 scope.setContext(value: [
                     "source": "image_import",
-                    "error_description": self.importError ?? "unknown",
+                    "error_description": self.importError ?? "unknown"
                 ], key: "import")
             }
         }

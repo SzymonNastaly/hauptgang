@@ -93,7 +93,8 @@ class ShareViewController: UIViewController {
                 // Some domains are handled entirely by the backend (e.g. YouTube uses the Data API).
                 // Skip client-side extraction and send URL only.
                 if self.isBackendOnlyDomain(pageContent.url) {
-                    logger.info("Backend-only domain, skipping client-side extraction: \(pageContent.url.absoluteString)")
+                    logger
+                        .info("Backend-only domain, skipping client-side extraction: \(pageContent.url.absoluteString)")
                     await self.handleExtractedURL(pageContent.url)
                     return
                 }
@@ -102,7 +103,7 @@ class ShareViewController: UIViewController {
                 let jsonLdCount = pageContent.jsonLd.count
                 let htmlSize = pageContent.html.utf8.count
                 logger.info(
-                    "JS preprocessing succeeded — URL: \(url), JSON-LD blocks: \(jsonLdCount), HTML size: \(htmlSize) bytes"
+                    "JS preprocessing OK — URL: \(url), JSON-LD: \(jsonLdCount), HTML: \(htmlSize) bytes"
                 )
                 await self.handleExtractedPageContent(pageContent)
                 return
@@ -186,7 +187,7 @@ class ShareViewController: UIViewController {
                 scope.setContext(value: [
                     "source": "web_page_with_content",
                     "url": pageContent.url.absoluteString,
-                    "host": pageContent.url.host ?? "unknown",
+                    "host": pageContent.url.host ?? "unknown"
                 ], key: "import")
             }
             await MainActor.run {
@@ -238,7 +239,7 @@ class ShareViewController: UIViewController {
                 scope.setContext(value: [
                     "source": "url_only",
                     "url": url.absoluteString,
-                    "host": url.host ?? "unknown",
+                    "host": url.host ?? "unknown"
                 ], key: "import")
             }
             await MainActor.run {
@@ -308,7 +309,7 @@ class ShareViewController: UIViewController {
 
     private static let backendOnlyDomains: Set<String> = [
         "youtube.com",
-        "youtu.be",
+        "youtu.be"
     ]
 
     private func isBackendOnlyDomain(_ url: URL) -> Bool {

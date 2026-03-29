@@ -26,16 +26,16 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
 
     var body: some View {
         Group {
-            switch phase {
+            switch self.phase {
             case .empty:
-                placeholder()
+                self.placeholder()
             case let .success(image):
-                content(image)
+                self.content(image)
             case .failure:
-                failure()
+                self.failure()
             }
         }
-        .task(id: url) {
+        .task(id: self.url) {
             await self.load()
         }
     }
@@ -43,23 +43,23 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
     @MainActor
     private func load() async {
         guard let url else {
-            phase = .failure
+            self.phase = .failure
             return
         }
 
-        phase = .empty
+        self.phase = .empty
 
         do {
             let image = try await cache.image(for: url)
             if Task.isCancelled {
                 return
             }
-            phase = .success(Image(uiImage: image))
+            self.phase = .success(Image(uiImage: image))
         } catch {
             if Task.isCancelled {
                 return
             }
-            phase = .failure
+            self.phase = .failure
         }
     }
 

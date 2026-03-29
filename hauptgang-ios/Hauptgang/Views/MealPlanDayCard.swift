@@ -16,13 +16,19 @@ struct MealPlanDayCard: View {
     let onSelect: (PersistedMealPlanEntry) -> Void
     let onDeselect: () -> Void
 
-    private var isSelected: Bool { day?.isSelected == true }
-    private var selectedEntry: PersistedMealPlanEntry? {
-        guard let selectedId = day?.selectedEntryId else { return nil }
-        return entries.first { $0.serverId == selectedId }
+    private var isSelected: Bool {
+        self.day?.isSelected == true
     }
 
-    private var canInteract: Bool { !isOffline && !isSelecting }
+    private var selectedEntry: PersistedMealPlanEntry? {
+        guard let selectedId = day?.selectedEntryId else { return nil }
+        return self.entries.first { $0.serverId == selectedId }
+    }
+
+    private var canInteract: Bool {
+        !self.isOffline && !self.isSelecting
+    }
+
     private func canDelete(_ entry: PersistedMealPlanEntry) -> Bool {
         entry.syncState == .pendingCreate || !self.isOffline
     }

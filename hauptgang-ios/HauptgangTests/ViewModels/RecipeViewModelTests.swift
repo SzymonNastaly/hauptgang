@@ -85,7 +85,7 @@ final class RecipeViewModelTests: XCTestCase {
     func testRefreshRecipes_success_updatesRecipes() async {
         let apiRecipes = [
             RecipeListItem.mock(id: 1, name: "Recipe 1"),
-            RecipeListItem.mock(id: 2, name: "Recipe 2"),
+            RecipeListItem.mock(id: 2, name: "Recipe 2")
         ]
         self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
 

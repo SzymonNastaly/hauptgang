@@ -324,7 +324,7 @@ private extension ShareImportExtractor {
         )
     }
 
-    // swiftlint:disable:next cyclomatic_complexity function_body_length
+    // swiftlint:disable:next cyclomatic_complexity
     static func urlFromPropertyListValue(
         _ value: Any,
         path: String,

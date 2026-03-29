@@ -24,7 +24,7 @@ final class MockMealPlanRepository: MealPlanRepositoryProtocol {
         return self.days.filter { dates.contains($0.date) }
     }
 
-    func getEntries(cookbookId: Int, date: String) throws -> [PersistedMealPlanEntry] {
+    func getEntries(cookbookId _: Int, date: String) throws -> [PersistedMealPlanEntry] {
         if self.shouldThrowOnGet { throw MockMealPlanRepoError.testError }
         return self.entries[date] ?? []
     }
@@ -34,7 +34,13 @@ final class MockMealPlanRepository: MealPlanRepositoryProtocol {
         self.savedDays.append(days)
     }
 
-    func addLocalEntry(cookbookId: Int, date: String, recipeId: Int, recipeName _: String, recipeCoverImageUrl _: String?) throws {
+    func addLocalEntry(
+        cookbookId: Int,
+        date: String,
+        recipeId: Int,
+        recipeName _: String,
+        recipeCoverImageUrl _: String?
+    ) throws {
         if self.shouldThrowOnSave { throw MockMealPlanRepoError.testError }
         self.addedLocalEntries.append((cookbookId: cookbookId, date: date, recipeId: recipeId))
     }

@@ -19,7 +19,13 @@ protocol MealPlanRepositoryProtocol {
     func getDays(cookbookId: Int, dates: [String]) throws -> [PersistedMealPlanDay]
     func getEntries(cookbookId: Int, date: String) throws -> [PersistedMealPlanEntry]
     func saveDays(_ days: [MealPlanDay], cookbookId: Int) throws
-    func addLocalEntry(cookbookId: Int, date: String, recipeId: Int, recipeName: String, recipeCoverImageUrl: String?) throws
+    func addLocalEntry(
+        cookbookId: Int,
+        date: String,
+        recipeId: Int,
+        recipeName: String,
+        recipeCoverImageUrl: String?
+    ) throws
     func getPendingEntries(cookbookId: Int) throws -> [PersistedMealPlanEntry]
     func deletePendingEntry(cookbookId: Int, date: String, recipeId: Int) throws
     func clearAll() throws
@@ -91,7 +97,9 @@ final class MealPlanRepository: MealPlanRepositoryProtocol {
             )
             let localEntries = try modelContext.fetch(entryDescriptor)
 
-            for local in localEntries where local.syncState == .synced && (local.serverId == nil || !serverEntryIds.contains(local.serverId!)) {
+            for local in localEntries
+                where local
+                .syncState == .synced && (local.serverId == nil || !serverEntryIds.contains(local.serverId!)) {
                 modelContext.delete(local)
             }
 
@@ -129,7 +137,13 @@ final class MealPlanRepository: MealPlanRepositoryProtocol {
         try modelContext.save()
     }
 
-    func addLocalEntry(cookbookId: Int, date: String, recipeId: Int, recipeName: String, recipeCoverImageUrl: String?) throws {
+    func addLocalEntry(
+        cookbookId: Int,
+        date: String,
+        recipeId: Int,
+        recipeName: String,
+        recipeCoverImageUrl: String?
+    ) throws {
         guard let modelContext else { throw MealPlanRepositoryError.notConfigured }
 
         // Check if entry already exists

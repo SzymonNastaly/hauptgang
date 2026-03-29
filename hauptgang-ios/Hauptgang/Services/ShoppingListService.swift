@@ -6,6 +6,7 @@ protocol ShoppingListServiceProtocol: Sendable {
     func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse]
     func updateItem(id: Int, checked: Bool, checkedAt: Date?) async throws -> ShoppingListItemResponse
     func deleteItem(id: Int) async throws
+    func deleteAllItems() async throws
 }
 
 final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendable {
@@ -62,6 +63,16 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
 
         try await self.api.requestVoid(
             endpoint: "shopping_list_items/\(id)",
+            method: .delete,
+            authenticated: true
+        )
+    }
+
+    func deleteAllItems() async throws {
+        self.logger.info("Deleting all shopping list items")
+
+        try await self.api.requestVoid(
+            endpoint: "shopping_list_items/destroy_all",
             method: .delete,
             authenticated: true
         )

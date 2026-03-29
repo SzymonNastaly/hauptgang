@@ -549,6 +549,46 @@ class RecipeImporterTest < ActiveSupport::TestCase
     ENV["APIFY_API_KEY"] = previous_key
   end
 
+  test "imports youtube video via data API" do
+    url = "https://www.youtube.com/watch?v=abc123"
+
+    stub_request(:get, "https://www.googleapis.com/youtube/v3/videos")
+      .with(query: hash_including("id" => "abc123"))
+      .to_return(
+        status: 200,
+        body: {
+          "items" => [ {
+            "snippet" => {
+              "description" => "My Recipe\n\nIngredients:\n- 1 cup flour",
+              "channelId" => "UC_chef",
+              "thumbnails" => { "high" => { "url" => "https://i.ytimg.com/vi/abc123/hqdefault.jpg" } }
+            }
+          } ]
+        }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_request(:get, "https://www.googleapis.com/youtube/v3/commentThreads")
+      .with(query: hash_including("videoId" => "abc123"))
+      .to_return(
+        status: 200,
+        body: { "items" => [] }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    stub_request(:post, /apify\.com.*youtube-scraper/)
+      .to_return(status: 200, body: [ { "subtitles" => [] } ].to_json, headers: { "Content-Type" => "application/json" })
+
+    stub_llm_response(name: "My Recipe", ingredients: [ "1 cup flour" ], instructions: [ "Mix" ])
+
+    result = RecipeImporter.new(url).import
+
+    assert result.success?
+    assert_equal "My Recipe", result.recipe_attributes[:name]
+    assert_equal "https://i.ytimg.com/vi/abc123/hqdefault.jpg", result.cover_image_url
+    assert_not_requested(:get, url)
+  end
+
   test "returns error when no extraction method succeeds" do
     html = "<html><body><h1>Just a regular page</h1></body></html>"
 

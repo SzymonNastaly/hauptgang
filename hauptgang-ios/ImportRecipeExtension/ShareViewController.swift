@@ -90,6 +90,14 @@ class ShareViewController: UIViewController {
             let webPageResult = await ShareImportExtractor.extractWebPageData(from: attachments)
             switch webPageResult {
             case let .success(pageContent):
+                // Some domains are handled entirely by the backend (e.g. YouTube uses the Data API).
+                // Skip client-side extraction and send URL only.
+                if self.isBackendOnlyDomain(pageContent.url) {
+                    logger.info("Backend-only domain, skipping client-side extraction: \(pageContent.url.absoluteString)")
+                    await self.handleExtractedURL(pageContent.url)
+                    return
+                }
+
                 let url = pageContent.url.absoluteString
                 let jsonLdCount = pageContent.jsonLd.count
                 let htmlSize = pageContent.html.utf8.count
@@ -296,6 +304,16 @@ class ShareViewController: UIViewController {
     private func close() {
         self.importTask?.cancel()
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    private static let backendOnlyDomains: Set<String> = [
+        "youtube.com",
+        "youtu.be",
+    ]
+
+    private func isBackendOnlyDomain(_ url: URL) -> Bool {
+        guard let host = url.host?.lowercased() else { return false }
+        return Self.backendOnlyDomains.contains { host == $0 || host.hasSuffix(".\($0)") }
     }
 
     private func unsupportedDomain(for url: URL) -> String? {

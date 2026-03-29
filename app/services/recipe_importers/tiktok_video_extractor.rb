@@ -236,8 +236,9 @@ module RecipeImporters
     def build_http_client
       Faraday.new do |conn|
         options = conn.options
-        options.timeout = 20
-        options.open_timeout = 5
+        # Apify run-sync endpoints can take a long time to start and complete
+        options.timeout = 90
+        options.open_timeout = 10
         conn.headers["User-Agent"] = USER_AGENT
       end
     end

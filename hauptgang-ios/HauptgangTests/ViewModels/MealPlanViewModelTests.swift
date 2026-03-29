@@ -148,7 +148,7 @@ struct MealPlanViewModelTests {
 
     // MARK: - Delete Entry
 
-    @Test func deleteEntry_deletesPendingEntryLocally() async {
+    @Test func deleteEntry_deletesPendingEntryLocally() {
         let (vm, repo, service) = self.makeVM()
         let entry = self.makePersistedEntry(serverId: nil, syncState: .pendingCreate)
 
@@ -206,7 +206,7 @@ struct MealPlanViewModelTests {
 
     // MARK: - Toggle Vote
 
-    @Test func toggleVote_optimisticallyUpdatesUI() async {
+    @Test func toggleVote_optimisticallyUpdatesUI() {
         let (vm, _, _) = self.makeVM()
         let entry = self.makePersistedEntry(serverId: 10, voteCount: 0, votedByCurrentUser: false)
 
@@ -291,7 +291,7 @@ struct MealPlanViewModelTests {
 
     // MARK: - Reset
 
-    @Test func resetForCookbookSwitch_clearsState() async {
+    @Test func resetForCookbookSwitch_clearsState() {
         let (vm, _, _) = self.makeVM()
 
         vm.resetForCookbookSwitch()
@@ -304,7 +304,7 @@ struct MealPlanViewModelTests {
         #expect(vm.isOffline == false)
     }
 
-    @Test func clearData_clearsRepoAndState() async {
+    @Test func clearData_clearsRepoAndState() {
         let repo = MockMealPlanRepository()
         let vm = MealPlanViewModel(repository: repo, service: MockMealPlanService())
 
@@ -332,8 +332,12 @@ struct MealPlanViewModelTests {
         #expect(MealPlanViewModel.displayDate(for: todayStr) == "Today")
     }
 
-    @Test func displayDate_returnsTomorrowForTomorrow() {
-        let tomorrowStr = MealPlanViewModel.dateString(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+    @Test func displayDate_returnsTomorrowForTomorrow() throws {
+        let tomorrowStr = try MealPlanViewModel.dateString(for: #require(Calendar.current.date(
+            byAdding: .day,
+            value: 1,
+            to: Date()
+        )))
         #expect(MealPlanViewModel.displayDate(for: tomorrowStr) == "Tomorrow")
     }
 

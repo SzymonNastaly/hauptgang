@@ -14,8 +14,13 @@ final class MealPlanViewModel {
     private(set) var isSelecting = false
     var didReceiveForbidden = false
 
-    var todayDateString: String { Self.dateString(for: Date()) }
-    var tomorrowDateString: String { Self.dateString(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!) }
+    var todayDateString: String {
+        Self.dateString(for: Date())
+    }
+
+    var tomorrowDateString: String {
+        Self.dateString(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
+    }
 
     private var activeCookbookId: Int?
     private let repository: MealPlanRepositoryProtocol
@@ -114,7 +119,11 @@ final class MealPlanViewModel {
 
     func deleteEntry(_ entry: PersistedMealPlanEntry, cookbookId: Int) {
         guard let serverId = entry.serverId else {
-            try? self.repository.deletePendingEntry(cookbookId: entry.cookbookId, date: entry.date, recipeId: entry.recipeId)
+            try? self.repository.deletePendingEntry(
+                cookbookId: entry.cookbookId,
+                date: entry.date,
+                recipeId: entry.recipeId
+            )
             self.loadCachedData()
             return
         }
@@ -123,8 +132,12 @@ final class MealPlanViewModel {
 
         Task {
             do {
-                try await service.deleteEntry(id: serverId)
-                try? self.repository.deletePendingEntry(cookbookId: entry.cookbookId, date: entry.date, recipeId: entry.recipeId)
+                try await self.service.deleteEntry(id: serverId)
+                try? self.repository.deletePendingEntry(
+                    cookbookId: entry.cookbookId,
+                    date: entry.date,
+                    recipeId: entry.recipeId
+                )
                 self.loadCachedData()
             } catch {
                 self.logger.error("Failed to delete entry from server: \(error.localizedDescription)")
@@ -144,11 +157,10 @@ final class MealPlanViewModel {
 
         Task {
             do {
-                let updatedDay: MealPlanDay
-                if wasVoted {
-                    updatedDay = try await service.unvote(entryId: serverId)
+                let updatedDay: MealPlanDay = if wasVoted {
+                    try await self.service.unvote(entryId: serverId)
                 } else {
-                    updatedDay = try await service.vote(entryId: serverId)
+                    try await self.service.vote(entryId: serverId)
                 }
                 try self.repository.saveDays([updatedDay], cookbookId: cookbookId)
                 self.loadCachedData()
@@ -243,14 +255,22 @@ final class MealPlanViewModel {
             let pending = try repository.getPendingEntries(cookbookId: cookbookId)
             for entry in pending {
                 do {
-                    let updatedDay = try await service.addEntry(cookbookId: cookbookId, date: entry.date, recipeId: entry.recipeId)
+                    let updatedDay = try await service.addEntry(
+                        cookbookId: cookbookId,
+                        date: entry.date,
+                        recipeId: entry.recipeId
+                    )
                     try self.repository.saveDays([updatedDay], cookbookId: cookbookId)
                 } catch {
                     self.logger.error("Failed to sync pending entry: \(error.localizedDescription)")
                     if let apiError = error as? APIError {
                         switch apiError {
                         case .unprocessableEntity, .notFound:
-                            try? self.repository.deletePendingEntry(cookbookId: cookbookId, date: entry.date, recipeId: entry.recipeId)
+                            try? self.repository.deletePendingEntry(
+                                cookbookId: cookbookId,
+                                date: entry.date,
+                                recipeId: entry.recipeId
+                            )
                         case .networkError:
                             self.isOffline = true
                             return

@@ -150,7 +150,7 @@ struct ShoppingListViewModelTests {
         // Server returns only the newly created items
         service.createResult = [
             self.makeResponse(id: 10, clientId: "placeholder-1", name: "Flour"),
-            self.makeResponse(id: 11, clientId: "placeholder-2", name: "Sugar"),
+            self.makeResponse(id: 11, clientId: "placeholder-2", name: "Sugar")
         ]
 
         let vm = ShoppingListViewModel(repository: repo, service: service)
@@ -192,7 +192,12 @@ struct ShoppingListViewModelTests {
         let repo = MockShoppingListRepository()
         let service = MockShoppingListService()
 
-        let pending = self.makePersisted(clientId: "gone-1", name: "Stale item", serverId: 99, syncState: .pendingUpdate)
+        let pending = self.makePersisted(
+            clientId: "gone-1",
+            name: "Stale item",
+            serverId: 99,
+            syncState: .pendingUpdate
+        )
         pending.checkedAt = Date()
         repo.items = [pending]
 
@@ -227,7 +232,7 @@ struct ShoppingListViewModelTests {
         #expect(service.createCallCount == 1)
     }
 
-    @Test func addCustomItem_ignoresEmptyString() async {
+    @Test func addCustomItem_ignoresEmptyString() {
         let (vm, repo, _) = self.makeVM()
 
         vm.addCustomItem("   ")
@@ -235,7 +240,7 @@ struct ShoppingListViewModelTests {
         #expect(repo.items.isEmpty)
     }
 
-    @Test func addIngredientsFromRecipe_addsMultipleItems() async {
+    @Test func addIngredientsFromRecipe_addsMultipleItems() {
         let (vm, repo, service) = self.makeVM()
         service.createResult = []
 
@@ -248,7 +253,7 @@ struct ShoppingListViewModelTests {
         #expect(repo.items.first?.sourceRecipeId == 42)
     }
 
-    @Test func addIngredientsFromRecipe_ignoresAllEmpty() async {
+    @Test func addIngredientsFromRecipe_ignoresAllEmpty() {
         let (vm, repo, _) = self.makeVM()
 
         vm.addIngredientsFromRecipe(["", "  "], recipeId: nil)
@@ -258,7 +263,7 @@ struct ShoppingListViewModelTests {
 
     // MARK: - Toggle item
 
-    @Test func toggleItem_checksUncheckedItem() async {
+    @Test func toggleItem_checksUncheckedItem() {
         let repo = MockShoppingListRepository()
         let item = self.makePersisted(clientId: "t-1", name: "Milk", checkedAt: nil)
         repo.items = [item]
@@ -271,7 +276,7 @@ struct ShoppingListViewModelTests {
         #expect(repo.updatedItems.first?.checkedAt != nil)
     }
 
-    @Test func toggleItem_unchecksCheckedItem() async {
+    @Test func toggleItem_unchecksCheckedItem() {
         let repo = MockShoppingListRepository()
         let item = self.makePersisted(clientId: "t-2", name: "Milk", checkedAt: Date())
         repo.items = [item]
@@ -318,7 +323,7 @@ struct ShoppingListViewModelTests {
 
     // MARK: - Reset and clear
 
-    @Test func resetForCookbookSwitch_clearsState() async {
+    @Test func resetForCookbookSwitch_clearsState() {
         let (vm, _, _) = self.makeVM()
 
         vm.resetForCookbookSwitch()
@@ -328,7 +333,7 @@ struct ShoppingListViewModelTests {
         #expect(vm.isOffline == false)
     }
 
-    @Test func clearData_clearsRepoAndItems() async {
+    @Test func clearData_clearsRepoAndItems() {
         let repo = MockShoppingListRepository()
         repo.items = [self.makePersisted()]
 
@@ -351,7 +356,7 @@ struct ShoppingListViewModelTests {
         let service = MockShoppingListService()
         service.fetchResult = [
             self.makeResponse(id: 1, clientId: "u-1", name: "Apples"),
-            self.makeResponse(id: 2, clientId: "c-1", name: "Bananas", checkedAt: checkedDate),
+            self.makeResponse(id: 2, clientId: "c-1", name: "Bananas", checkedAt: checkedDate)
         ]
         let vm = ShoppingListViewModel(repository: repo, service: service)
         await vm.refresh()

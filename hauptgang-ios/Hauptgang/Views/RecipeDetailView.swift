@@ -140,8 +140,7 @@ struct RecipeDetailView: View {
                     // Duration card - only show if any duration data exists
                     if (recipe.prepTime ?? 0) > 0
                         || (recipe.cookTime ?? 0) > 0
-                        || (recipe.servings ?? 0) > 0
-                    {
+                        || (recipe.servings ?? 0) > 0 {
                         self.durationCard(recipe)
                     }
 
@@ -298,18 +297,18 @@ struct RecipeDetailView: View {
 
     private func addIngredientsButton(_ ingredients: [String]) -> some View {
         Button {
+            withAnimation(.smooth(duration: 0.4)) {
+                self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+                self.showShoppingListConfirmation = true
+            }
+            Task {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
                 withAnimation(.smooth(duration: 0.4)) {
-                    self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
-                    self.showShoppingListConfirmation = true
+                    self.showShoppingListConfirmation = false
                 }
-                Task {
-                    try? await Task.sleep(nanoseconds: 1_500_000_000)
-                    withAnimation(.smooth(duration: 0.4)) {
-                        self.showShoppingListConfirmation = false
-                    }
-                }
-            } label: {
-                Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
+            }
+        } label: {
+            Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(self.showShoppingListConfirmation ? .white : Color.hauptgangTextSecondary)
@@ -322,9 +321,12 @@ struct RecipeDetailView: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .strokeBorder(Color.hauptgangTextMuted.opacity(self.showShoppingListConfirmation ? 0 : 0.4), lineWidth: 1)
+                        .strokeBorder(
+                            Color.hauptgangTextMuted.opacity(self.showShoppingListConfirmation ? 0 : 0.4),
+                            lineWidth: 1
+                        )
                 )
-            }
+        }
         .buttonStyle(PressDownButtonStyle())
     }
 

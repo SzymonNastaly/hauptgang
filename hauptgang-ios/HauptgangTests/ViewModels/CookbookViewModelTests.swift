@@ -5,7 +5,7 @@ import Testing
 struct CookbookViewModelTests {
     private func makePersonalCookbook(id: Int = 1) -> Cookbook {
         Cookbook(id: id, name: "My Recipes", personal: true, recipeCount: 5, members: [
-            CookbookMember(id: 100, email: "me@example.com", role: "owner"),
+            CookbookMember(id: 100, email: "me@example.com", role: "owner")
         ])
     }
 
@@ -18,7 +18,7 @@ struct CookbookViewModelTests {
     ) -> Cookbook {
         Cookbook(id: id, name: "Family Recipes", personal: false, recipeCount: 3, members: [
             CookbookMember(id: ownerId, email: ownerEmail, role: "owner"),
-            CookbookMember(id: collaboratorId, email: collaboratorEmail, role: "collaborator"),
+            CookbookMember(id: collaboratorId, email: collaboratorEmail, role: "collaborator")
         ])
     }
 
@@ -39,7 +39,7 @@ struct CookbookViewModelTests {
         let mock = MockCookbookService()
         mock.cookbooksToReturn = [
             self.makePersonalCookbook(),
-            self.makeSharedCookbook(ownerId: 100, collaboratorId: 200),
+            self.makeSharedCookbook(ownerId: 100, collaboratorId: 200)
         ]
 
         let vm = CookbookViewModel(service: mock)

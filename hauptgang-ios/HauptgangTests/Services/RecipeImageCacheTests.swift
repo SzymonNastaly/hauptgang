@@ -1,5 +1,5 @@
-@testable import Hauptgang
 import Foundation
+@testable import Hauptgang
 import XCTest
 
 final class RecipeImageCacheTests: XCTestCase {
@@ -11,11 +11,11 @@ final class RecipeImageCacheTests: XCTestCase {
 
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [RecipeImageCacheMockURLProtocol.self]
-        session = URLSession(configuration: config)
+        self.session = URLSession(configuration: config)
 
-        tempDirectory = FileManager.default.temporaryDirectory
+        self.tempDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent("RecipeImageCacheTests-\(UUID().uuidString)", isDirectory: true)
-        try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: self.tempDirectory, withIntermediateDirectories: true)
 
         RecipeImageCacheMockURLProtocol.reset()
     }
@@ -25,13 +25,13 @@ final class RecipeImageCacheTests: XCTestCase {
         if let tempDirectory {
             try? FileManager.default.removeItem(at: tempDirectory)
         }
-        session = nil
+        self.session = nil
         tempDirectory = nil
         try await super.tearDown()
     }
 
     func testImage_secondRequestUsesCacheWithoutSecondNetworkHit() async throws {
-        let url = URL(string: "https://example.com/recipe-thumbnail.webp")!
+        let url = try XCTUnwrap(URL(string: "https://example.com/recipe-thumbnail.webp"))
         let imageData = try XCTUnwrap(Self.sampleImageData)
         RecipeImageCacheMockURLProtocol.requestCount = 0
         RecipeImageCacheMockURLProtocol.requestHandler = { request in
@@ -54,7 +54,7 @@ final class RecipeImageCacheTests: XCTestCase {
     }
 
     func testImage_expiredDiskEntryRefetches() async throws {
-        let url = URL(string: "https://example.com/recipe-thumbnail.webp")!
+        let url = try XCTUnwrap(URL(string: "https://example.com/recipe-thumbnail.webp"))
         let imageData = try XCTUnwrap(Self.sampleImageData)
         RecipeImageCacheMockURLProtocol.requestCount = 0
         RecipeImageCacheMockURLProtocol.requestHandler = { request in
@@ -86,7 +86,7 @@ final class RecipeImageCacheTests: XCTestCase {
     }
 
     func testImage_concurrentRequestsUseSingleFlightDownload() async throws {
-        let url = URL(string: "https://example.com/recipe-thumbnail.webp")!
+        let url = try XCTUnwrap(URL(string: "https://example.com/recipe-thumbnail.webp"))
         let imageData = try XCTUnwrap(Self.sampleImageData)
         RecipeImageCacheMockURLProtocol.requestCount = 0
         RecipeImageCacheMockURLProtocol.requestHandler = { request in
@@ -120,8 +120,8 @@ private final class RecipeImageCacheMockURLProtocol: URLProtocol {
     nonisolated(unsafe) static var requestCount = 0
 
     static func reset() {
-        requestHandler = nil
-        requestCount = 0
+        self.requestHandler = nil
+        self.requestCount = 0
     }
 
     override class func canInit(with _: URLRequest) -> Bool {

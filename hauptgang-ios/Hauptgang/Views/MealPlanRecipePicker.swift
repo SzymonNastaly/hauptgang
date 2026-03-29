@@ -121,7 +121,7 @@ struct MealPlanRecipePicker: View {
     private func loadRecipes() {
         do {
             let descriptor = FetchDescriptor<PersistedRecipe>()
-            self.recipes = try modelContext.fetch(descriptor)
+            self.recipes = try self.modelContext.fetch(descriptor)
                 .filter { $0.cookbookId == self.cookbookId && $0.importStatus != "failed" }
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         } catch {

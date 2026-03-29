@@ -15,7 +15,9 @@ final class PersistedMealPlanDay {
     var selectedByUserId: Int?
     var selectedAt: Date?
 
-    var isSelected: Bool { selectedEntryId != nil }
+    var isSelected: Bool {
+        self.selectedEntryId != nil
+    }
 
     init(
         cookbookId: Int,

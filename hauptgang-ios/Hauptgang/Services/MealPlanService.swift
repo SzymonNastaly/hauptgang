@@ -40,14 +40,12 @@ final class MealPlanService: MealPlanServiceProtocol, @unchecked Sendable {
         self.logger.info("Adding entry for recipe \(recipeId) on \(date)")
 
         let request = MealPlanAddEntryRequest(recipeId: recipeId)
-        let plan: MealPlanDay = try await api.request(
+        return try await self.api.request(
             endpoint: "cookbooks/\(cookbookId)/meal_plans/\(date)/entries",
             method: .post,
             body: request,
             authenticated: true
         )
-
-        return plan
     }
 
     func deleteEntry(id: Int) async throws {
@@ -63,50 +61,42 @@ final class MealPlanService: MealPlanServiceProtocol, @unchecked Sendable {
     func vote(entryId: Int) async throws -> MealPlanDay {
         self.logger.info("Voting for entry \(entryId)")
 
-        let plan: MealPlanDay = try await api.request(
+        return try await self.api.request(
             endpoint: "meal_plan_entries/\(entryId)/vote",
             method: .post,
             authenticated: true
         )
-
-        return plan
     }
 
     func unvote(entryId: Int) async throws -> MealPlanDay {
         self.logger.info("Unvoting entry \(entryId)")
 
-        let plan: MealPlanDay = try await api.request(
+        return try await self.api.request(
             endpoint: "meal_plan_entries/\(entryId)/vote",
             method: .delete,
             authenticated: true
         )
-
-        return plan
     }
 
     func select(cookbookId: Int, date: String, entryId: Int) async throws -> MealPlanDay {
         self.logger.info("Selecting entry \(entryId) for \(date)")
 
         let request = MealPlanSelectRequest(entryId: entryId)
-        let plan: MealPlanDay = try await api.request(
+        return try await self.api.request(
             endpoint: "cookbooks/\(cookbookId)/meal_plans/\(date)/select",
             method: .patch,
             body: request,
             authenticated: true
         )
-
-        return plan
     }
 
     func deselect(cookbookId: Int, date: String) async throws -> MealPlanDay {
         self.logger.info("Deselecting for \(date)")
 
-        let plan: MealPlanDay = try await api.request(
+        return try await self.api.request(
             endpoint: "cookbooks/\(cookbookId)/meal_plans/\(date)/select",
             method: .delete,
             authenticated: true
         )
-
-        return plan
     }
 }

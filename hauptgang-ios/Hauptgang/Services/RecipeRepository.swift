@@ -109,14 +109,13 @@ final class RecipeRepository: RecipeRepositoryProtocol {
             throw RepositoryError.notConfigured
         }
 
-        let descriptor: FetchDescriptor<PersistedRecipe>
-        if let cookbookId {
-            descriptor = FetchDescriptor<PersistedRecipe>(
+        let descriptor = if let cookbookId {
+            FetchDescriptor<PersistedRecipe>(
                 predicate: #Predicate { $0.cookbookId == cookbookId },
                 sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         } else {
-            descriptor = FetchDescriptor<PersistedRecipe>(
+            FetchDescriptor<PersistedRecipe>(
                 sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
             )
         }

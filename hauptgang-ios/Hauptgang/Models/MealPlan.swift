@@ -7,9 +7,13 @@ struct MealPlanDay: Codable, Identifiable, Sendable {
     let selectedAt: Date?
     let entries: [MealPlanEntry]
 
-    var id: String { date }
+    var id: String {
+        self.date
+    }
 
-    var isSelected: Bool { selectedEntryId != nil }
+    var isSelected: Bool {
+        self.selectedEntryId != nil
+    }
 }
 
 struct MealPlanEntry: Codable, Identifiable, Sendable {

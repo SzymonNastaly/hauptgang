@@ -13,7 +13,7 @@
 --trimwhitespace always
 --linebreaks lf
 --semicolons never
---commas always
+--commas inline
 --decimalgrouping 3,6
 --binarygrouping 4,8
 --octalgrouping 4,8
@@ -56,7 +56,7 @@
 --enable spaceInsideComments
 --enable spaceInsideGenerics
 --enable spaceInsideParens
---disable trailingCommas
+--enable trailingCommas
 --enable trailingSpace
 --enable void
 --disable wrapMultilineStatementBraces

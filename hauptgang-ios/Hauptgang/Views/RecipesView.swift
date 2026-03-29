@@ -175,7 +175,8 @@ struct RecipesView: View {
                         if let text = UIPasteboard.general.string, !text.isEmpty {
                             self.clipboardContent = ClipboardContent(text: text)
                         } else {
-                            self.recipeViewModel.importError = "Nothing to paste. Copy a recipe to your clipboard first."
+                            self.recipeViewModel.importError =
+                                "Nothing to paste. Copy a recipe to your clipboard first."
                         }
                     } label: {
                         Label("Paste from Clipboard", systemImage: "doc.on.clipboard")

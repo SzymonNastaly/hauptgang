@@ -54,7 +54,7 @@ actor RecipeImageCache {
         let task = Task<UIImage, Error> {
             try await self.loadImage(for: url, key: key, keyObject: keyObject)
         }
-        inFlightRequests[key] = task
+        self.inFlightRequests[key] = task
         defer { inFlightRequests[key] = nil }
 
         return try await task.value
@@ -62,7 +62,7 @@ actor RecipeImageCache {
 
     private func loadImage(for url: URL, key: String, keyObject: NSString) async throws -> UIImage {
         if let diskImage = try readDiskImageIfFresh(for: key) {
-            memoryCache.setObject(diskImage, forKey: keyObject)
+            self.memoryCache.setObject(diskImage, forKey: keyObject)
             return diskImage
         }
 
@@ -74,48 +74,48 @@ actor RecipeImageCache {
             throw CacheError.invalidImageData
         }
 
-        try writeToDisk(data: data, key: key)
-        memoryCache.setObject(image, forKey: keyObject, cost: data.count)
-        try evictDiskIfNeeded()
+        try self.writeToDisk(data: data, key: key)
+        self.memoryCache.setObject(image, forKey: keyObject, cost: data.count)
+        try self.evictDiskIfNeeded()
 
         return image
     }
 
     private func readDiskImageIfFresh(for key: String) throws -> UIImage? {
-        try ensureCacheDirectoryExists()
+        try self.ensureCacheDirectoryExists()
 
-        let fileURL = fileURLForKey(key)
-        guard fileManager.fileExists(atPath: fileURL.path) else {
+        let fileURL = self.fileURLForKey(key)
+        guard self.fileManager.fileExists(atPath: fileURL.path) else {
             return nil
         }
 
         let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
         let modifiedAt = attributes[.modificationDate] as? Date ?? .distantPast
-        if Date().timeIntervalSince(modifiedAt) > maxAge {
-            try? fileManager.removeItem(at: fileURL)
+        if Date().timeIntervalSince(modifiedAt) > self.maxAge {
+            try? self.fileManager.removeItem(at: fileURL)
             return nil
         }
 
         let data = try Data(contentsOf: fileURL)
         guard let image = UIImage(data: data) else {
-            try? fileManager.removeItem(at: fileURL)
+            try? self.fileManager.removeItem(at: fileURL)
             return nil
         }
 
         // Touch the file on successful read so LRU eviction uses recent accesses.
-        try? fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: fileURL.path)
+        try? self.fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: fileURL.path)
         return image
     }
 
     private func writeToDisk(data: Data, key: String) throws {
-        try ensureCacheDirectoryExists()
-        let fileURL = fileURLForKey(key)
+        try self.ensureCacheDirectoryExists()
+        let fileURL = self.fileURLForKey(key)
         try data.write(to: fileURL, options: .atomic)
     }
 
     private func evictDiskIfNeeded() throws {
         let files = try fileManager.contentsOfDirectory(
-            at: cacheDirectory,
+            at: self.cacheDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
         )
@@ -131,26 +131,26 @@ actor RecipeImageCache {
             entries.append((url: file, modifiedAt: modifiedAt, size: size))
         }
 
-        guard totalSize > maxDiskSizeBytes else {
+        guard totalSize > self.maxDiskSizeBytes else {
             return
         }
 
         let sorted = entries.sorted { $0.modifiedAt < $1.modifiedAt }
-        for entry in sorted where totalSize > maxDiskSizeBytes {
+        for entry in sorted where totalSize > self.maxDiskSizeBytes {
             try? fileManager.removeItem(at: entry.url)
             totalSize -= entry.size
         }
     }
 
     private func ensureCacheDirectoryExists() throws {
-        if !fileManager.fileExists(atPath: cacheDirectory.path) {
-            try fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+        if !self.fileManager.fileExists(atPath: self.cacheDirectory.path) {
+            try self.fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
         }
     }
 
     private func fileURLForKey(_ key: String) -> URL {
         let digest = SHA256.hash(data: Data(key.utf8))
         let filename = digest.compactMap { String(format: "%02x", $0) }.joined() + ".img"
-        return cacheDirectory.appendingPathComponent(filename, isDirectory: false)
+        return self.cacheDirectory.appendingPathComponent(filename, isDirectory: false)
     }
 }

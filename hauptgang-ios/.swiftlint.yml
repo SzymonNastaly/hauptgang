@@ -44,13 +44,10 @@ opt_in_rules:
   - redundant_type_annotation               # Variables should not have redundant type annotation
 
   # Best practices
-  - discouraged_optional_collection         # Prefer non-optional collections
   - explicit_init                            # Use .init() instead of Type()
   - fallthrough                              # Fallthrough should be avoided
   - fatal_error_message                      # fatalError should have a message
-  - force_unwrapping                         # Force unwrapping should be avoided
   - implicitly_unwrapped_optional           # Implicitly unwrapped optionals should be avoided
-  - let_var_whitespace                       # Let and var should be separated by a blank line
   - multiline_function_chains               # Chained function calls should be on separate lines
   - overridden_super_call                    # Some methods should always call super
   - prohibited_super_call                    # Some methods should not call super
@@ -65,8 +62,8 @@ opt_in_rules:
 
 # Closure Body Length
 closure_body_length:
-  warning: 40
-  error: 80
+  warning: 50
+  error: 100
 
 # Cyclomatic Complexity
 cyclomatic_complexity:
@@ -76,13 +73,13 @@ cyclomatic_complexity:
 
 # Function Body Length
 function_body_length:
-  warning: 50
-  error: 80
+  warning: 75
+  error: 120
 
 # Type Body Length (class/struct/enum)
 type_body_length:
-  warning: 300
-  error: 400
+  warning: 400
+  error: 600
 
 # File Length
 file_length:

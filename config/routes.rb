@@ -3,7 +3,11 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
-      resources :shopping_list_items, only: [ :index, :create, :update, :destroy ]
+      resources :shopping_list_items, only: [ :index, :create, :update, :destroy ] do
+        collection do
+          delete :destroy_all
+        end
+      end
       resources :recipes, only: [ :index, :show, :destroy ] do
         resource :favorite, only: [ :update, :destroy ]
         collection do

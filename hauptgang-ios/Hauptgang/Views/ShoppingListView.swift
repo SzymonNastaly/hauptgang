@@ -6,6 +6,7 @@ struct ShoppingListView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = ShoppingListViewModel()
     @State private var newItemText = ""
+    @State private var showRemoveAllConfirmation = false
     @FocusState private var isAddItemFocused: Bool
 
     var body: some View {
@@ -20,13 +21,16 @@ struct ShoppingListView: View {
             self.addItemBar
                 .padding(.horizontal, Theme.Spacing.lg)
 
-            if self.viewModel.items.isEmpty && !self.viewModel.isSyncing {
+            if self.viewModel.items.isEmpty {
                 self.emptyState
             } else {
                 self.listView
             }
         }
         .padding(.top, Theme.Spacing.sm)
+        .refreshable {
+            await self.viewModel.refresh()
+        }
         .background(Color.hauptgangBackground.ignoresSafeArea())
         .onTapGesture {
             self.isAddItemFocused = false
@@ -103,6 +107,8 @@ struct ShoppingListView: View {
                     .background(self.addItemButtonBackground)
             }
             .buttonStyle(PuffyButtonStyle())
+            .disabled(self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .opacity(self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1.0)
         }
     }
 
@@ -124,12 +130,18 @@ struct ShoppingListView: View {
     private var listView: some View {
         List {
             if !self.viewModel.uncheckedItems.isEmpty {
-                Section("To Buy") {
+                Section {
                     ForEach(self.viewModel.uncheckedItems) { item in
                         self.itemRow(item)
                     }
                     .onDelete { indexSet in
                         self.deleteItems(at: indexSet, from: self.viewModel.uncheckedItems)
+                    }
+                } header: {
+                    HStack {
+                        Text("To Buy")
+                        Spacer()
+                        self.removeAllButton
                     }
                 }
             }
@@ -148,9 +160,6 @@ struct ShoppingListView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.immediately)
-        .refreshable {
-            await self.viewModel.refresh()
-        }
     }
 
     private func itemRow(_ item: PersistedShoppingListItem) -> some View {
@@ -176,26 +185,64 @@ struct ShoppingListView: View {
         .listRowBackground(Color.hauptgangBackground)
     }
 
-    private var emptyState: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Spacer()
-
-            Image(systemName: "cart")
-                .font(.system(size: 50))
-                .foregroundStyle(Color.hauptgangTextMuted)
-
-            Text("Your shopping list is empty")
-                .font(.headline)
-                .foregroundStyle(Color.hauptgangTextPrimary)
-
-            Text("Add items from a recipe or type your own")
-                .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
-                .multilineTextAlignment(.center)
-
-            Spacer()
+    private var removeAllButton: some View {
+        Button {
+            self.showRemoveAllConfirmation = true
+        } label: {
+            Text("Remove All")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(Color.hauptgangTextSecondary)
+                .padding(.horizontal, Theme.Spacing.sm + 4)
+                .padding(.vertical, Theme.Spacing.xs + 2)
+                .background(
+                    Capsule()
+                        .fill(Color.hauptgangBackground)
+                )
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .strokeBorder(Color.hauptgangTextMuted.opacity(0.4), lineWidth: 1)
+                )
         }
-        .frame(maxWidth: .infinity)
+        .disabled(self.viewModel.isSyncing)
+        .opacity(self.viewModel.isSyncing ? 0.5 : 1.0)
+        .buttonStyle(RemoveAllButtonStyle())
+        .textCase(nil)
+        .confirmationDialog(
+            "This will remove all items from your shopping list, including checked items.",
+            isPresented: self.$showRemoveAllConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Remove All", role: .destructive) {
+                Task { await self.viewModel.removeAllItems() }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        ScrollView {
+            VStack(spacing: Theme.Spacing.md) {
+                Spacer()
+
+                Image(systemName: "cart")
+                    .font(.system(size: 50))
+                    .foregroundStyle(Color.hauptgangTextMuted)
+
+                Text("Your shopping list is empty")
+                    .font(.headline)
+                    .foregroundStyle(Color.hauptgangTextPrimary)
+
+                Text("Add items from a recipe or type your own")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .multilineTextAlignment(.center)
+
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: UIScreen.main.bounds.height * 0.5)
+        }
     }
 
     private func addCustomItem() {
@@ -212,6 +259,14 @@ struct ShoppingListView: View {
             let item = items[index]
             self.viewModel.deleteItem(item)
         }
+    }
+}
+
+private struct RemoveAllButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .offset(y: configuration.isPressed ? 2 : 0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

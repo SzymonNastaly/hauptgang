@@ -59,6 +59,13 @@ module Api
         render json: { error: "Could not delete item" }, status: :unprocessable_entity
       end
 
+      def destroy_all
+        current_cookbook.shopping_list_items.find_each(&:destroy!)
+        head :no_content
+      rescue ActiveRecord::RecordNotDestroyed
+        render json: { error: "Could not delete all items" }, status: :unprocessable_entity
+      end
+
       private
 
       def cleanup_stale_checked_items

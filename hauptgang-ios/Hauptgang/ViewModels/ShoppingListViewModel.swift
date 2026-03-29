@@ -166,6 +166,26 @@ final class ShoppingListViewModel {
         self.recentlyCheckedIds = []
     }
 
+    func removeAllItems() async {
+        do {
+            try await self.service.deleteAllItems()
+        } catch {
+            self.logger.error("Failed to delete all items from server: \(error.localizedDescription)")
+            if let apiError = error as? APIError, case .networkError = apiError {
+                self.isOffline = true
+            }
+            return
+        }
+
+        do {
+            try self.repository.clearAll()
+            self.recentlyCheckedIds = []
+            self.items = []
+        } catch {
+            self.logger.error("Failed to clear local shopping list: \(error.localizedDescription)")
+        }
+    }
+
     func clearData() {
         do {
             try self.repository.clearAll()

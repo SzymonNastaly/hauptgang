@@ -51,6 +51,25 @@ module Api
         render json: { error: "Recipe not found" }, status: :not_found
       end
 
+      def update
+        recipe = current_cookbook.recipes.find(params[:id])
+
+        if recipe_params[:cookbook_id].present?
+          target_cookbook = current_user.cookbooks.find_by(id: recipe_params[:cookbook_id])
+          unless target_cookbook
+            return render json: { error: "Target cookbook not found or not accessible" }, status: :unprocessable_entity
+          end
+        end
+
+        if recipe.update(recipe_params)
+          render json: recipe_detail_json(recipe.reload)
+        else
+          render json: { errors: recipe.errors.full_messages }, status: :unprocessable_entity
+        end
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Recipe not found" }, status: :not_found
+      end
+
       def destroy
         recipe = current_cookbook.recipes.find(params[:id])
         recipe.destroy!
@@ -214,6 +233,10 @@ module Api
           created_at: recipe.created_at,
           updated_at: recipe.updated_at
         }
+      end
+
+      def recipe_params
+        params.permit(:name, :prep_time, :cook_time, :servings, :notes, :source_url, :favorite, :cookbook_id)
       end
 
       def cover_image_url(recipe, variant)

@@ -513,6 +513,84 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert Recipe.exists?(recipe.id)
   end
 
+  # MARK: - Update Tests
+
+  test "update changes recipe attributes" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Old Name", notes: "Old notes")
+
+    patch api_v1_recipe_url(recipe),
+      params: { name: "New Name", notes: "New notes" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal "New Name", json["name"]
+    assert_equal "New notes", json["notes"]
+    assert_equal "New Name", recipe.reload.name
+  end
+
+  test "update moves recipe to another cookbook the user belongs to" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :owner)
+    recipe = @cookbook.recipes.create!(user: @user, name: "Moveable")
+
+    patch api_v1_recipe_url(recipe),
+      params: { cookbook_id: shared.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    assert_equal shared.id, recipe.reload.cookbook_id
+  end
+
+  test "update returns 422 when moving to a cookbook the user does not belong to" do
+    other_cookbook = Cookbook.create!(name: "Not Mine", personal: false)
+    recipe = @cookbook.recipes.create!(user: @user, name: "Stuck")
+
+    patch api_v1_recipe_url(recipe),
+      params: { cookbook_id: other_cookbook.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :unprocessable_entity
+    json = response.parsed_body
+    assert_equal "Target cookbook not found or not accessible", json["error"]
+    assert_equal @cookbook.id, recipe.reload.cookbook_id
+  end
+
+  test "update returns 404 for non-existent recipe" do
+    patch api_v1_recipe_url(id: 999999),
+      params: { name: "Nope" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :not_found
+  end
+
+  test "update returns 404 for another user's recipe" do
+    other_recipe = @other_cookbook.recipes.create!(user: @other_user, name: "Theirs")
+
+    patch api_v1_recipe_url(other_recipe),
+      params: { name: "Mine now" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :not_found
+    assert_equal "Theirs", other_recipe.reload.name
+  end
+
+  test "update requires authentication" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Protected")
+
+    patch api_v1_recipe_url(recipe),
+      params: { name: "Hacked" },
+      as: :json
+
+    assert_response :unauthorized
+    assert_equal "Protected", recipe.reload.name
+  end
+
   # ===================
   # SHARED COOKBOOK OPERATIONS
   # ===================

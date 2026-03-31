@@ -41,6 +41,18 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
         return try self.fetchRecipeDetailsResult.get()
     }
 
+    var moveRecipeCalled = false
+    var moveRecipeCalledWithId: Int?
+    var moveRecipeCalledWithCookbookId: Int?
+    var moveRecipeResult: Result<Void, Error> = .success(())
+
+    func moveRecipe(id: Int, toCookbookId cookbookId: Int) async throws {
+        self.moveRecipeCalled = true
+        self.moveRecipeCalledWithId = id
+        self.moveRecipeCalledWithCookbookId = cookbookId
+        try self.moveRecipeResult.get()
+    }
+
     var deleteRecipeCalled = false
     var deleteRecipeCalledWithId: Int?
     var deleteRecipeResult: Result<Void, Error> = .success(())

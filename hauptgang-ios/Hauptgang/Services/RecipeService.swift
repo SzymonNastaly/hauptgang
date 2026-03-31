@@ -7,6 +7,7 @@ protocol RecipeServiceProtocol: Sendable {
     func fetchRecipeDetail(id: Int) async throws -> RecipeDetail
     func fetchRecipeDetails(cursor: String?, limit: Int) async throws -> RecipeDetailBatchResponse
     func deleteRecipe(id: Int) async throws
+    func moveRecipe(id: Int, toCookbookId cookbookId: Int) async throws
 }
 
 /// Handles all recipe-related API calls
@@ -61,6 +62,20 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
 
         self.logger.info("Fetched \(response.recipes.count) recipe details from batch")
         return response
+    }
+
+    /// Moves a recipe to a different cookbook
+    func moveRecipe(id: Int, toCookbookId cookbookId: Int) async throws {
+        self.logger.info("Moving recipe \(id) to cookbook \(cookbookId)")
+
+        try await self.api.requestVoid(
+            endpoint: "recipes/\(id)",
+            method: .patch,
+            body: ["cookbook_id": cookbookId],
+            authenticated: true
+        )
+
+        self.logger.info("Moved recipe \(id) to cookbook \(cookbookId)")
     }
 
     /// Deletes a recipe by ID

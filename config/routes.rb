@@ -8,7 +8,7 @@ Rails.application.routes.draw do
           delete :destroy_all
         end
       end
-      resources :recipes, only: [ :index, :show, :destroy ] do
+      resources :recipes, only: [ :index, :show, :update, :destroy ] do
         resource :favorite, only: [ :update, :destroy ]
         collection do
           get :batch

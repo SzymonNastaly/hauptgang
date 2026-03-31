@@ -440,6 +440,33 @@ extension RecipeViewModel {
         await self.deleteRecipe(id: recipe.id)
     }
 
+    /// Move a recipe to a different cookbook (optimistic local removal + server call)
+    func moveRecipe(id recipeId: Int, toCookbookId cookbookId: Int) async {
+        self.logger.info("Moving recipe \(recipeId) to cookbook \(cookbookId)")
+
+        // Optimistically remove from local list (it belongs to another cookbook now)
+        do {
+            try self.repository.deleteRecipe(id: recipeId)
+            withAnimation {
+                self.loadCachedRecipes()
+                self.searchResults.removeAll { $0.id == recipeId }
+            }
+        } catch {
+            self.logger.error("Failed to remove recipe locally: \(error.localizedDescription)")
+        }
+
+        await self.searchIndex.delete(ids: [recipeId])
+
+        do {
+            try await self.recipeService.moveRecipe(id: recipeId, toCookbookId: cookbookId)
+            self.logger.info("Moved recipe on server: \(recipeId)")
+        } catch {
+            self.logger.error("Failed to move recipe on server: \(error.localizedDescription)")
+            // Refresh to restore consistent state
+            await self.refreshRecipes()
+        }
+    }
+
     /// Delete a recipe (optimistic local delete + background server delete)
     func deleteRecipe(id recipeId: Int) async {
         self.logger.info("Deleting recipe: \(recipeId)")

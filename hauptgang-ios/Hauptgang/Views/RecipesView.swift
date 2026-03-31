@@ -13,6 +13,13 @@ private struct DeleteCandidate: Identifiable {
     let name: String
 }
 
+private struct MoveCandidate: Identifiable {
+    let id: Int
+    let name: String
+    let targetCookbookId: Int
+    let targetCookbookName: String
+}
+
 private struct ClipboardContent: Identifiable {
     let id = UUID()
     let text: String
@@ -33,6 +40,7 @@ struct RecipesView: View {
     @State private var isSearching = false
     @State private var navigationPath = NavigationPath()
     @State private var recipeToDelete: DeleteCandidate?
+    @State private var recipeToMove: MoveCandidate?
     @State private var clipboardContent: ClipboardContent?
 
     var body: some View {
@@ -259,22 +267,6 @@ struct RecipesView: View {
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
         }
-        .confirmationDialog(
-            "Delete Recipe",
-            isPresented: Binding(
-                get: { self.recipeToDelete != nil },
-                set: { if !$0 { self.recipeToDelete = nil } }
-            ),
-            presenting: self.recipeToDelete
-        ) { candidate in
-            Button("Delete", role: .destructive) {
-                Task {
-                    await self.recipeViewModel.deleteRecipe(id: candidate.id)
-                }
-            }
-        } message: { _ in
-            Text("Are you sure?")
-        }
         .overlay(alignment: .bottom) {
             self.failedRecipeBanners
         }
@@ -291,11 +283,60 @@ struct RecipesView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
+            if let targetCookbook = self.cookbookViewModel.cookbooks.first(where: {
+                $0.id != self.cookbookViewModel.activeCookbook?.id
+            }) {
+                Button {
+                    self.recipeToMove = MoveCandidate(
+                        id: recipe.id,
+                        name: recipe.name,
+                        targetCookbookId: targetCookbook.id,
+                        targetCookbookName: targetCookbook.name
+                    )
+                } label: {
+                    Label("Move to \(targetCookbook.name)", systemImage: "arrow.right.arrow.left")
+                }
+            }
             Button(role: .destructive) {
                 self.recipeToDelete = DeleteCandidate(id: recipe.id, name: recipe.name)
             } label: {
                 Label("Delete", systemImage: "trash")
             }
+        }
+        .confirmationDialog(
+            "Delete Recipe",
+            isPresented: Binding(
+                get: { self.recipeToDelete?.id == recipe.id },
+                set: { if !$0 { self.recipeToDelete = nil } }
+            ),
+            presenting: self.recipeToDelete
+        ) { candidate in
+            Button("Delete", role: .destructive) {
+                Task {
+                    await self.recipeViewModel.deleteRecipe(id: candidate.id)
+                }
+            }
+        } message: { _ in
+            Text("Are you sure?")
+        }
+        .confirmationDialog(
+            "Move Recipe",
+            isPresented: Binding(
+                get: { self.recipeToMove?.id == recipe.id },
+                set: { if !$0 { self.recipeToMove = nil } }
+            ),
+            presenting: self.recipeToMove
+        ) { candidate in
+            Button("Move to \(candidate.targetCookbookName)") {
+                Task {
+                    await self.recipeViewModel.moveRecipe(
+                        id: candidate.id,
+                        toCookbookId: candidate.targetCookbookId
+                    )
+                }
+            }
+        } message: { candidate in
+            Text("Move \"\(candidate.name)\" to \(candidate.targetCookbookName)?")
         }
     }
 

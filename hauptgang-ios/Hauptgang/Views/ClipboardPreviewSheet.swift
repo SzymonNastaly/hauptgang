@@ -5,86 +5,45 @@ struct ClipboardPreviewSheet: View {
     let onImport: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-
     private var previewLines: String {
-        self.text.components(separatedBy: .newlines).prefix(5).joined(separator: "\n")
+        let lines = self.text.components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let preview = lines.prefix(10).joined(separator: "\n")
+        return preview + "…"
     }
 
     var body: some View {
-        VStack(spacing: Theme.Spacing.lg) {
-            Text("Import from Clipboard?")
-                .font(.headline)
-                .foregroundStyle(Color.hauptgangTextPrimary)
-
-            Text(self.previewLines)
-                .font(.subheadline)
-                .foregroundStyle(Color.hauptgangTextSecondary)
-                .lineLimit(5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack(spacing: Theme.Spacing.md) {
-                Button {
-                    self.dismiss()
-                } label: {
-                    Text("Cancel")
-                        .font(.headline)
-                        .foregroundStyle(Color.hauptgangPrimary)
-                        .frame(maxWidth: .infinity)
-                        .padding(Theme.Spacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                                .fill(Color.hauptgangSurfaceRaised)
-                        )
-                        .contentShape(Rectangle())
+        NavigationStack {
+            List {
+                Section {
+                    Text(self.previewLines)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(10)
+                        .fixedSize(horizontal: false, vertical: true)
+                } footer: {
+                    Text("A recipe will be created from the text in your clipboard.")
                 }
-                .buttonStyle(PuffyButtonStyle())
-
-                Button {
-                    self.onImport()
-                } label: {
-                    Text("Import")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(Theme.Spacing.md)
-                        .background(self.importButtonBackground)
-                        .contentShape(Rectangle())
+            }
+            .scrollDisabled(true)
+            .navigationTitle("Import from Clipboard?")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        self.dismiss()
+                    }
+                    .foregroundStyle(.secondary)
                 }
-                .buttonStyle(PuffyButtonStyle())
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Import") {
+                        self.onImport()
+                    }
+                }
             }
         }
-        .padding(Theme.Spacing.lg)
-        .presentationDetents([.height(280)])
+        .presentationDetents([.medium])
         .presentationDragIndicator(.hidden)
-        .presentationBackground {
-            Color.hauptgangSurfaceRaised.opacity(0.1)
-                .background(.ultraThinMaterial)
-        }
-    }
-
-    // MARK: - Button Backgrounds
-
-    private var importButtonBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .fill(Color.hauptgangPrimary)
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.25), .clear, .black.opacity(0.15)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.35), .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    ),
-                    lineWidth: 1
-                )
-        }
     }
 }

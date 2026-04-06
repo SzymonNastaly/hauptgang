@@ -383,10 +383,10 @@ struct RecipeDetailView: View {
             UIApplication.shared.isIdleTimerDisabled = self.isCookingMode
         } label: {
             HStack(spacing: 4) {
-                Text("Cooking Mode")
+                Text("Keep Screen On")
 
                 if self.isCookingMode {
-                    Text("On")
+                    Text("(active)")
                         .transition(.push(from: .bottom))
                 }
             }

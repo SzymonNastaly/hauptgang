@@ -184,11 +184,10 @@ final class PersistedRecipe {
 
     // MARK: - Conversion
 
-    /// Convert to RecipeDetail for use in views (returns nil if details not cached)
-    func toRecipeDetail() -> RecipeDetail? {
-        guard self.hasDetailsCached else { return nil }
-
-        return RecipeDetail(
+    /// Convert to RecipeDetail for use in views.
+    /// Returns partial data (empty ingredients/instructions) when only list data is cached.
+    func toRecipeDetail() -> RecipeDetail {
+        RecipeDetail(
             id: self.id,
             name: self.name,
             prepTime: self.prepTime,

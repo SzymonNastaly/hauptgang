@@ -51,12 +51,15 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
     func fetchRecipeDetails(cursor: String?, limit: Int) async throws -> RecipeDetailBatchResponse {
         self.logger.info("Fetching recipe details batch")
 
-        let query = self.buildBatchQuery(cursor: cursor, limit: limit)
-        let endpoint = "recipes/batch\(query)"
+        var queryItems = [URLQueryItem(name: "limit", value: String(max(limit, 1)))]
+        if let cursor, !cursor.isEmpty {
+            queryItems.append(URLQueryItem(name: "cursor", value: cursor))
+        }
 
         let response: RecipeDetailBatchResponse = try await api.request(
-            endpoint: endpoint,
+            endpoint: "recipes/batch",
             method: .get,
+            queryItems: queryItems,
             authenticated: true
         )
 
@@ -94,14 +97,4 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
         }
     }
 
-    private func buildBatchQuery(cursor: String?, limit: Int) -> String {
-        var components: [String] = []
-        components.append("limit=\(max(limit, 1))")
-        if let cursor, !cursor.isEmpty,
-           let encoded = cursor.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
-            components.append("cursor=\(encoded)")
-        }
-
-        return components.isEmpty ? "" : "?" + components.joined(separator: "&")
-    }
 }

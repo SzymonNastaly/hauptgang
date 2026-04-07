@@ -46,10 +46,26 @@ actor CookbookContext {
         self.logger.info("Set active cookbook to \(cookbookId ?? -1) for user \(userId)")
     }
 
+    // MARK: - Cookbook List Cache
+
+    /// Persist encoded cookbook data for offline use
+    func saveCookbooksData(_ data: Data) {
+        guard let userId = self.currentUserId else { return }
+        self.defaults.set(data, forKey: self.cookbooksKey(for: userId))
+        self.logger.info("Cached cookbook data for user \(userId)")
+    }
+
+    /// Load cached cookbook data (returns nil if none cached)
+    func loadCachedCookbooksData() -> Data? {
+        guard let userId = self.currentUserId else { return nil }
+        return self.defaults.data(forKey: self.cookbooksKey(for: userId))
+    }
+
     /// Clear all state (e.g., on logout)
     func reset() {
         if let userId = self.currentUserId {
             self.defaults.removeObject(forKey: self.key(for: userId))
+            self.defaults.removeObject(forKey: self.cookbooksKey(for: userId))
         }
         self.activeCookbookId = nil
         self.currentUserId = nil
@@ -59,5 +75,9 @@ actor CookbookContext {
 
     private func key(for userId: Int) -> String {
         "activeCookbook_\(userId)"
+    }
+
+    private func cookbooksKey(for userId: Int) -> String {
+        "cachedCookbooks_\(userId)"
     }
 }

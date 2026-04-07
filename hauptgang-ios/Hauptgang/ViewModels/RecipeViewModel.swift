@@ -151,6 +151,9 @@ extension RecipeViewModel {
             }
             self.handleRefreshError(error)
         }
+
+        // Always attempt detail sync — resumes from cursor even if list refresh failed
+        self.startDetailSyncIfNeeded()
     }
 
     private func fetchAndPersistRecipes() async throws {
@@ -162,7 +165,6 @@ extension RecipeViewModel {
 
         let visibleRecipes = self.successfulRecipes
         await self.updateSearchIndex(visibleRecipes: visibleRecipes, deletedIds: deletedIds)
-        self.startDetailSyncIfNeeded()
 
         if self.hasPendingImports {
             self.startPolling()

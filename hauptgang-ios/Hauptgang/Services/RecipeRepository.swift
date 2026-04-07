@@ -67,6 +67,9 @@ final class RecipeRepository: RecipeRepositoryProtocol {
 
         self.logger.info("Syncing \(recipes.count) recipes to local storage")
 
+        // Don't purge local cache when API returned nothing (likely a network/auth issue)
+        guard !recipes.isEmpty else { return [] }
+
         let scopedCookbookId = cookbookId ?? 0
         let apiRecipeIds = Set(recipes.map(\.id))
 

@@ -84,8 +84,8 @@ final class RecipeDetailViewModel {
     /// Load cached recipe from local storage
     private func loadCachedRecipe(id: Int) {
         do {
-            if let persisted = try repository.getRecipe(id: id),
-               let cached = persisted.toRecipeDetail() {
+            if let persisted = try repository.getRecipe(id: id) {
+                let cached = persisted.toRecipeDetail()
                 self.recipe = cached
                 self.logger.info("Loaded cached recipe: \(cached.name)")
             }

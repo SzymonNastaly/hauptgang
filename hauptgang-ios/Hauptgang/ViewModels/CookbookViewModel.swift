@@ -32,25 +32,42 @@ final class CookbookViewModel {
 
         do {
             let cookbooks = try await service.fetchCookbooks()
-            self.cookbooks = cookbooks
-
-            // If we have a saved selection that's still valid, keep it
-            let currentId = await CookbookContext.shared.getActiveCookbookId()
-            if let currentId, let match = cookbooks.first(where: { $0.id == currentId }) {
-                self.activeCookbook = match
-            } else {
-                // Default: prefer shared cookbook, fall back to personal
-                let defaultCookbook = cookbooks.first(where: { !$0.personal }) ?? cookbooks
-                    .first(where: { $0.personal })
-                self.activeCookbook = defaultCookbook
-                await CookbookContext.shared.setActiveCookbookId(defaultCookbook?.id)
-            }
-
-            self.logger.info("Loaded \(cookbooks.count) cookbooks, active: \(self.activeCookbook?.name ?? "none")")
+            await self.applyAndCache(cookbooks)
         } catch {
             self.logger.error("Failed to load cookbooks: \(error.localizedDescription)")
-            self.error = error.localizedDescription
+
+            // Fall back to cached cookbooks for offline launch
+            if let data = await CookbookContext.shared.loadCachedCookbooksData(),
+               let cached = try? JSONDecoder().decode([Cookbook].self, from: data), !cached.isEmpty
+            {
+                self.logger.info("Using \(cached.count) cached cookbooks (offline)")
+                await self.applyAndCache(cached)
+            } else {
+                self.error = error.localizedDescription
+            }
         }
+    }
+
+    /// Apply a cookbook list to the view model state and persist for offline use
+    private func applyAndCache(_ cookbooks: [Cookbook]) async {
+        self.cookbooks = cookbooks
+
+        // If we have a saved selection that's still valid, keep it
+        let currentId = await CookbookContext.shared.getActiveCookbookId()
+        if let currentId, let match = cookbooks.first(where: { $0.id == currentId }) {
+            self.activeCookbook = match
+        } else {
+            // Default: prefer shared cookbook, fall back to personal
+            let defaultCookbook = cookbooks.first(where: { !$0.personal }) ?? cookbooks
+                .first(where: { $0.personal })
+            self.activeCookbook = defaultCookbook
+            await CookbookContext.shared.setActiveCookbookId(defaultCookbook?.id)
+        }
+
+        if let data = try? JSONEncoder().encode(cookbooks) {
+            await CookbookContext.shared.saveCookbooksData(data)
+        }
+        self.logger.info("Loaded \(cookbooks.count) cookbooks, active: \(self.activeCookbook?.name ?? "none")")
     }
 
     /// Refresh cookbooks list without changing active selection

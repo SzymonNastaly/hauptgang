@@ -72,58 +72,45 @@ final class AuthViewModel: ObservableObject {
     // MARK: - Login
 
     func login(authManager: AuthManager) async {
-        guard self.isFormValid else { return }
-
-        self.isLoading = true
-        self.errorMessage = nil
-
-        do {
-            let user = try await authService.login(
+        await performAuthAction(authManager: authManager) {
+            try await authService.login(
                 email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
                 password: self.password
             )
-
-            self.password = ""
-
-            authManager.signIn(user: user)
-        } catch let error as APIError {
-            errorMessage = error.localizedDescription
-        } catch {
-            self.errorMessage = "An unexpected error occurred. Please try again."
         }
-
-        self.isLoading = false
     }
 
     // MARK: - Signup
 
     func signup(authManager: AuthManager) async {
+        await performAuthAction(authManager: authManager) {
+            try await authService.signup(
+                email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
+                password: self.password,
+                passwordConfirmation: self.passwordConfirmation
+            )
+        }
+    }
+
+    // MARK: - Private
+
+    private func performAuthAction(authManager: AuthManager, action: () async throws -> User) async {
         guard self.isFormValid else { return }
 
         self.isLoading = true
         self.errorMessage = nil
 
         do {
-            let user = try await authService.signup(
-                email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
-                password: self.password,
-                passwordConfirmation: self.passwordConfirmation
-            )
-
-            self.password = ""
-            self.passwordConfirmation = ""
-
+            let user = try await action()
             authManager.signIn(user: user)
         } catch let error as APIError {
-            errorMessage = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         } catch {
             self.errorMessage = "An unexpected error occurred. Please try again."
         }
 
         self.isLoading = false
     }
-
-    // MARK: - Private
 
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegex = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#

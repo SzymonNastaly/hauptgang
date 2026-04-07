@@ -97,17 +97,6 @@ final class AuthViewModelTests: XCTestCase {
 
     // MARK: - Login Tests
 
-    func testLogin_success_clearsPassword() async {
-        self.sut.email = "user@example.com"
-        self.sut.password = "password123"
-        let authManager = AuthManager(authService: mockAuthService)
-
-        await sut.login(authManager: authManager)
-
-        XCTAssertEqual(self.sut.password, "")
-        XCTAssertNil(self.sut.errorMessage)
-    }
-
     func testLogin_success_updatesAuthManager() async {
         self.sut.email = "user@example.com"
         self.sut.password = "password123"

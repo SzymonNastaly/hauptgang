@@ -46,6 +46,10 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
         if let error = self.deleteError { throw error }
         if self.shouldThrow { throw self.errorToThrow }
     }
+
+    func deleteAllItems() async throws {
+        if self.shouldThrow { throw self.errorToThrow }
+    }
 }
 
 enum MockShoppingListServiceError: Error {

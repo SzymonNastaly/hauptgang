@@ -8,6 +8,21 @@ protocol RecipeServiceProtocol: Sendable {
     func fetchRecipeDetails(cursor: String?, limit: Int) async throws -> RecipeDetailBatchResponse
     func deleteRecipe(id: Int) async throws
     func moveRecipe(id: Int, toCookbookId cookbookId: Int) async throws
+    func updateRecipe(id: Int, params: RecipeUpdateParams) async throws -> RecipeDetail
+    func updateRecipeCoverImage(id: Int, imageData: Data, mimeType: String) async throws -> RecipeDetail
+}
+
+/// Parameters for updating a recipe via PATCH
+struct RecipeUpdateParams: Encodable, Sendable {
+    var name: String?
+    var prepTime: Int?
+    var cookTime: Int?
+    var servings: Int?
+    var ingredients: [String]?
+    var instructions: [String]?
+    var notes: String?
+    var sourceUrl: String?
+    var favorite: Bool?
 }
 
 /// Handles all recipe-related API calls
@@ -79,6 +94,40 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
         )
 
         self.logger.info("Moved recipe \(id) to cookbook \(cookbookId)")
+    }
+
+    /// Updates a recipe's fields
+    func updateRecipe(id: Int, params: RecipeUpdateParams) async throws -> RecipeDetail {
+        self.logger.info("Updating recipe \(id)")
+
+        let recipe: RecipeDetail = try await api.request(
+            endpoint: "recipes/\(id)",
+            method: .patch,
+            body: params,
+            authenticated: true
+        )
+
+        self.logger.info("Updated recipe \(id): \(recipe.name)")
+        return recipe
+    }
+
+    /// Updates a recipe's cover image via multipart upload
+    func updateRecipeCoverImage(id: Int, imageData: Data, mimeType: String) async throws -> RecipeDetail {
+        self.logger.info("Uploading cover image for recipe \(id)")
+
+        let ext = mimeType == "image/png" ? "png" : "jpg"
+        let recipe: RecipeDetail = try await api.uploadMultipart(
+            endpoint: "recipes/\(id)",
+            method: .patch,
+            fileData: imageData,
+            fileName: "cover.\(ext)",
+            mimeType: mimeType,
+            paramName: "cover_image",
+            authenticated: true
+        )
+
+        self.logger.info("Uploaded cover image for recipe \(id)")
+        return recipe
     }
 
     /// Deletes a recipe by ID

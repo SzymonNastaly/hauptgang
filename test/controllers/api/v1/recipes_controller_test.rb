@@ -580,6 +580,119 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Theirs", other_recipe.reload.name
   end
 
+  test "update changes ingredients" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", ingredients: ["old ingredient"])
+
+    patch api_v1_recipe_url(recipe),
+      params: { ingredients: ["flour", "sugar", "butter"] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal ["flour", "sugar", "butter"], json["ingredients"]
+    assert_equal ["flour", "sugar", "butter"], recipe.reload.ingredients
+  end
+
+  test "update changes instructions" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", instructions: ["old step"])
+
+    patch api_v1_recipe_url(recipe),
+      params: { instructions: ["step 1", "step 2"] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal ["step 1", "step 2"], json["instructions"]
+    assert_equal ["step 1", "step 2"], recipe.reload.instructions
+  end
+
+  test "update strips blank entries from ingredients and instructions" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test")
+
+    patch api_v1_recipe_url(recipe),
+      params: { ingredients: ["flour", "", "sugar"], instructions: ["step 1", ""] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal ["flour", "sugar"], json["ingredients"]
+    assert_equal ["step 1"], json["instructions"]
+  end
+
+  test "update attaches cover image" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test")
+    image = fixture_file_upload("test/fixtures/files/test_image.png", "image/png")
+
+    patch api_v1_recipe_url(recipe),
+      params: { cover_image: image },
+      headers: @auth_headers
+
+    assert_response :success
+    assert recipe.reload.cover_image.attached?
+    json = response.parsed_body
+    assert json["cover_image_url"].present?
+  end
+
+  test "update replaces existing cover image" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test")
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "old.png",
+      content_type: "image/png"
+    )
+    assert recipe.cover_image.attached?
+    old_blob_id = recipe.cover_image.blob.id
+
+    new_image = fixture_file_upload("test/fixtures/files/test_image.png", "image/png")
+
+    patch api_v1_recipe_url(recipe),
+      params: { cover_image: new_image },
+      headers: @auth_headers
+
+    assert_response :success
+    assert recipe.reload.cover_image.attached?
+    assert_not_equal old_blob_id, recipe.cover_image.blob.id
+  end
+
+  test "update can change multiple fields at once" do
+    recipe = @cookbook.recipes.create!(user: @user, name: "Old", ingredients: ["a"], instructions: ["b"], notes: "old")
+
+    patch api_v1_recipe_url(recipe),
+      params: { name: "New", ingredients: ["x", "y"], instructions: ["z"], notes: "new", prep_time: 10, cook_time: 20, servings: 4 },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal "New", json["name"]
+    assert_equal ["x", "y"], json["ingredients"]
+    assert_equal ["z"], json["instructions"]
+    assert_equal "new", json["notes"]
+    assert_equal 10, json["prep_time"]
+    assert_equal 20, json["cook_time"]
+    assert_equal 4, json["servings"]
+  end
+
+  test "update by collaborator in shared cookbook" do
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: @other_user, role: :owner)
+    CookbookMembership.create!(cookbook: shared, user: @user, role: :collaborator)
+    recipe = shared.recipes.create!(name: "Original", user: @other_user)
+
+    patch api_v1_recipe_url(recipe),
+      params: { name: "Edited by collaborator", ingredients: ["new ingredient"] },
+      headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
+      as: :json
+
+    assert_response :success
+    json = response.parsed_body
+    assert_equal "Edited by collaborator", json["name"]
+    assert_equal ["new ingredient"], json["ingredients"]
+  end
+
   test "update requires authentication" do
     recipe = @cookbook.recipes.create!(user: @user, name: "Protected")
 

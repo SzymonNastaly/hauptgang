@@ -25,6 +25,7 @@ protocol APIClientProtocol: Actor {
 
     func uploadMultipart<T: Decodable>(
         endpoint: String,
+        method: HTTPMethod,
         fileData: Data,
         fileName: String,
         mimeType: String,
@@ -60,6 +61,25 @@ extension APIClientProtocol {
             method: method,
             body: body,
             queryItems: nil,
+            authenticated: authenticated
+        )
+    }
+
+    func uploadMultipart<T: Decodable>(
+        endpoint: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String,
+        paramName: String,
+        authenticated: Bool = false
+    ) async throws -> T {
+        try await self.uploadMultipart(
+            endpoint: endpoint,
+            method: .post,
+            fileData: fileData,
+            fileName: fileName,
+            mimeType: mimeType,
+            paramName: paramName,
             authenticated: authenticated
         )
     }

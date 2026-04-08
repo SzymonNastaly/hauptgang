@@ -62,6 +62,28 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
         self.deleteRecipeCalledWithId = id
         try self.deleteRecipeResult.get()
     }
+
+    var updateRecipeResult: Result<RecipeDetail, Error> = .success(RecipeDetail.mock())
+    var updateRecipeCalled = false
+    var updateRecipeCalledWithId: Int?
+    var updateRecipeCalledWithParams: RecipeUpdateParams?
+
+    func updateRecipe(id: Int, params: RecipeUpdateParams) async throws -> RecipeDetail {
+        self.updateRecipeCalled = true
+        self.updateRecipeCalledWithId = id
+        self.updateRecipeCalledWithParams = params
+        return try self.updateRecipeResult.get()
+    }
+
+    var updateRecipeCoverImageResult: Result<RecipeDetail, Error> = .success(RecipeDetail.mock())
+    var updateRecipeCoverImageCalled = false
+    var updateRecipeCoverImageCalledWithId: Int?
+
+    func updateRecipeCoverImage(id: Int, imageData: Data, mimeType: String) async throws -> RecipeDetail {
+        self.updateRecipeCoverImageCalled = true
+        self.updateRecipeCoverImageCalledWithId = id
+        return try self.updateRecipeCoverImageResult.get()
+    }
 }
 
 enum MockRecipeError: Error, LocalizedError {

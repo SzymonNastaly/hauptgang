@@ -11,6 +11,7 @@ struct RecipeDetailView: View {
     @State private var shoppingListViewModel = ShoppingListViewModel()
     @State private var showShoppingListConfirmation = false
     @State private var isCookingMode = false
+    @State private var showEditSheet = false
 
     init(recipeId: Int, viewModel: RecipeDetailViewModel? = nil) {
         self.recipeId = recipeId
@@ -47,6 +48,24 @@ struct RecipeDetailView: View {
                     ProgressView()
                         .scaleEffect(0.8)
                         .tint(.hauptgangTextSecondary)
+                }
+            }
+            if self.viewModel.recipe != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        self.showEditSheet = true
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: self.$showEditSheet) {
+            if let recipe = self.viewModel.recipe {
+                RecipeEditView(recipe: recipe) {
+                    Task {
+                        await self.viewModel.loadRecipe(id: self.recipeId)
+                    }
                 }
             }
         }

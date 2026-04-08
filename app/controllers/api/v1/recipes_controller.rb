@@ -236,7 +236,18 @@ module Api
       end
 
       def recipe_params
-        params.permit(:name, :prep_time, :cook_time, :servings, :notes, :source_url, :favorite, :cookbook_id)
+        permitted = params.permit(:name, :prep_time, :cook_time, :servings, :notes, :source_url, :favorite, :cookbook_id,
+          :cover_image, ingredients: [], instructions: [])
+
+        if permitted[:ingredients].is_a?(Array)
+          permitted[:ingredients] = permitted[:ingredients].reject(&:blank?)
+        end
+
+        if permitted[:instructions].is_a?(Array)
+          permitted[:instructions] = permitted[:instructions].reject(&:blank?)
+        end
+
+        permitted
       end
 
       def cover_image_url(recipe, variant)

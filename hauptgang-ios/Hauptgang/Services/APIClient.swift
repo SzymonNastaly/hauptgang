@@ -159,6 +159,7 @@ actor APIClient: APIClientProtocol {
 
     func uploadMultipart<T: Decodable>(
         endpoint: String,
+        method: HTTPMethod = .post,
         fileData: Data,
         fileName: String,
         mimeType: String,
@@ -167,7 +168,7 @@ actor APIClient: APIClientProtocol {
     ) async throws -> T {
         let url = Constants.API.baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
-        request.httpMethod = "POST"
+        request.httpMethod = method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         let boundary = UUID().uuidString

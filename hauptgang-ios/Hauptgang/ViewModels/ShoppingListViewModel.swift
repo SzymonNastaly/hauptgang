@@ -9,14 +9,12 @@ final class ShoppingListViewModel {
     private(set) var isSyncing = false
     private(set) var isOffline = false
     var didReceiveForbidden = false
-    private var recentlyCheckedIds: Set<String> = []
-
     var uncheckedItems: [PersistedShoppingListItem] {
-        self.items.filter { !$0.isChecked || self.recentlyCheckedIds.contains($0.clientId) }
+        self.items.filter { !$0.isChecked }
     }
 
     var checkedItems: [PersistedShoppingListItem] {
-        self.items.filter { $0.isChecked && !self.recentlyCheckedIds.contains($0.clientId) }
+        self.items.filter { $0.isChecked }
     }
 
     private let repository: ShoppingListRepositoryProtocol
@@ -117,17 +115,11 @@ final class ShoppingListViewModel {
             try self.repository.updateItem(clientId: clientId, checkedAt: newCheckedAt)
 
             if isChecking {
-                self.recentlyCheckedIds.insert(clientId)
-                Task {
-                    try? await Task.sleep(for: .seconds(0.6))
-                    guard !Task.isCancelled else { return }
-                    withAnimation(.easeInOut(duration: 0.6)) {
-                        self.recentlyCheckedIds.remove(clientId)
-                        self.loadCachedItems()
-                    }
+                withAnimation(.snappy(duration: 0.35)) {
+                    self.loadCachedItems()
                 }
             } else {
-                withAnimation(.easeInOut(duration: 0.35)) {
+                withAnimation(.snappy(duration: 0.35)) {
                     self.loadCachedItems()
                 }
             }
@@ -163,7 +155,6 @@ final class ShoppingListViewModel {
         self.items = []
         self.isSyncing = false
         self.isOffline = false
-        self.recentlyCheckedIds = []
     }
 
     func removeAllItems() async {
@@ -179,7 +170,6 @@ final class ShoppingListViewModel {
 
         do {
             try self.repository.clearAll()
-            self.recentlyCheckedIds = []
             self.items = []
         } catch {
             self.logger.error("Failed to clear local shopping list: \(error.localizedDescription)")

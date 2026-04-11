@@ -4,6 +4,7 @@ struct ShoppingListView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var viewModel = ShoppingListViewModel()
     @State private var newItemText = ""
     @State private var showRemoveAllConfirmation = false
@@ -24,7 +25,7 @@ struct ShoppingListView: View {
             if self.viewModel.items.isEmpty {
                 self.emptyState
             } else {
-                self.listView
+                self.gridView
             }
         }
         .padding(.top, Theme.Spacing.sm)
@@ -127,62 +128,130 @@ struct ShoppingListView: View {
         }
     }
 
-    private var listView: some View {
-        List {
-            if !self.viewModel.uncheckedItems.isEmpty {
-                Section {
-                    ForEach(self.viewModel.uncheckedItems) { item in
-                        self.itemRow(item)
-                    }
-                    .onDelete { indexSet in
-                        self.deleteItems(at: indexSet, from: self.viewModel.uncheckedItems)
-                    }
-                } header: {
-                    HStack {
-                        Text("To Buy")
-                        Spacer()
-                        self.removeAllButton
-                    }
-                }
-            }
-
-            if !self.viewModel.checkedItems.isEmpty {
-                Section("Checked") {
-                    ForEach(self.viewModel.checkedItems) { item in
-                        self.itemRow(item)
-                    }
-                    .onDelete { indexSet in
-                        self.deleteItems(at: indexSet, from: self.viewModel.checkedItems)
-                    }
-                }
-            }
+    private var gridColumns: [GridItem] {
+        if horizontalSizeClass == .compact {
+            return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.md), count: 3)
+        } else {
+            return [GridItem(.adaptive(minimum: 130, maximum: 180), spacing: Theme.Spacing.md)]
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+    }
+
+    private var gridView: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                if !self.viewModel.uncheckedItems.isEmpty {
+                    self.uncheckedSection
+                }
+
+                if !self.viewModel.checkedItems.isEmpty {
+                    self.checkedSection
+                }
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.bottom, Theme.Spacing.lg)
+        }
         .scrollDismissesKeyboard(.immediately)
     }
 
-    private func itemRow(_ item: PersistedShoppingListItem) -> some View {
-        Button {
+    private var uncheckedSection: some View {
+        Section {
+            LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.md) {
+                ForEach(self.viewModel.uncheckedItems, id: \.scopedClientId) { item in
+                    self.itemTile(item)
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                }
+            }
+        } header: {
+            HStack {
+                Text("To Buy")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .textCase(.uppercase)
+                Spacer()
+                self.removeAllButton
+            }
+        }
+    }
+
+    @State private var checkedSectionExpanded = true
+
+    private var checkedSection: some View {
+        Section {
+            if self.checkedSectionExpanded {
+                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.md) {
+                    ForEach(self.viewModel.checkedItems, id: \.scopedClientId) { item in
+                        self.itemTile(item)
+                            .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    }
+                }
+            }
+        } header: {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) {
+                    self.checkedSectionExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Text("Already Got")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .textCase(.uppercase)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.hauptgangTextMuted)
+                        .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func itemTile(_ item: PersistedShoppingListItem) -> some View {
+        let isChecked = item.isChecked
+
+        return Button {
             self.viewModel.toggleItem(item)
         } label: {
-            HStack(spacing: Theme.Spacing.md) {
-                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(item.isChecked ? Color.hauptgangSuccess : .hauptgangTextMuted)
-                    .contentTransition(.symbolEffect(.replace))
+            Text(item.name)
+                .font(.subheadline.weight(.medium))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .minimumScaleFactor(0.8)
+                .foregroundStyle(isChecked ? Color.hauptgangTextMuted : .hauptgangTextPrimary)
+                .strikethrough(isChecked, color: .hauptgangTextMuted)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(Theme.Spacing.sm)
+                .aspectRatio(1, contentMode: .fit)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                        .fill(isChecked ? Color.hauptgangSurfaceRaised.opacity(0.6) : .hauptgangCard)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                        .strokeBorder(
+                            isChecked ? Color.hauptgangBorderSubtle.opacity(0.5) : .hauptgangBorderSubtle,
+                            lineWidth: 1
+                        )
+                )
 
-                Text(item.name)
-                    .font(.body)
-                    .foregroundStyle(item.isChecked ? Color.hauptgangTextSecondary : .hauptgangTextPrimary)
-                    .strikethrough(item.isChecked, color: .hauptgangTextMuted)
-                    .opacity(item.isChecked ? 0.6 : 1.0)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.vertical, Theme.Spacing.xs)
         }
         .buttonStyle(.plain)
-        .listRowBackground(Color.hauptgangBackground)
+        .geometryGroup()
+        .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        .contextMenu {
+            Button(role: .destructive) {
+                self.viewModel.deleteItem(item)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .accessibilityLabel(item.name)
+        .accessibilityValue(isChecked ? "Bought" : "To buy")
+        .accessibilityHint(isChecked ? "Double-tap to move back to shopping list" : "Double-tap to mark as bought")
+        .accessibilityAction(named: "Delete") {
+            self.viewModel.deleteItem(item)
+        }
     }
 
     private var removeAllButton: some View {
@@ -254,12 +323,7 @@ struct ShoppingListView: View {
         self.isAddItemFocused = false
     }
 
-    private func deleteItems(at indexSet: IndexSet, from items: [PersistedShoppingListItem]) {
-        for index in indexSet {
-            let item = items[index]
-            self.viewModel.deleteItem(item)
-        }
-    }
+
 }
 
 private struct RemoveAllButtonStyle: ButtonStyle {

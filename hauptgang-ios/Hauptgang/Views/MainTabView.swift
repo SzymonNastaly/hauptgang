@@ -3,6 +3,7 @@ import SwiftUI
 /// Main tab view container for authenticated users
 struct MainTabView: View {
     @State private var selectedTab: Tab = .recipes
+    @State private var shoppingListViewModel = ShoppingListViewModel()
 
     enum Tab: Hashable {
         case recipes
@@ -18,7 +19,7 @@ struct MainTabView: View {
             }
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
-                ShoppingListView()
+                ShoppingListView(viewModel: self.shoppingListViewModel)
             }
 
             SwiftUI.Tab("Meal Plan", systemImage: "calendar", value: Tab.mealPlan) {
@@ -31,6 +32,17 @@ struct MainTabView: View {
         }
         .tint(.hauptgangPrimary)
         .toolbarBackgroundVisibility(.visible, for: .tabBar)
+        .modifier(TabBarMinimizeModifier())
+    }
+}
+
+private struct TabBarMinimizeModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            content
+        }
     }
 }
 

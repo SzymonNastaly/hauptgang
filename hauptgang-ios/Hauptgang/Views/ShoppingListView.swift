@@ -5,10 +5,9 @@ struct ShoppingListView: View {
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var viewModel = ShoppingListViewModel()
-    @State private var newItemText = ""
+    let viewModel: ShoppingListViewModel
     @State private var showRemoveAllConfirmation = false
-    @FocusState private var isAddItemFocused: Bool
+    @State private var addItemText = ""
 
     var body: some View {
         NavigationStack {
@@ -18,24 +17,17 @@ struct ShoppingListView: View {
     }
 
     private var screenContent: some View {
-        VStack(spacing: Theme.Spacing.sm) {
-            self.addItemBar
-                .padding(.horizontal, Theme.Spacing.lg)
-
+        Group {
             if self.viewModel.items.isEmpty {
                 self.emptyState
             } else {
                 self.gridView
             }
         }
-        .padding(.top, Theme.Spacing.sm)
         .refreshable {
             await self.viewModel.refresh()
         }
         .background(Color.hauptgangBackground.ignoresSafeArea())
-        .onTapGesture {
-            self.isAddItemFocused = false
-        }
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
@@ -91,43 +83,6 @@ struct ShoppingListView: View {
         return cookbook.personal ? "person.fill" : "person.2.fill"
     }
 
-    private var addItemBar: some View {
-        HStack(spacing: Theme.Spacing.sm) {
-            TextField("Add item", text: self.$newItemText)
-                .themeTextField()
-                .focused(self.$isAddItemFocused)
-                .onSubmit(self.addCustomItem)
-
-            Button {
-                self.addCustomItem()
-            } label: {
-                Image(systemName: "plus")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(self.addItemButtonBackground)
-            }
-            .buttonStyle(PuffyButtonStyle())
-            .disabled(self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .opacity(self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1.0)
-        }
-    }
-
-    private var addItemButtonBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                .fill(Color.hauptgangPrimary)
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                .fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.25), .clear, .black.opacity(0.15)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-        }
-    }
-
     private var gridColumns: [GridItem] {
         if horizontalSizeClass == .compact {
             return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.md), count: 3)
@@ -138,17 +93,25 @@ struct ShoppingListView: View {
 
     private var gridView: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                if !self.viewModel.uncheckedItems.isEmpty {
-                    self.uncheckedSection
-                }
+            VStack(spacing: 0) {
+                ShoppingAddItemBar(viewModel: self.viewModel, text: self.$addItemText)
 
-                if !self.viewModel.checkedItems.isEmpty {
-                    self.checkedSection
+                LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    if !self.viewModel.uncheckedItems.isEmpty {
+                        self.uncheckedSection
+                    }
+
+                    if !self.viewModel.checkedItems.isEmpty {
+                        self.checkedSection
+                    }
                 }
+                .padding(.horizontal, Theme.Spacing.lg)
+                .padding(.bottom, Theme.Spacing.lg)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
-            .padding(.bottom, Theme.Spacing.lg)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
         .scrollDismissesKeyboard(.immediately)
     }
@@ -292,6 +255,8 @@ struct ShoppingListView: View {
     private var emptyState: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.md) {
+                ShoppingAddItemBar(viewModel: self.viewModel, text: self.$addItemText)
+
                 Spacer()
 
                 Image(systemName: "cart")
@@ -311,19 +276,32 @@ struct ShoppingListView: View {
             }
             .frame(maxWidth: .infinity)
             .frame(minHeight: UIScreen.main.bounds.height * 0.5)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
-    private func addCustomItem() {
-        let trimmed = self.newItemText.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+struct ShoppingAddItemBar: View {
+    let viewModel: ShoppingListViewModel
+    @Binding var text: String
+
+    var body: some View {
+        SearchInputBar(text: self.$text, prompt: "Add item", icon: "plus", onSubmit: {
+            self.addItem()
+        })
+    }
+
+    private func addItem() {
+        let trimmed = self.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-
         self.viewModel.addCustomItem(trimmed)
-        self.newItemText = ""
-        self.isAddItemFocused = false
+        self.text = ""
     }
-
-
 }
 
 private struct RemoveAllButtonStyle: ButtonStyle {
@@ -336,7 +314,7 @@ private struct RemoveAllButtonStyle: ButtonStyle {
 
 #Preview {
     let authManager = AuthManager()
-    return ShoppingListView()
+    return ShoppingListView(viewModel: ShoppingListViewModel())
         .environmentObject(authManager)
         .environment(CookbookViewModel())
         .modelContainer(for: PersistedShoppingListItem.self, inMemory: true)

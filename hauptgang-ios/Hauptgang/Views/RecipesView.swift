@@ -103,7 +103,6 @@ struct RecipesView: View {
             .onDisappear {
                 self.recipeViewModel.stopPolling()
             }
-            .searchable(text: self.$searchQuery, isPresented: self.$isSearching, prompt: "Search recipes")
             .onChange(of: self.searchQuery) { _, newValue in
                 Task { await self.recipeViewModel.search(query: newValue) }
             }
@@ -243,6 +242,12 @@ struct RecipesView: View {
     private var recipeListView: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.sm) {
+                SearchInputBar(
+                    text: self.$searchQuery,
+                    prompt: "Search recipes",
+                    onCancel: { self.isSearching = false }
+                )
+
                 LazyVStack(spacing: Theme.Spacing.md) {
                     let displayedRecipes = self.searchQuery.isEmpty
                         ? self.recipeViewModel.successfulRecipes
@@ -254,7 +259,12 @@ struct RecipesView: View {
                 .padding(.horizontal, Theme.Spacing.lg)
             }
             .padding(.vertical, Theme.Spacing.sm)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
+        .scrollDismissesKeyboard(.immediately)
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentOffset.y > 10
         } action: { _, isScrolled in

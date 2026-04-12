@@ -8,12 +8,12 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "RecipesVi
 
 /// Lightweight value capturing the info needed for the delete confirmation dialog,
 /// avoiding holding a SwiftData model object in @State after deletion.
-private struct DeleteCandidate: Identifiable {
+struct DeleteCandidate: Identifiable {
     let id: Int
     let name: String
 }
 
-private struct MoveCandidate: Identifiable {
+struct MoveCandidate: Identifiable {
     let id: Int
     let name: String
     let targetCookbookId: Int
@@ -30,14 +30,12 @@ struct RecipesView: View {
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    @State private var recipeViewModel = RecipeViewModel()
+    var recipeViewModel: RecipeViewModel
 
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isScrolledDown = false
-    @State private var searchQuery = ""
-    @State private var isSearching = false
     @State private var navigationPath = NavigationPath()
     @State private var recipeToDelete: DeleteCandidate?
     @State private var recipeToMove: MoveCandidate?
@@ -102,9 +100,6 @@ struct RecipesView: View {
             }
             .onDisappear {
                 self.recipeViewModel.stopPolling()
-            }
-            .onChange(of: self.searchQuery) { _, newValue in
-                Task { await self.recipeViewModel.search(query: newValue) }
             }
             .overlay {
                 if self.recipeViewModel.isImporting {
@@ -241,28 +236,13 @@ struct RecipesView: View {
 
     private var recipeListView: some View {
         ScrollView {
-            VStack(spacing: Theme.Spacing.sm) {
-                SearchInputBar(
-                    text: self.$searchQuery,
-                    prompt: "Search recipes",
-                    onCancel: { self.isSearching = false }
-                )
-
-                LazyVStack(spacing: Theme.Spacing.md) {
-                    let displayedRecipes = self.searchQuery.isEmpty
-                        ? self.recipeViewModel.successfulRecipes
-                        : self.recipeViewModel.searchResults
-                    ForEach(displayedRecipes) { recipe in
-                        self.recipeRow(recipe)
-                    }
+            LazyVStack(spacing: Theme.Spacing.md) {
+                ForEach(self.recipeViewModel.successfulRecipes) { recipe in
+                    self.recipeRow(recipe)
                 }
-                .padding(.horizontal, Theme.Spacing.lg)
             }
+            .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.sm)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-            }
         }
         .scrollDismissesKeyboard(.immediately)
         .onScrollGeometryChange(for: Bool.self) { geometry in
@@ -284,9 +264,6 @@ struct RecipesView: View {
 
     private func recipeRow(_ recipe: PersistedRecipe) -> some View {
         Button {
-            if self.searchQuery.isEmpty {
-                self.isSearching = false
-            }
             self.navigationPath.append(recipe.id)
         } label: {
             RecipeCardView(recipe: recipe)
@@ -405,7 +382,7 @@ struct RecipesView: View {
 
 #Preview {
     let authManager = AuthManager()
-    return RecipesView()
+    return RecipesView(recipeViewModel: RecipeViewModel())
         .environmentObject(authManager)
         .environment(CookbookViewModel())
         .modelContainer(for: PersistedRecipe.self, inMemory: true)

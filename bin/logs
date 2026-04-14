@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+# Attach lazyjournal to the production server's systemd journal.
+# Host is read from config/deploy.yml so there's a single source of truth.
+
+require "yaml"
+
+deploy = YAML.load_file(File.expand_path("../config/deploy.yml", __dir__))
+host = deploy.dig("servers", "web", 0) or abort "Could not find servers.web[0] in config/deploy.yml"
+user = deploy.dig("ssh", "user") || "root"
+port = deploy.dig("ssh", "port") || 22
+
+unless system("command -v lazyjournal > /dev/null 2>&1")
+  abort <<~MSG
+    lazyjournal is not installed.
+
+    Install with:  brew install lazyjournal
+    (see https://github.com/Lifailon/lazyjournal for other platforms)
+  MSG
+end
+
+exec "lazyjournal", "--ssh", "#{user}@#{host} -p #{port}"

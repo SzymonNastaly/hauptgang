@@ -27,6 +27,7 @@ bin/dev                      # Start development server
 bin/ci                       # Run full CI suite (style, security, tests)
 bin/rubocop -a               # Auto-fix Ruby style issues
 bin/ios-test                 # Run iOS tests (auto-finds simulator, macOS only)
+bin/logs                     # Attach lazyjournal to production (host from config/deploy.yml)
 
 # Standard Rails commands for database, testing, etc. work as expected
 ```

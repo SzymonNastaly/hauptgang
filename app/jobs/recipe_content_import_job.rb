@@ -121,6 +121,11 @@ class RecipeContentImportJob < ApplicationJob
       return false
     end
 
+    if response.body.blank? || response.body.bytesize == 0
+      Rails.logger.info "[RecipeContentImportJob] Cover image attempt=#{attempt_index} source=#{source} empty_body recipe=#{recipe.id}"
+      return false
+    end
+
     if response.body.bytesize > 15.megabytes
       Rails.logger.info "[RecipeContentImportJob] Cover image attempt=#{attempt_index} source=#{source} too_large recipe=#{recipe.id} bytes=#{response.body.bytesize}"
       return false
@@ -184,6 +189,7 @@ class RecipeContentImportJob < ApplicationJob
 
   def cover_image_client
     Faraday.new do |conn|
+      conn.response :follow_redirects, limit: 5
       conn.options.timeout = 10
       conn.options.open_timeout = 5
       conn.headers["User-Agent"] = "Mozilla/5.0 (compatible; Hauptgang Recipe Importer)"

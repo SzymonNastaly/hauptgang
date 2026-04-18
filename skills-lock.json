@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "ios-app-intents": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "94c87b7b139fa748ab4522b71a9abe8c572f8b7f15b67342c13313449c533ec5"
+    },
+    "ios-debugger-agent": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "cc28bb00c138bf1d8c841c5a137185a63d05a4b3197f5d360de0534b5e492c1a"
+    },
+    "swiftui-liquid-glass": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "55231be46b195bf670980324a806b042cba1604ae5118dbd20ccca60dbc99d31"
+    },
+    "swiftui-performance-audit": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "8f99ca4b21f37ba956469b4792af47415cb1d8ae5bb49501381c9ea4d911e073"
+    },
+    "swiftui-ui-patterns": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "053bbbb4cc1e554ca6f44a6eb8f7f2943566c3dcff4ff3431d1acd1f36ba528c"
+    },
+    "swiftui-view-refactor": {
+      "source": "openai/plugins",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "71e5e4409443aa9ccd845df6536822dde7df1a566aa4ce3ceb00f82f22731960"
+    }
+  }
+}

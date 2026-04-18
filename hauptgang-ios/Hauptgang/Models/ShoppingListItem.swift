@@ -24,4 +24,5 @@ struct BulkCreateShoppingListItemsRequest: Codable, Sendable {
 struct UpdateShoppingListItemRequest: Codable, Sendable {
     let checked: Bool
     let checkedAt: Date?
+    let createdAt: Date?
 }

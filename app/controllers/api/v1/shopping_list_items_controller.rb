@@ -5,7 +5,7 @@ module Api
 
       def index
         unchecked = current_cookbook.shopping_list_items.unchecked.order(created_at: :desc)
-        checked = current_cookbook.shopping_list_items.checked.order(checked_at: :asc)
+        checked = current_cookbook.shopping_list_items.checked.order(checked_at: :desc)
         items = unchecked + checked
 
         render json: items.map { |item| ShoppingListItemSerializer.new(item).as_json }
@@ -37,6 +37,10 @@ module Api
           item.checked_at = checked ? Time.current : nil
         else
           return render json: { error: "checked or checked_at is required" }, status: :unprocessable_entity
+        end
+
+        if params.key?(:created_at) && params[:created_at].present?
+          item.created_at = Time.iso8601(params[:created_at])
         end
 
         item.save!

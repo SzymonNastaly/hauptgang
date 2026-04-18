@@ -55,7 +55,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             case (_, nil):
                 false
             case let (left?, right?):
-                left < right
+                left > right
             }
         }
     }
@@ -150,6 +150,9 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
         guard let item = try fetchItem(clientId: clientId) else { return }
 
         item.checkedAt = checkedAt
+        if checkedAt == nil {
+            item.createdAt = Date()
+        }
         item.updatedAt = Date()
         if item.syncState != .pendingCreate {
             item.syncState = .pendingUpdate

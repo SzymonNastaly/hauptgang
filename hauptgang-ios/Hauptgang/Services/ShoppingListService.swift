@@ -4,7 +4,7 @@ import os
 protocol ShoppingListServiceProtocol: Sendable {
     func fetchItems() async throws -> [ShoppingListItemResponse]
     func createItems(_ items: [ShoppingListItemCreate]) async throws -> [ShoppingListItemResponse]
-    func updateItem(id: Int, checked: Bool, checkedAt: Date?) async throws -> ShoppingListItemResponse
+    func updateItem(id: Int, checked: Bool, checkedAt: Date?, createdAt: Date?) async throws -> ShoppingListItemResponse
     func deleteItem(id: Int) async throws
     func deleteAllItems() async throws
 }
@@ -45,8 +45,8 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
         return created
     }
 
-    func updateItem(id: Int, checked: Bool, checkedAt: Date?) async throws -> ShoppingListItemResponse {
-        let request = UpdateShoppingListItemRequest(checked: checked, checkedAt: checkedAt)
+    func updateItem(id: Int, checked: Bool, checkedAt: Date?, createdAt: Date? = nil) async throws -> ShoppingListItemResponse {
+        let request = UpdateShoppingListItemRequest(checked: checked, checkedAt: checkedAt, createdAt: createdAt)
         let item: ShoppingListItemResponse = try await api.request(
             endpoint: "shopping_list_items/\(id)",
             method: .patch,

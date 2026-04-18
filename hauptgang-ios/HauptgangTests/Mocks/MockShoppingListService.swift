@@ -32,7 +32,7 @@ final class MockShoppingListService: ShoppingListServiceProtocol, @unchecked Sen
         return self.createResult
     }
 
-    func updateItem(id: Int, checked _: Bool, checkedAt _: Date?) async throws -> ShoppingListItemResponse {
+    func updateItem(id: Int, checked _: Bool, checkedAt _: Date?, createdAt _: Date?) async throws -> ShoppingListItemResponse {
         self.updateCallCount += 1
         self.lastUpdatedId = id
         if self.shouldThrow { throw self.errorToThrow }

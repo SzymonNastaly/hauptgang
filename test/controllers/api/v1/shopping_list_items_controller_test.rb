@@ -232,6 +232,33 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert_nil item.checked_at
   end
 
+  test "update sets created_at when provided" do
+    item = shopping_list_items(:unchecked_milk)
+    new_created_at = Time.current.iso8601
+
+    patch api_v1_shopping_list_item_url(item),
+      params: { checked: false, created_at: new_created_at },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    assert_equal Time.iso8601(new_created_at).to_i, Time.iso8601(response.parsed_body["created_at"]).to_i
+  end
+
+  test "update ignores blank created_at" do
+    item = shopping_list_items(:unchecked_milk)
+    original_created_at = item.created_at
+
+    patch api_v1_shopping_list_item_url(item),
+      params: { checked: false, created_at: "" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    item.reload
+    assert_equal original_created_at.to_i, item.created_at.to_i
+  end
+
   test "update returns 422 without checked or checked_at" do
     item = shopping_list_items(:unchecked_milk)
 

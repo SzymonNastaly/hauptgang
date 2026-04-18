@@ -209,7 +209,8 @@ final class ShoppingListViewModel {
                     let updated = try await service.updateItem(
                         id: serverId,
                         checked: item.isChecked,
-                        checkedAt: item.checkedAt
+                        checkedAt: item.checkedAt,
+                        createdAt: item.createdAt
                     )
                     try self.repository.updateItemFromServer(clientId: item.clientId, response: updated)
                 } catch APIError.notFound {

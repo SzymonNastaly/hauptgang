@@ -2,6 +2,12 @@
 
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
+  # Restore from Litestream backup if no database exists
+  if [ -f /rails/config/litestream.yml ] && [ ! -f storage/production.sqlite3 ]; then
+    echo "No database found, restoring from Litestream backup..."
+    litestream restore -if-replica-exists -config /rails/config/litestream.yml storage/production.sqlite3
+  fi
+
   ./bin/rails db:prepare
 fi
 

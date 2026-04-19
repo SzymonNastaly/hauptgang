@@ -10,6 +10,10 @@ class Tag < ApplicationRecord
   # Callbacks - auto-generate slug from name if not provided
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id name slug]
+  end
+
   private
 
   def generate_slug

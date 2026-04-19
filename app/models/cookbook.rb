@@ -20,4 +20,8 @@ class Cookbook < ApplicationRecord
   def owner?(user)
     cookbook_memberships.exists?(user: user, role: :owner)
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id name]
+  end
 end

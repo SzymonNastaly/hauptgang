@@ -24,6 +24,10 @@ class User < ApplicationRecord
     cookbooks.shared.first
   end
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id email_address]
+  end
+
   private
 
   def create_personal_cookbook!

@@ -15,6 +15,10 @@ class CookbookInvitation < ApplicationRecord
     expires_at < Time.current
   end
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id token]
+  end
+
   private
 
   def generate_token_and_expiry

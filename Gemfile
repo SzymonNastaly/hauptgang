@@ -94,5 +94,6 @@ end
 
 # Admin dashboard [https://avohq.io]
 gem "avo", ">= 3.2.1"
+gem "ransack"
 
 gem "tailwindcss-rails", "~> 4.4"

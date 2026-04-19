@@ -32,6 +32,10 @@ class Recipe < ApplicationRecord
   # but we add this for extra safety
   before_validation :ensure_array_fields
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id name source_url]
+  end
+
   private
 
   def ensure_array_fields

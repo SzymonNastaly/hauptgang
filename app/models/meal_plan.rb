@@ -12,6 +12,10 @@ class MealPlan < ApplicationRecord
     selected_entry_id.present?
   end
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id date]
+  end
+
   private
 
   def selected_entry_belongs_to_self

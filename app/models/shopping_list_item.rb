@@ -13,4 +13,8 @@ class ShoppingListItem < ApplicationRecord
   def self.cleanup_stale_checked_for(cookbook)
     cookbook.shopping_list_items.checked.stale_checked.destroy_all
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id name client_id]
+  end
 end

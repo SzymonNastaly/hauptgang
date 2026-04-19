@@ -7,6 +7,10 @@ class MealPlanEntry < ApplicationRecord
   validates :recipe_id, uniqueness: { scope: :meal_plan_id }
   validate :recipe_belongs_to_same_cookbook
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[id]
+  end
+
   private
 
   def recipe_belongs_to_same_cookbook

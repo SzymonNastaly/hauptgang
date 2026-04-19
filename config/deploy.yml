@@ -107,6 +107,8 @@ accessories:
     host: 49.13.125.220
     image: litestream/litestream
     cmd: replicate -config /etc/litestream.yml
+    options:
+      user: 1000:1000
     env:
       secret:
         - LITESTREAM_REPLICA_BUCKET

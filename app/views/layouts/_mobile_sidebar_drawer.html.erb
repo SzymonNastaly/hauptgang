@@ -90,8 +90,7 @@
         </div>
         <%= button_to session_path, method: :delete,
             class: "p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors",
-            title: "Log Out",
-            data: { controller: "logout", action: "click->logout#clearCache" } do %>
+            title: "Log Out" do %>
           <%= lucide_icon "log-out", class: "size-5" %>
         <% end %>
       </div>

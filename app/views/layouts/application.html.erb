@@ -31,18 +31,6 @@
       </main>
     </div>
 
-    <%# Prefetch all recipe URLs for offline access (PWA) %>
-    <% if authenticated? %>
-      <div data-controller="prefetch"
-           data-prefetch-urls-value="<%= Current.user.recipes.pluck(:id).map { |id| recipe_path(id) }.to_json %>"
-           class="hidden"></div>
-    <% end %>
 
-    <%# Invalidate specific recipe cache after create/update/destroy %>
-    <% if flash[:invalidate_cache].present? %>
-      <div data-controller="cache-invalidate"
-           data-cache-invalidate-url-value="<%= flash[:invalidate_cache] %>"
-           class="hidden"></div>
-    <% end %>
   </body>
 </html>

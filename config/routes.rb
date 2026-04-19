@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount_avo
   namespace :api do
     namespace :v1 do
       resource :registration, only: [ :create ]

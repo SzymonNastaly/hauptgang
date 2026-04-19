@@ -3,9 +3,3 @@
   <%= render "recipes/favorite_button", recipe: @recipe, context: @context %>
 <% end %>
 
-<%# Trigger cache invalidation via Stimulus controller %>
-<%= turbo_stream.append "body" do %>
-  <div data-controller="cache-invalidate"
-       data-cache-invalidate-url-value="<%= recipe_path(@recipe) %>"
-       class="hidden"></div>
-<% end %>

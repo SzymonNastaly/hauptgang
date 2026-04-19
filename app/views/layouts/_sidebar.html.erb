@@ -91,8 +91,7 @@
     <div data-account-dropdown-target="menu"
          class="hidden absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-border-subtle dark:border-gray-700 overflow-hidden">
       <%= button_to session_path, method: :delete,
-          class: "w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors",
-          data: { controller: "logout", action: "click->logout#clearCache" } do %>
+          class: "w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" do %>
         <%= lucide_icon "log-out", class: "size-4 text-gray-400 dark:text-gray-500" %>
         <span>Log Out</span>
       <% end %>

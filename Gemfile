@@ -92,4 +92,7 @@ group :test do
   gem "minitest-mock"
 end
 
+# Admin dashboard [https://avohq.io]
+gem "avo", ">= 3.2.1"
+
 gem "tailwindcss-rails", "~> 4.4"

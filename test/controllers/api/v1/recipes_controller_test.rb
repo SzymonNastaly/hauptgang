@@ -581,45 +581,45 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update changes ingredients" do
-    recipe = @cookbook.recipes.create!(user: @user, name: "Test", ingredients: ["old ingredient"])
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", ingredients: [ "old ingredient" ])
 
     patch api_v1_recipe_url(recipe),
-      params: { ingredients: ["flour", "sugar", "butter"] },
+      params: { ingredients: [ "flour", "sugar", "butter" ] },
       headers: @auth_headers,
       as: :json
 
     assert_response :success
     json = response.parsed_body
-    assert_equal ["flour", "sugar", "butter"], json["ingredients"]
-    assert_equal ["flour", "sugar", "butter"], recipe.reload.ingredients
+    assert_equal [ "flour", "sugar", "butter" ], json["ingredients"]
+    assert_equal [ "flour", "sugar", "butter" ], recipe.reload.ingredients
   end
 
   test "update changes instructions" do
-    recipe = @cookbook.recipes.create!(user: @user, name: "Test", instructions: ["old step"])
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test", instructions: [ "old step" ])
 
     patch api_v1_recipe_url(recipe),
-      params: { instructions: ["step 1", "step 2"] },
+      params: { instructions: [ "step 1", "step 2" ] },
       headers: @auth_headers,
       as: :json
 
     assert_response :success
     json = response.parsed_body
-    assert_equal ["step 1", "step 2"], json["instructions"]
-    assert_equal ["step 1", "step 2"], recipe.reload.instructions
+    assert_equal [ "step 1", "step 2" ], json["instructions"]
+    assert_equal [ "step 1", "step 2" ], recipe.reload.instructions
   end
 
   test "update strips blank entries from ingredients and instructions" do
     recipe = @cookbook.recipes.create!(user: @user, name: "Test")
 
     patch api_v1_recipe_url(recipe),
-      params: { ingredients: ["flour", "", "sugar"], instructions: ["step 1", ""] },
+      params: { ingredients: [ "flour", "", "sugar" ], instructions: [ "step 1", "" ] },
       headers: @auth_headers,
       as: :json
 
     assert_response :success
     json = response.parsed_body
-    assert_equal ["flour", "sugar"], json["ingredients"]
-    assert_equal ["step 1"], json["instructions"]
+    assert_equal [ "flour", "sugar" ], json["ingredients"]
+    assert_equal [ "step 1" ], json["instructions"]
   end
 
   test "update attaches cover image" do
@@ -658,18 +658,18 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update can change multiple fields at once" do
-    recipe = @cookbook.recipes.create!(user: @user, name: "Old", ingredients: ["a"], instructions: ["b"], notes: "old")
+    recipe = @cookbook.recipes.create!(user: @user, name: "Old", ingredients: [ "a" ], instructions: [ "b" ], notes: "old")
 
     patch api_v1_recipe_url(recipe),
-      params: { name: "New", ingredients: ["x", "y"], instructions: ["z"], notes: "new", prep_time: 10, cook_time: 20, servings: 4 },
+      params: { name: "New", ingredients: [ "x", "y" ], instructions: [ "z" ], notes: "new", prep_time: 10, cook_time: 20, servings: 4 },
       headers: @auth_headers,
       as: :json
 
     assert_response :success
     json = response.parsed_body
     assert_equal "New", json["name"]
-    assert_equal ["x", "y"], json["ingredients"]
-    assert_equal ["z"], json["instructions"]
+    assert_equal [ "x", "y" ], json["ingredients"]
+    assert_equal [ "z" ], json["instructions"]
     assert_equal "new", json["notes"]
     assert_equal 10, json["prep_time"]
     assert_equal 20, json["cook_time"]
@@ -683,14 +683,14 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     recipe = shared.recipes.create!(name: "Original", user: @other_user)
 
     patch api_v1_recipe_url(recipe),
-      params: { name: "Edited by collaborator", ingredients: ["new ingredient"] },
+      params: { name: "Edited by collaborator", ingredients: [ "new ingredient" ] },
       headers: @auth_headers.merge("X-Cookbook-Id" => shared.id.to_s),
       as: :json
 
     assert_response :success
     json = response.parsed_body
     assert_equal "Edited by collaborator", json["name"]
-    assert_equal ["new ingredient"], json["ingredients"]
+    assert_equal [ "new ingredient" ], json["ingredients"]
   end
 
   test "update requires authentication" do

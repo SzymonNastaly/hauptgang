@@ -37,7 +37,3 @@ bin/logs                     # Attach lazyjournal to production (host from confi
 ## Documentation
 
 `docs/` contains guides and reference documentation about how things work in this codebase. Check there first when working on a feature area.
-
-## Task Management
-
-Use `/dex` to break down complex work, track progress across sessions, and coordinate multi-step implementations.

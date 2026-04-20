@@ -55,7 +55,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             case (_, nil):
                 false
             case let (left?, right?):
-                left > right
+                left < right
             }
         }
     }

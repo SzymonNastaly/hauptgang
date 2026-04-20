@@ -121,7 +121,10 @@ struct ShoppingListView: View {
             LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
                 ForEach(self.viewModel.uncheckedItems, id: \.scopedClientId) { item in
                     self.itemTile(item)
-                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.5).combined(with: .opacity),
+                            removal: .identity
+                        ))
                 }
             }
             .animation(.snappy(duration: 0.25), value: self.viewModel.uncheckedItems.map(\.scopedClientId))
@@ -145,7 +148,10 @@ struct ShoppingListView: View {
                 LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
                     ForEach(self.viewModel.checkedItems, id: \.scopedClientId) { item in
                         self.itemTile(item)
-                            .transition(.scale(scale: 0.5).combined(with: .opacity))
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.5).combined(with: .opacity),
+                                removal: .identity
+                            ))
                     }
                 }
                 .animation(.snappy(duration: 0.25), value: self.viewModel.checkedItems.map(\.scopedClientId))
@@ -185,19 +191,17 @@ struct ShoppingListView: View {
                 .lineLimit(3)
                 .minimumScaleFactor(0.8)
                 .foregroundStyle(isChecked ? Color.hauptgangTextMuted : .hauptgangTextPrimary)
-                .strikethrough(isChecked, color: .hauptgangTextMuted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(Theme.Spacing.sm)
                 .aspectRatio(1, contentMode: .fit)
                 .background(
                     RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                        .fill(isChecked ? Color.hauptgangSurfaceRaised.opacity(0.6) : .hauptgangCard)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                        .strokeBorder(
-                            isChecked ? Color.hauptgangBorderSubtle.opacity(0.5) : .hauptgangBorderSubtle,
-                            lineWidth: 1
+                        .fill(isChecked ? Color.hauptgangSurfaceRaised : .hauptgangCard)
+                        .shadow(
+                            color: Color.black.opacity(isChecked ? 0 : 0.06),
+                            radius: 4,
+                            x: 0,
+                            y: 2
                         )
                 )
 
@@ -296,7 +300,7 @@ struct ShoppingAddItemBar: View {
     var body: some View {
         SearchInputBar(text: self.$text, prompt: "Add item", icon: "plus", onSubmit: {
             self.addItem()
-        })
+        }, keepFocusOnSubmit: true)
     }
 
     private func addItem() {

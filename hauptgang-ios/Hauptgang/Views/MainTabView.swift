@@ -18,7 +18,7 @@ struct MainTabView: View {
     var body: some View {
         self.tabContent
             .tint(.hauptgangPrimary)
-            .toolbarBackgroundVisibility(.visible, for: .tabBar)
+            .modifier(TabBarBackgroundModifier())
             .modifier(TabBarMinimizeModifier())
             .modifier(TabSearchActivationModifier())
             .onChange(of: self.searchQuery) { _, newValue in
@@ -47,6 +47,16 @@ struct MainTabView: View {
             SwiftUI.Tab(value: Tab.search, role: .search) {
                 RecipeSearchView(recipeViewModel: self.recipeViewModel, searchQuery: self.$searchQuery)
             }
+        }
+    }
+}
+
+private struct TabBarBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+        } else {
+            content.toolbarBackgroundVisibility(.visible, for: .tabBar)
         }
     }
 }

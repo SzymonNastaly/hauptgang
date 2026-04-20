@@ -224,7 +224,41 @@ struct ShoppingListView: View {
         }
     }
 
+    @ViewBuilder
     private var removeAllButton: some View {
+        if #available(iOS 26, *) {
+            self.removeAllButtonGlass
+        } else {
+            self.removeAllButtonLegacy
+        }
+    }
+
+    @available(iOS 26, *)
+    private var removeAllButtonGlass: some View {
+        Button {
+            self.showRemoveAllConfirmation = true
+        } label: {
+            Text("Remove All")
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .buttonStyle(.glass)
+        .controlSize(.small)
+        .disabled(self.viewModel.isSyncing)
+        .opacity(self.viewModel.isSyncing ? 0.5 : 1.0)
+        .textCase(nil)
+        .confirmationDialog(
+            "This will remove all items from your shopping list, including checked items.",
+            isPresented: self.$showRemoveAllConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Remove All", role: .destructive) {
+                Task { await self.viewModel.removeAllItems() }
+            }
+        }
+    }
+
+    private var removeAllButtonLegacy: some View {
         Button {
             self.showRemoveAllConfirmation = true
         } label: {

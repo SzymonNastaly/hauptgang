@@ -41,7 +41,7 @@ struct RecipeDetailView: View {
         }
         .background(Color.hauptgangBackground)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .modifier(NavigationBarBackgroundModifier())
         .toolbar {
             if self.viewModel.isRefreshing {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -314,18 +314,39 @@ struct RecipeDetailView: View {
         }
     }
 
+    @ViewBuilder
     private func addIngredientsButton(_ ingredients: [String]) -> some View {
+        if #available(iOS 26, *) {
+            self.addIngredientsButtonGlass(ingredients)
+        } else {
+            self.addIngredientsButtonLegacy(ingredients)
+        }
+    }
+
+    @available(iOS 26, *)
+    @ViewBuilder
+    private func addIngredientsButtonGlass(_ ingredients: [String]) -> some View {
+        let button = Button {
+            self.handleAddIngredients(ingredients)
+        } label: {
+            Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .controlSize(.small)
+
+        if self.showShoppingListConfirmation {
+            button
+                .buttonStyle(.glassProminent)
+                .tint(Color.hauptgangSuccess)
+        } else {
+            button.buttonStyle(.glass)
+        }
+    }
+
+    private func addIngredientsButtonLegacy(_ ingredients: [String]) -> some View {
         Button {
-            withAnimation(.smooth(duration: 0.4)) {
-                self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
-                self.showShoppingListConfirmation = true
-            }
-            Task {
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
-                withAnimation(.smooth(duration: 0.4)) {
-                    self.showShoppingListConfirmation = false
-                }
-            }
+            self.handleAddIngredients(ingredients)
         } label: {
             Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
                 .font(.caption)
@@ -347,6 +368,19 @@ struct RecipeDetailView: View {
                 )
         }
         .buttonStyle(PressDownButtonStyle())
+    }
+
+    private func handleAddIngredients(_ ingredients: [String]) {
+        withAnimation(.smooth(duration: 0.4)) {
+            self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+            self.showShoppingListConfirmation = true
+        }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            withAnimation(.smooth(duration: 0.4)) {
+                self.showShoppingListConfirmation = false
+            }
+        }
     }
 
     // MARK: - Instructions Section
@@ -395,6 +429,48 @@ struct RecipeDetailView: View {
     // MARK: - Cooking Mode
 
     private var cookingModeButton: some View {
+        Group {
+            if #available(iOS 26, *) {
+                self.cookingModeButtonGlass
+            } else {
+                self.cookingModeButtonLegacy
+            }
+        }
+    }
+
+    @available(iOS 26, *)
+    @ViewBuilder
+    private var cookingModeButtonGlass: some View {
+        let button = Button {
+            withAnimation(.smooth(duration: 0.4)) {
+                self.isCookingMode.toggle()
+            }
+            UIApplication.shared.isIdleTimerDisabled = self.isCookingMode
+        } label: {
+            HStack(spacing: 4) {
+                Text("Keep Screen On")
+
+                if self.isCookingMode {
+                    Text("(active)")
+                        .transition(.push(from: .bottom))
+                }
+            }
+            .font(.subheadline)
+            .fontWeight(.medium)
+        }
+
+        if self.isCookingMode {
+            button
+                .buttonStyle(.glassProminent)
+                .tint(Color.hauptgangPrimary)
+        } else {
+            button
+                .buttonStyle(.glass)
+                .tint(Color.hauptgangPrimary)
+        }
+    }
+
+    private var cookingModeButtonLegacy: some View {
         Button {
             withAnimation(.smooth(duration: 0.4)) {
                 self.isCookingMode.toggle()
@@ -434,6 +510,18 @@ struct RecipeDetailView: View {
         Text(title)
             .font(.headline)
             .foregroundColor(.hauptgangTextPrimary)
+    }
+}
+
+// MARK: - Navigation Bar Background
+
+private struct NavigationBarBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+        } else {
+            content.toolbarBackground(.visible, for: .navigationBar)
+        }
     }
 }
 

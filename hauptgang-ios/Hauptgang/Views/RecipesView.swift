@@ -230,7 +230,7 @@ struct RecipesView: View {
                     .foregroundColor(.white)
             }
             .padding(Theme.Spacing.xl)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+            .modifier(ImportingOverlayBackground())
         }
     }
 
@@ -377,6 +377,18 @@ struct RecipesView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct ImportingOverlayBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+                .glassEffect(.regular, in: .rect(cornerRadius: Theme.CornerRadius.lg))
+        } else {
+            content
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+        }
     }
 }
 

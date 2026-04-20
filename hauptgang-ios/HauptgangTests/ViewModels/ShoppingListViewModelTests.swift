@@ -83,14 +83,13 @@ struct ShoppingListViewModelTests {
         #expect(names.contains("Fresh Bread"))
     }
 
-    @Test func refresh_setsOfflineOnNetworkError() async {
+    @Test func refresh_networkError_resetsSyncing() async {
         let (vm, _, service) = self.makeVM()
         service.shouldThrow = true
         service.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
 
         await vm.refresh()
 
-        #expect(vm.isOffline == true)
         #expect(vm.isSyncing == false)
     }
 
@@ -330,7 +329,6 @@ struct ShoppingListViewModelTests {
 
         #expect(vm.items.isEmpty)
         #expect(vm.isSyncing == false)
-        #expect(vm.isOffline == false)
     }
 
     @Test func clearData_clearsRepoAndItems() {

@@ -10,7 +10,6 @@ final class MealPlanViewModel {
     private(set) var todayDay: PersistedMealPlanDay?
     private(set) var tomorrowDay: PersistedMealPlanDay?
     private(set) var isSyncing = false
-    private(set) var isOffline = false
     private(set) var isSelecting = false
     var didReceiveForbidden = false
 
@@ -47,7 +46,6 @@ final class MealPlanViewModel {
 
         self.activeCookbookId = cookbookId
         self.isSyncing = true
-        self.isOffline = false
 
         await self.syncPendingEntries(cookbookId: cookbookId)
 
@@ -61,15 +59,8 @@ final class MealPlanViewModel {
             self.loadCachedData()
         } catch {
             self.logger.error("Failed to refresh meal plans: \(error.localizedDescription)")
-            if let apiError = error as? APIError {
-                switch apiError {
-                case .networkError:
-                    self.isOffline = true
-                case .forbidden:
-                    self.didReceiveForbidden = true
-                default:
-                    break
-                }
+            if let apiError = error as? APIError, case .forbidden = apiError {
+                self.didReceiveForbidden = true
             }
         }
 
@@ -106,8 +97,6 @@ final class MealPlanViewModel {
                 case .unprocessableEntity, .notFound:
                     try? self.repository.deletePendingEntry(cookbookId: cookbookId, date: date, recipeId: recipeId)
                     self.loadCachedData()
-                case .networkError:
-                    self.isOffline = true
                 default:
                     break
                 }
@@ -128,7 +117,7 @@ final class MealPlanViewModel {
             return
         }
 
-        guard !self.isOffline else { return }
+        guard !NetworkMonitor.shared.isOffline else { return }
 
         Task {
             do {
@@ -214,7 +203,6 @@ final class MealPlanViewModel {
         self.todayDay = nil
         self.tomorrowDay = nil
         self.isSyncing = false
-        self.isOffline = false
     }
 
     func clearData() {
@@ -271,9 +259,6 @@ final class MealPlanViewModel {
                                 date: entry.date,
                                 recipeId: entry.recipeId
                             )
-                        case .networkError:
-                            self.isOffline = true
-                            return
                         default:
                             break
                         }

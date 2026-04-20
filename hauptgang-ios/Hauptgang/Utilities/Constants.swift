@@ -36,6 +36,11 @@ enum Constants {
         #endif
 
         static let sessionPath = "/session"
+        static let healthCheckPath = "/up"
+
+        static let healthCheckURL: URL = {
+            URL(string: healthCheckPath, relativeTo: host)!
+        }()
 
         /// Resolves a relative path (e.g., "/rails/active_storage/...") to a full URL
         static func resolveURL(_ path: String?) -> URL? {

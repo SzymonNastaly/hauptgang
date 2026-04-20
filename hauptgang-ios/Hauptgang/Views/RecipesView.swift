@@ -28,6 +28,7 @@ private struct ClipboardContent: Identifiable {
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
+    @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     var recipeViewModel: RecipeViewModel
@@ -45,7 +46,7 @@ struct RecipesView: View {
         NavigationStack(path: self.$navigationPath) {
             self.recipeContent
         }
-        .offlineToast(isOffline: self.recipeViewModel.isOffline, showToast: !self.isScrolledDown)
+        .offlineToast(isOffline: self.networkMonitor.isOffline, showToast: !self.isScrolledDown)
     }
 
     private var recipeContent: some View {
@@ -251,6 +252,7 @@ struct RecipesView: View {
             self.isScrolledDown = isScrolled
         }
         .refreshable {
+            await self.networkMonitor.refreshStatus()
             await self.cookbookViewModel.refresh()
             await self.recipeViewModel.refreshRecipes()
         }
@@ -397,6 +399,7 @@ private struct ImportingOverlayBackground: ViewModifier {
     return RecipesView(recipeViewModel: RecipeViewModel())
         .environmentObject(authManager)
         .environment(CookbookViewModel())
+        .environment(NetworkMonitor.shared)
         .modelContainer(for: PersistedRecipe.self, inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))

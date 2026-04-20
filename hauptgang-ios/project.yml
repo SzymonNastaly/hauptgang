@@ -20,7 +20,7 @@ packages:
 settings:
   SWIFT_VERSION: "5.9"
   MARKETING_VERSION: "1.0.0"
-  CURRENT_PROJECT_VERSION: "41"
+  CURRENT_PROJECT_VERSION: "42"
   # Enable Swift 6 strict concurrency checking for data race safety
   SWIFT_STRICT_CONCURRENCY: complete
   OTHER_SWIFT_FLAGS: "-Xfrontend -enable-upcoming-feature -Xfrontend InferSendableFromCaptures"
@@ -78,6 +78,7 @@ targets:
       - path: Hauptgang/Services/RecipeImportService.swift
       - path: Hauptgang/Services/ImageCompressor.swift
       - path: Hauptgang/Services/CookbookContext.swift
+      - path: Hauptgang/Services/NetworkMonitor.swift
       - path: Hauptgang/Models/PageContent.swift
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios.share-extension

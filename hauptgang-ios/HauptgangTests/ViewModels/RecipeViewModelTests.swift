@@ -96,16 +96,14 @@ final class RecipeViewModelTests: XCTestCase {
         await self.sut.refreshRecipes()
 
         XCTAssertEqual(self.sut.recipes.count, 2)
-        XCTAssertFalse(self.sut.isOffline)
         XCTAssertFalse(self.sut.isLoading)
     }
 
-    func testRefreshRecipes_networkFailure_setsOffline() async {
+    func testRefreshRecipes_networkFailure_preservesLoadingState() async {
         self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
 
         await self.sut.refreshRecipes()
 
-        XCTAssertTrue(self.sut.isOffline)
         XCTAssertFalse(self.sut.isLoading)
     }
 
@@ -130,19 +128,6 @@ final class RecipeViewModelTests: XCTestCase {
 
         XCTAssertEqual(self.mockRepository.savedRecipes.count, 1)
         XCTAssertEqual(self.mockRepository.savedRecipes.first?.name, "New Recipe")
-    }
-
-    func testRefreshRecipes_clearsOfflineOnSuccess() async {
-        // First, create an offline state
-        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
-        await self.sut.refreshRecipes()
-        XCTAssertTrue(self.sut.isOffline)
-
-        // Then, refresh successfully
-        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
-        await self.sut.refreshRecipes()
-
-        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - stopPolling Tests
@@ -210,28 +195,9 @@ final class RecipeViewModelTests: XCTestCase {
         // Wait for the cancelled first task to finish
         await task1.value
 
-        // The second refresh won — data is loaded and offline is false
-        XCTAssertFalse(self.sut.isOffline, "Cancelled refresh should not leave isOffline = true")
+        // The second refresh won — data is loaded
         XCTAssertFalse(self.sut.isLoading)
         XCTAssertEqual(self.sut.recipes.count, 1)
-    }
-
-    func testRefreshRecipes_cancelledRefresh_doesNotSetOffline() async {
-        // Slow refresh that would fail with a network error
-        self.mockRecipeService.fetchRecipesDelay = 500_000_000
-        self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.timedOut)))
-
-        let task1 = Task { await self.sut.refreshRecipes() }
-        try? await Task.sleep(nanoseconds: 50_000_000)
-
-        // Cancel via a second refresh that succeeds instantly
-        self.mockRecipeService.fetchRecipesDelay = 0
-        self.mockRecipeService.fetchRecipesResult = .success([])
-
-        await self.sut.refreshRecipes()
-        await task1.value
-
-        XCTAssertFalse(self.sut.isOffline, "A cancelled network error should not set isOffline")
     }
 
     // MARK: - dismissFailedRecipe Tests

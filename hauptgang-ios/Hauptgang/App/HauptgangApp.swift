@@ -67,6 +67,7 @@ struct HauptgangApp: App {
                 .environmentObject(self.authManager)
                 .environmentObject(self.subscriptionManager)
                 .environment(self.deepLinkRouter)
+                .environment(NetworkMonitor.shared)
                 .preferredColorScheme(.light)
                 .task {
                     self.subscriptionManager.startListening()

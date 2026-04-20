@@ -82,14 +82,13 @@ struct MealPlanViewModelTests {
         #expect(vm.isSyncing == false)
     }
 
-    @Test func refresh_setsOfflineOnNetworkError() async {
+    @Test func refresh_networkError_resetsSyncing() async {
         let (vm, _, service) = self.makeVM()
         service.shouldThrow = true
         service.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
 
         await vm.refresh(cookbookId: self.cookbookId)
 
-        #expect(vm.isOffline == true)
         #expect(vm.isSyncing == false)
     }
 
@@ -170,21 +169,6 @@ struct MealPlanViewModelTests {
         #expect(service.deleteEntryCallCount == 1)
         #expect(service.lastDeletedEntryId == 42)
         #expect(repo.deletedPendingEntries.count == 1)
-    }
-
-    @Test func deleteEntry_ignoresSyncedEntryWhileOffline() async {
-        let (vm, repo, service) = self.makeVM()
-        let entry = self.makePersistedEntry(serverId: 42)
-
-        service.shouldThrow = true
-        service.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
-
-        await vm.refresh(cookbookId: self.cookbookId)
-        vm.deleteEntry(entry, cookbookId: self.cookbookId)
-
-        try? await Task.sleep(for: .milliseconds(50))
-        #expect(service.deleteEntryCallCount == 0)
-        #expect(repo.deletedPendingEntries.isEmpty)
     }
 
     @Test func addEntry_removesPendingEntryOnNotFound() async {
@@ -301,7 +285,6 @@ struct MealPlanViewModelTests {
         #expect(vm.todayDay == nil)
         #expect(vm.tomorrowDay == nil)
         #expect(vm.isSyncing == false)
-        #expect(vm.isOffline == false)
     }
 
     @Test func clearData_clearsRepoAndState() {

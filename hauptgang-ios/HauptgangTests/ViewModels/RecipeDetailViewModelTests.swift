@@ -36,7 +36,6 @@ final class RecipeDetailViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipe?.name, "Spaghetti Carbonara")
         XCTAssertFalse(self.sut.isLoading)
         XCTAssertFalse(self.sut.isRefreshing)
-        XCTAssertFalse(self.sut.isOffline)
         XCTAssertNil(self.sut.errorMessage)
     }
 
@@ -92,16 +91,15 @@ final class RecipeDetailViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipe?.name, "Updated Recipe")
     }
 
-    // MARK: - Offline Mode Tests
+    // MARK: - Offline Fallback Tests
 
-    func testLoadRecipe_apiFailsWithCache_setsOfflineMode() async {
+    func testLoadRecipe_apiFailsWithCache_keepsCachedRecipe() async {
         let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
         self.mockRepository.cachedRecipe = cachedRecipe
         self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
         await self.sut.loadRecipe(id: 42)
 
-        XCTAssertTrue(self.sut.isOffline)
         XCTAssertNotNil(self.sut.recipe)
         XCTAssertNil(self.sut.errorMessage)
     }
@@ -111,23 +109,9 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
         await self.sut.loadRecipe(id: 42)
 
-        XCTAssertFalse(self.sut.isOffline)
         XCTAssertNil(self.sut.recipe)
         XCTAssertNotNil(self.sut.errorMessage)
         XCTAssertEqual(self.sut.errorMessage, "Failed to load recipe. Tap to retry.")
-    }
-
-    func testLoadRecipe_apiSuccess_clearsOfflineMode() async {
-        let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached Recipe")
-        self.mockRepository.cachedRecipe = cachedRecipe
-        self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
-        await self.sut.loadRecipe(id: 42)
-        XCTAssertTrue(self.sut.isOffline)
-
-        self.mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
-        await self.sut.loadRecipe(id: 42)
-
-        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - Error Handling Tests
@@ -153,17 +137,7 @@ final class RecipeDetailViewModelTests: XCTestCase {
         await self.sut.loadRecipe(id: 42)
 
         XCTAssertEqual(self.sut.recipe?.name, "API Recipe")
-        XCTAssertFalse(self.sut.isOffline)
         XCTAssertNil(self.sut.errorMessage)
-    }
-
-    func testLoadRecipe_persistenceFailure_doesNotSetOfflineMode() async {
-        self.mockRecipeService.fetchRecipeDetailResult = .success(RecipeDetail.mock(id: 42))
-        self.mockRepository.shouldThrowOnSave = true
-
-        await self.sut.loadRecipe(id: 42)
-
-        XCTAssertFalse(self.sut.isOffline)
     }
 
     // MARK: - Loading Flag Cleanup Tests

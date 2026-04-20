@@ -8,7 +8,6 @@ final class RecipeDetailViewModel {
     private(set) var recipe: RecipeDetail?
     private(set) var isLoading = false
     private(set) var isRefreshing = false
-    private(set) var isOffline = false
     private(set) var errorMessage: String?
 
     private let recipeService: RecipeServiceProtocol
@@ -36,7 +35,6 @@ final class RecipeDetailViewModel {
 
         self.logger.info("Loading recipe detail for id: \(id)")
         self.errorMessage = nil
-        self.isOffline = false
 
         self.loadCachedRecipe(id: id)
 
@@ -57,7 +55,6 @@ final class RecipeDetailViewModel {
             }
 
             self.recipe = apiRecipe
-            self.isOffline = false
             self.logger.info("Successfully loaded recipe from API: \(apiRecipe.name)")
 
             do {
@@ -73,8 +70,7 @@ final class RecipeDetailViewModel {
 
             self.logger.error("Failed to load recipe detail: \(error.localizedDescription)")
             if self.recipe != nil {
-                self.isOffline = true
-                self.logger.info("Showing cached recipe in offline mode")
+                self.logger.info("Showing cached recipe after fetch failure")
             } else {
                 self.errorMessage = "Failed to load recipe. Tap to retry."
             }

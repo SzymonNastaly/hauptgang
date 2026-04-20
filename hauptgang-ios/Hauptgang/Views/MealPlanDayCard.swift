@@ -5,10 +5,11 @@ struct MealPlanDayCard: View {
     /// Matches thumbnail + row padding + list row insets so the embedded list does not clip or scroll internally.
     private static let entryRowHeight: CGFloat = 84
 
+    @Environment(NetworkMonitor.self) private var networkMonitor
+
     let dateString: String
     let day: PersistedMealPlanDay?
     let entries: [PersistedMealPlanEntry]
-    let isOffline: Bool
     let isSelecting: Bool
     let onAddTapped: () -> Void
     let onDeleteEntry: (PersistedMealPlanEntry) -> Void
@@ -26,11 +27,11 @@ struct MealPlanDayCard: View {
     }
 
     private var canInteract: Bool {
-        !self.isOffline && !self.isSelecting
+        !self.networkMonitor.isOffline && !self.isSelecting
     }
 
     private func canDelete(_ entry: PersistedMealPlanEntry) -> Bool {
-        entry.syncState == .pendingCreate || !self.isOffline
+        entry.syncState == .pendingCreate || !self.networkMonitor.isOffline
     }
 
     var body: some View {
@@ -221,7 +222,7 @@ struct MealPlanDayCard: View {
             }
             .font(.title2)
         }
-        .disabled(self.isOffline || entry.syncState == .pendingCreate)
+        .disabled(self.networkMonitor.isOffline || entry.syncState == .pendingCreate)
         .buttonStyle(.plain)
     }
 
@@ -257,7 +258,7 @@ struct MealPlanDayCard: View {
                     .fontWeight(.medium)
                     .foregroundStyle(Color.hauptgangPrimary)
             }
-            .disabled(self.isOffline || self.isSelecting)
+            .disabled(self.networkMonitor.isOffline || self.isSelecting)
         }
     }
 }

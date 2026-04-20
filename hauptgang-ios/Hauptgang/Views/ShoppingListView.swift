@@ -3,6 +3,7 @@ import SwiftUI
 struct ShoppingListView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
+    @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let viewModel: ShoppingListViewModel
@@ -13,7 +14,7 @@ struct ShoppingListView: View {
         NavigationStack {
             self.screenContent
         }
-        .offlineToast(isOffline: self.viewModel.isOffline)
+        .offlineToast(isOffline: self.networkMonitor.isOffline)
     }
 
     private var screenContent: some View {
@@ -25,6 +26,7 @@ struct ShoppingListView: View {
             }
         }
         .refreshable {
+            await self.networkMonitor.refreshStatus()
             await self.viewModel.refresh()
         }
         .background(Color.hauptgangBackground.ignoresSafeArea())
@@ -358,6 +360,7 @@ private struct RemoveAllButtonStyle: ButtonStyle {
     return ShoppingListView(viewModel: ShoppingListViewModel())
         .environmentObject(authManager)
         .environment(CookbookViewModel())
+        .environment(NetworkMonitor.shared)
         .modelContainer(for: PersistedShoppingListItem.self, inMemory: true)
         .onAppear {
             authManager.signIn(user: User(id: 1, email: "test@example.com"))

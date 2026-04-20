@@ -9,7 +9,6 @@ import SwiftUI
 final class RecipeViewModel {
     private(set) var recipes: [PersistedRecipe] = []
     private(set) var isLoading = false
-    private(set) var isOffline = false
     private(set) var isImporting = false
     private(set) var searchResults: [PersistedRecipe] = []
     private(set) var pendingDeletionIDs: Set<Int> = []
@@ -113,16 +112,13 @@ extension RecipeViewModel {
 
     /// Fetch fresh recipes from API and update local cache.
     ///
-    /// Cancels any in-flight refresh so the latest caller always wins. This avoids a race where
-    /// a slow/failing background refresh (e.g. from scenePhase) blocks a user-initiated
-    /// pull-to-refresh, leaving the offline toast stuck.
+    /// Cancels any in-flight refresh so the latest caller always wins.
     func refreshRecipes() async {
         self.refreshTask?.cancel()
         self.refreshTask = nil
 
         self.logger.info("Starting recipe refresh")
         self.isLoading = true
-        self.isOffline = false
 
         let task = Task { @MainActor in
             await self.performRefresh()
@@ -186,17 +182,8 @@ extension RecipeViewModel {
     private func handleRefreshError(_ error: Error) {
         self.logger.error("Recipe refresh failed: \(error.localizedDescription)")
 
-        guard let apiError = error as? APIError else {
-            return
-        }
-
-        switch apiError {
-        case .networkError:
-            self.isOffline = true
-        case .forbidden:
+        if let apiError = error as? APIError, case .forbidden = apiError {
             self.didReceiveForbidden = true
-        default:
-            break
         }
     }
 
@@ -338,7 +325,6 @@ extension RecipeViewModel {
         self.recipes = []
         self.searchResults = []
         self.isLoading = false
-        self.isOffline = false
     }
 
     /// Stop polling for pending imports

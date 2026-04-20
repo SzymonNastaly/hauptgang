@@ -3,6 +3,7 @@ import SwiftUI
 struct MealPlanView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
+    @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel = MealPlanViewModel()
     @State private var pickerDate: String?
@@ -11,7 +12,7 @@ struct MealPlanView: View {
         NavigationStack {
             self.screenContent
         }
-        .offlineToast(isOffline: self.viewModel.isOffline)
+        .offlineToast(isOffline: self.networkMonitor.isOffline)
     }
 
     private var screenContent: some View {
@@ -21,7 +22,6 @@ struct MealPlanView: View {
                     dateString: self.viewModel.todayDateString,
                     day: self.viewModel.todayDay,
                     entries: self.viewModel.todayEntries,
-                    isOffline: self.viewModel.isOffline,
                     isSelecting: self.viewModel.isSelecting,
                     onAddTapped: { self.pickerDate = self.viewModel.todayDateString },
                     onDeleteEntry: { self.deleteEntry($0) },
@@ -34,7 +34,6 @@ struct MealPlanView: View {
                     dateString: self.viewModel.tomorrowDateString,
                     day: self.viewModel.tomorrowDay,
                     entries: self.viewModel.tomorrowEntries,
-                    isOffline: self.viewModel.isOffline,
                     isSelecting: self.viewModel.isSelecting,
                     onAddTapped: { self.pickerDate = self.viewModel.tomorrowDateString },
                     onDeleteEntry: { self.deleteEntry($0) },
@@ -64,6 +63,7 @@ struct MealPlanView: View {
             }
         }
         .refreshable {
+            await self.networkMonitor.refreshStatus()
             if let cookbookId = self.cookbookViewModel.activeCookbook?.id {
                 await self.viewModel.refresh(cookbookId: cookbookId)
             }
@@ -164,6 +164,7 @@ extension String: @retroactive Identifiable {
     return MealPlanView()
         .environmentObject(authManager)
         .environment(CookbookViewModel())
+        .environment(NetworkMonitor.shared)
         .modelContainer(
             for: [PersistedRecipe.self, PersistedMealPlanDay.self, PersistedMealPlanEntry.self],
             inMemory: true

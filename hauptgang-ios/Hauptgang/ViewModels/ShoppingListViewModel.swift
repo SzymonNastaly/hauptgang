@@ -7,7 +7,6 @@ import SwiftUI
 final class ShoppingListViewModel {
     private(set) var items: [PersistedShoppingListItem] = []
     private(set) var isSyncing = false
-    private(set) var isOffline = false
     var didReceiveForbidden = false
     var uncheckedItems: [PersistedShoppingListItem] {
         self.items.filter { !$0.isChecked }
@@ -38,7 +37,6 @@ final class ShoppingListViewModel {
         guard !self.isSyncing else { return }
 
         self.isSyncing = true
-        self.isOffline = false
 
         await self.syncPendingChanges()
 
@@ -49,15 +47,8 @@ final class ShoppingListViewModel {
             self.loadCachedItems()
         } catch {
             self.logger.error("Failed to refresh shopping list: \(error.localizedDescription)")
-            if let apiError = error as? APIError {
-                switch apiError {
-                case .networkError:
-                    self.isOffline = true
-                case .forbidden:
-                    self.didReceiveForbidden = true
-                default:
-                    break
-                }
+            if let apiError = error as? APIError, case .forbidden = apiError {
+                self.didReceiveForbidden = true
             }
         }
 
@@ -154,7 +145,6 @@ final class ShoppingListViewModel {
     func resetForCookbookSwitch() {
         self.items = []
         self.isSyncing = false
-        self.isOffline = false
     }
 
     func removeAllItems() async {
@@ -162,9 +152,6 @@ final class ShoppingListViewModel {
             try await self.service.deleteAllItems()
         } catch {
             self.logger.error("Failed to delete all items from server: \(error.localizedDescription)")
-            if let apiError = error as? APIError, case .networkError = apiError {
-                self.isOffline = true
-            }
             return
         }
 
@@ -221,9 +208,6 @@ final class ShoppingListViewModel {
             }
         } catch {
             self.logger.error("Failed to sync pending changes: \(error.localizedDescription)")
-            if let apiError = error as? APIError, case .networkError = apiError {
-                self.isOffline = true
-            }
         }
     }
 

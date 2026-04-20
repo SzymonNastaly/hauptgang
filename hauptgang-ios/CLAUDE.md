@@ -18,18 +18,7 @@ bin/ios-release --external  # Same + distribute to external testers & submit for
 xcodegen generate    # Regenerate Xcode project after adding/removing files
 ```
 
-### Manual xcodebuild (if needed)
-
-```bash
-# List available simulators to find a UUID
-xcrun simctl list devices available | grep iPhone
-
-# Build/test using a specific simulator ID
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
-  -destination 'platform=iOS Simulator,id=SIMULATOR_ID' build
-xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
-  -destination 'platform=iOS Simulator,id=SIMULATOR_ID' test
-```
+- If using XcodeBuildMCP, use the installed XcodeBuildMCP skill before calling XcodeBuildMCP tools.
 
 ## XcodeGen Rules
 
@@ -88,7 +77,7 @@ The iOS app consumes the Rails JSON API at `/api/v1/`. When working on iOS featu
 
 - Unit tests go in `HauptgangTests/`
 - Test ViewModels by mocking Services
-- Run tests: `xcodebuild test` or Cmd+U in Xcode
+- Run tests with `bin/ios-test`
 
 ## Task Management
 

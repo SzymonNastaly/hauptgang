@@ -85,9 +85,9 @@ struct ShoppingListView: View {
 
     private var gridColumns: [GridItem] {
         if horizontalSizeClass == .compact {
-            return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.md), count: 3)
+            return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3)
         } else {
-            return [GridItem(.adaptive(minimum: 130, maximum: 180), spacing: Theme.Spacing.md)]
+            return [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: Theme.Spacing.sm)]
         }
     }
 
@@ -118,12 +118,13 @@ struct ShoppingListView: View {
 
     private var uncheckedSection: some View {
         Section {
-            LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.md) {
+            LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
                 ForEach(self.viewModel.uncheckedItems, id: \.scopedClientId) { item in
                     self.itemTile(item)
                         .transition(.scale(scale: 0.5).combined(with: .opacity))
                 }
             }
+            .animation(.snappy(duration: 0.25), value: self.viewModel.uncheckedItems.map(\.scopedClientId))
         } header: {
             HStack {
                 Text("To Buy")
@@ -141,12 +142,13 @@ struct ShoppingListView: View {
     private var checkedSection: some View {
         Section {
             if self.checkedSectionExpanded {
-                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.md) {
+                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
                     ForEach(self.viewModel.checkedItems, id: \.scopedClientId) { item in
                         self.itemTile(item)
                             .transition(.scale(scale: 0.5).combined(with: .opacity))
                     }
                 }
+                .animation(.snappy(duration: 0.25), value: self.viewModel.checkedItems.map(\.scopedClientId))
             }
         } header: {
             Button {
@@ -174,6 +176,7 @@ struct ShoppingListView: View {
         let isChecked = item.isChecked
 
         return Button {
+            HapticManager.shared.lightTap()
             self.viewModel.toggleItem(item)
         } label: {
             Text(item.name)

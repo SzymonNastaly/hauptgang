@@ -49,7 +49,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
         return items.sorted { lhs, rhs in
             switch (lhs.checkedAt, rhs.checkedAt) {
             case (nil, nil):
-                lhs.createdAt > rhs.createdAt
+                lhs.createdAt < rhs.createdAt
             case (nil, _):
                 true
             case (_, nil):

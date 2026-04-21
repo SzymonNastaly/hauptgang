@@ -209,7 +209,10 @@ module Api
           prep_time: recipe.prep_time,
           cook_time: recipe.cook_time,
           favorite: recipe.favorite,
-          cover_image_url: cover_image_url(recipe, :thumbnail),
+          # TODO: Remove legacy cover_image_url once older iOS builds have migrated
+          # to the structured cover_images payload.
+          cover_image_url: recipe.cover_image_variant_url(:card),
+          cover_images: recipe.cover_image_urls,
           import_status: recipe.import_status,
           error_message: recipe.error_message,
           updated_at: recipe.updated_at
@@ -229,7 +232,10 @@ module Api
           notes: recipe.notes,
           source_url: recipe.source_url,
           tags: recipe.tags.map { |tag| { id: tag.id, name: tag.name } },
-          cover_image_url: cover_image_url(recipe, :display),
+          # TODO: Remove legacy cover_image_url once older iOS builds have migrated
+          # to the structured cover_images payload.
+          cover_image_url: recipe.cover_image_variant_url(:hero),
+          cover_images: recipe.cover_image_urls,
           created_at: recipe.created_at,
           updated_at: recipe.updated_at
         }
@@ -248,14 +254,6 @@ module Api
         end
 
         permitted
-      end
-
-      def cover_image_url(recipe, variant)
-        return nil unless recipe.cover_image.attached?
-        Rails.application.routes.url_helpers.rails_blob_path(
-          recipe.cover_image.variant(variant),
-          only_path: true
-        )
       end
 
       def normalize_limit(raw_limit)

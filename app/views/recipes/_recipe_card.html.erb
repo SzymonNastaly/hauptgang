@@ -4,7 +4,7 @@
 
   <% if recipe.cover_image.attached? %>
     <%# Full-bleed background image %>
-    <%= image_tag recipe.cover_image.variant(:thumbnail),
+    <%= image_tag recipe.cover_image.variant(:card),
         alt: recipe.name,
         class: "absolute inset-0 w-full h-full object-cover",
         loading: "lazy" %>

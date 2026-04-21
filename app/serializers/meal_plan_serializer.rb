@@ -30,7 +30,10 @@ class MealPlanSerializer
     {
       id: recipe.id,
       name: recipe.name,
-      cover_image_url: recipe.cover_image.attached? ? Rails.application.routes.url_helpers.rails_blob_path(recipe.cover_image.variant(:thumbnail), only_path: true) : nil
+      # TODO: Remove legacy cover_image_url once older iOS builds have migrated
+      # to the structured cover_images payload.
+      cover_image_url: recipe.cover_image_variant_url(:thumb),
+      cover_images: recipe.cover_image_urls
     }
   end
 

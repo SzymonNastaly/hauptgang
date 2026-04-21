@@ -29,6 +29,7 @@ struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     var recipeViewModel: RecipeViewModel
@@ -248,11 +249,13 @@ struct RecipesView: View {
 
     private var recipeListView: some View {
         ScrollView {
-            LazyVStack(spacing: Theme.Spacing.md) {
+            LazyVGrid(columns: self.recipeColumns, spacing: Theme.Spacing.md) {
                 ForEach(self.recipeViewModel.successfulRecipes) { recipe in
                     self.recipeRow(recipe)
                 }
             }
+            .frame(maxWidth: self.recipeGridMaxWidth)
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.sm)
         }
@@ -273,6 +276,18 @@ struct RecipesView: View {
         .overlay(alignment: .bottom) {
             self.failedRecipeBanners
         }
+    }
+
+    private var recipeColumns: [GridItem] {
+        if self.horizontalSizeClass == .compact {
+            return [GridItem(.flexible(), spacing: Theme.Spacing.md)]
+        }
+
+        return [GridItem(.adaptive(minimum: 280, maximum: 360), spacing: Theme.Spacing.md)]
+    }
+
+    private var recipeGridMaxWidth: CGFloat {
+        self.horizontalSizeClass == .compact ? .infinity : 1100
     }
 
     private func recipeRow(_ recipe: PersistedRecipe) -> some View {

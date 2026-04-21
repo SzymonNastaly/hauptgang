@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RecipeDetailContentView: View {
+    @Environment(\.displayScale) private var displayScale
+
     let recipe: RecipeDetail
     let heroImageHeight: CGFloat
     let isIOS26: Bool
@@ -8,7 +10,7 @@ struct RecipeDetailContentView: View {
     let onToggleCookingMode: () -> Void
 
     private var hasHeroImage: Bool {
-        self.recipe.coverImageUrl != nil
+        self.recipe.heroCoverImageUrl != nil
     }
 
     var body: some View {
@@ -67,23 +69,28 @@ struct RecipeDetailContentView: View {
 
     @ViewBuilder
     private var heroImage: some View {
-        if let url = Constants.API.resolveURL(self.recipe.coverImageUrl) {
+        if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
             Color.clear
                 .frame(height: self.heroImageHeight)
                 .frame(maxWidth: .infinity)
                 .background {
-                    CachedRecipeImage(url: url) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Color.gray.opacity(0.2)
-                            .overlay {
-                                ProgressView()
-                                    .tint(.hauptgangTextMuted)
-                            }
-                    } failure: {
-                        Color.hauptgangSurfaceRaised
+                    GeometryReader { proxy in
+                        CachedRecipeImage(
+                            url: url,
+                            maxPixelSize: max(proxy.size.width, proxy.size.height) * self.displayScale
+                        ) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        } placeholder: {
+                            Color.gray.opacity(0.2)
+                                .overlay {
+                                    ProgressView()
+                                        .tint(.hauptgangTextMuted)
+                                }
+                        } failure: {
+                            Color.hauptgangSurfaceRaised
+                        }
                     }
                 }
                 .clipped()

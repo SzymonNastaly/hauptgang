@@ -9,6 +9,7 @@ struct RecipeEditView: View {
     var onSave: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
     @Environment(\.modelContext) private var modelContext
     @State private var viewModel: RecipeEditViewModel
 
@@ -77,7 +78,7 @@ struct RecipeEditView: View {
     }
 
     private var photoPickerLabel: String {
-        self.recipe.coverImageUrl != nil || self.viewModel.hasCoverImageChange
+        self.recipe.heroCoverImageUrl != nil || self.viewModel.hasCoverImageChange
             ? "Change Photo" : "Add Photo"
     }
 
@@ -94,8 +95,8 @@ struct RecipeEditView: View {
                         .frame(maxWidth: .infinity)
                         .clipped()
                         .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.md))
-                } else if let url = Constants.API.resolveURL(self.recipe.coverImageUrl) {
-                    CachedRecipeImage(url: url) { image in
+                } else if let url = Constants.API.resolveURL(self.recipe.heroCoverImageUrl) {
+                    CachedRecipeImage(url: url, maxPixelSize: 180 * self.displayScale) { image in
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)

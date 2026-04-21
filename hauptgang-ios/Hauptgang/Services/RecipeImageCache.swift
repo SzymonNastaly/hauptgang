@@ -1,5 +1,7 @@
+import CoreGraphics
 import CryptoKit
 import Foundation
+import ImageIO
 import UIKit
 
 actor RecipeImageCache {
@@ -18,6 +20,7 @@ actor RecipeImageCache {
     private let memoryCache = NSCache<NSString, UIImage>()
 
     private var inFlightRequests: [String: Task<UIImage, Error>] = [:]
+    private var inFlightDownloads: [String: Task<Data, Error>] = [:]
 
     init(
         session: URLSession = .shared,
@@ -39,49 +42,73 @@ actor RecipeImageCache {
         self.memoryCache.countLimit = memoryCountLimit
     }
 
-    func image(for url: URL) async throws -> UIImage {
-        let key = url.absoluteString
-        let keyObject = key as NSString
+    func image(for url: URL, maxPixelSize: CGFloat? = nil) async throws -> UIImage {
+        let memoryKey = self.memoryCacheKey(for: url, maxPixelSize: maxPixelSize)
+        let keyObject = memoryKey as NSString
 
-        if let cached = memoryCache.object(forKey: keyObject) {
+        if let cached = self.memoryCache.object(forKey: keyObject) {
             return cached
         }
 
-        if let inFlight = inFlightRequests[key] {
+        if let inFlight = self.inFlightRequests[memoryKey] {
             return try await inFlight.value
         }
 
         let task = Task<UIImage, Error> {
-            try await self.loadImage(for: url, key: key, keyObject: keyObject)
+            try await self.loadImage(for: url, memoryKey: memoryKey, keyObject: keyObject, maxPixelSize: maxPixelSize)
         }
-        self.inFlightRequests[key] = task
-        defer { inFlightRequests[key] = nil }
+        self.inFlightRequests[memoryKey] = task
+        defer { self.inFlightRequests[memoryKey] = nil }
 
         return try await task.value
     }
 
-    private func loadImage(for url: URL, key: String, keyObject: NSString) async throws -> UIImage {
-        if let diskImage = try readDiskImageIfFresh(for: key) {
-            self.memoryCache.setObject(diskImage, forKey: keyObject)
-            return diskImage
+    private func loadImage(
+        for url: URL,
+        memoryKey: String,
+        keyObject: NSString,
+        maxPixelSize: CGFloat?
+    ) async throws -> UIImage {
+        let diskKey = url.absoluteString
+
+        if let data = try self.readDiskDataIfFresh(for: diskKey) {
+            do {
+                let image = try self.decodeImage(from: data, maxPixelSize: maxPixelSize)
+                self.memoryCache.setObject(image, forKey: keyObject, cost: data.count)
+                return image
+            } catch {
+                try? self.fileManager.removeItem(at: self.fileURLForKey(diskKey))
+            }
         }
 
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
-            throw CacheError.badResponse
-        }
-        guard let image = UIImage(data: data) else {
-            throw CacheError.invalidImageData
-        }
-
-        try self.writeToDisk(data: data, key: key)
+        let data = try await self.downloadData(for: url, diskKey: diskKey)
+        let image = try self.decodeImage(from: data, maxPixelSize: maxPixelSize)
         self.memoryCache.setObject(image, forKey: keyObject, cost: data.count)
-        try self.evictDiskIfNeeded()
 
         return image
     }
 
-    private func readDiskImageIfFresh(for key: String) throws -> UIImage? {
+    private func downloadData(for url: URL, diskKey: String) async throws -> Data {
+        if let inFlight = self.inFlightDownloads[diskKey] {
+            return try await inFlight.value
+        }
+
+        let task = Task<Data, Error> {
+            let (data, response) = try await self.session.data(from: url)
+            guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+                throw CacheError.badResponse
+            }
+            try self.writeToDisk(data: data, key: diskKey)
+            try self.evictDiskIfNeeded()
+            return data
+        }
+        self.inFlightDownloads[diskKey] = task
+        defer { self.inFlightDownloads[diskKey] = nil }
+
+        return try await task.value
+    }
+
+    private func readDiskDataIfFresh(for key: String) throws -> Data? {
         try self.ensureCacheDirectoryExists()
 
         let fileURL = self.fileURLForKey(key)
@@ -89,7 +116,7 @@ actor RecipeImageCache {
             return nil
         }
 
-        let attributes = try fileManager.attributesOfItem(atPath: fileURL.path)
+        let attributes = try self.fileManager.attributesOfItem(atPath: fileURL.path)
         let modifiedAt = attributes[.modificationDate] as? Date ?? .distantPast
         if Date().timeIntervalSince(modifiedAt) > self.maxAge {
             try? self.fileManager.removeItem(at: fileURL)
@@ -97,14 +124,36 @@ actor RecipeImageCache {
         }
 
         let data = try Data(contentsOf: fileURL)
-        guard let image = UIImage(data: data) else {
-            try? self.fileManager.removeItem(at: fileURL)
-            return nil
-        }
 
         // Touch the file on successful read so LRU eviction uses recent accesses.
         try? self.fileManager.setAttributes([.modificationDate: Date()], ofItemAtPath: fileURL.path)
-        return image
+        return data
+    }
+
+    private func decodeImage(from data: Data, maxPixelSize: CGFloat?) throws -> UIImage {
+        guard let maxPixelSize, maxPixelSize > 0 else {
+            guard let image = UIImage(data: data) else {
+                throw CacheError.invalidImageData
+            }
+            return image
+        }
+
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            throw CacheError.invalidImageData
+        }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: Int(ceil(maxPixelSize))
+        ]
+
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+            throw CacheError.invalidImageData
+        }
+
+        return UIImage(cgImage: cgImage)
     }
 
     private func writeToDisk(data: Data, key: String) throws {
@@ -114,7 +163,7 @@ actor RecipeImageCache {
     }
 
     private func evictDiskIfNeeded() throws {
-        let files = try fileManager.contentsOfDirectory(
+        let files = try self.fileManager.contentsOfDirectory(
             at: self.cacheDirectory,
             includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey],
             options: [.skipsHiddenFiles]
@@ -137,7 +186,7 @@ actor RecipeImageCache {
 
         let sorted = entries.sorted { $0.modifiedAt < $1.modifiedAt }
         for entry in sorted where totalSize > self.maxDiskSizeBytes {
-            try? fileManager.removeItem(at: entry.url)
+            try? self.fileManager.removeItem(at: entry.url)
             totalSize -= entry.size
         }
     }
@@ -146,6 +195,14 @@ actor RecipeImageCache {
         if !self.fileManager.fileExists(atPath: self.cacheDirectory.path) {
             try self.fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
         }
+    }
+
+    private func memoryCacheKey(for url: URL, maxPixelSize: CGFloat?) -> String {
+        guard let maxPixelSize, maxPixelSize > 0 else {
+            return url.absoluteString
+        }
+
+        return "\(url.absoluteString)#\(Int(ceil(maxPixelSize)))"
     }
 
     private func fileURLForKey(_ key: String) -> URL {

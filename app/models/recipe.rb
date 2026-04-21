@@ -10,12 +10,26 @@ class Recipe < ApplicationRecord
   has_many :shopping_list_items, foreign_key: :source_recipe_id, dependent: :nullify
   has_many :meal_plan_entries, dependent: :restrict_with_error
 
+  COVER_IMAGE_VARIANTS = {
+    thumb: :thumb,
+    card: :card,
+    hero: :hero
+  }.freeze
+
   # File attachments
   has_one_attached :cover_image, dependent: :purge_later do |attachable|
-    # Thumbnail for recipe cards/lists (400px wide, optimized for mobile)
-    attachable.variant :thumbnail, resize_to_limit: [ 400, 300 ], format: :webp, saver: { quality: 80 }
-    # Display size for recipe detail page (800px wide)
-    attachable.variant :display, resize_to_limit: [ 800, 600 ], format: :webp, saver: { quality: 85 }
+    # Small thumbnails for compact list rows and meal plan pickers.
+    attachable.variant :thumb, resize_to_limit: [ 320, 320 ], format: :webp, saver: { quality: 78 }
+    # Medium-large artwork for recipe list cards on modern iPhones and iPads.
+    attachable.variant :card, resize_to_limit: [ 1280, 960 ], format: :webp, saver: { quality: 82 }
+    # Larger artwork for recipe detail hero images.
+    attachable.variant :hero, resize_to_limit: [ 1800, 1350 ], format: :webp, saver: { quality: 85 }
+
+    # Legacy aliases kept for compatibility with older callers.
+    # TODO: Remove :thumbnail/:display once older iOS builds that still rely on the
+    # legacy cover_image_url API contract are no longer supported.
+    attachable.variant :thumbnail, resize_to_limit: [ 320, 320 ], format: :webp, saver: { quality: 78 }
+    attachable.variant :display, resize_to_limit: [ 1800, 1350 ], format: :webp, saver: { quality: 85 }
   end
   has_one_attached :import_image, dependent: :purge_later
 
@@ -34,6 +48,23 @@ class Recipe < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[id name source_url]
+  end
+
+  def cover_image_variant_url(variant)
+    return nil unless cover_image.attached?
+
+    Rails.application.routes.url_helpers.rails_blob_path(
+      cover_image.variant(variant),
+      only_path: true
+    )
+  end
+
+  def cover_image_urls
+    return nil unless cover_image.attached?
+
+    COVER_IMAGE_VARIANTS.transform_values do |variant|
+      cover_image_variant_url(variant)
+    end
   end
 
   private

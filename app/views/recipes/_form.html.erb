@@ -56,7 +56,7 @@
 
         <div data-recipe-form-target="imagePreview" class="absolute inset-0">
           <% if recipe.cover_image.attached? %>
-            <%= image_tag recipe.cover_image.variant(:display),
+            <%= image_tag recipe.cover_image.variant(:hero),
                 alt: "Cover preview",
                 class: "w-full h-full object-cover" %>
             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-medium">

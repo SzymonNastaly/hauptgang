@@ -5,6 +5,7 @@ struct MealPlanDayCard: View {
     /// Matches thumbnail + row padding + list row insets so the embedded list does not clip or scroll internally.
     private static let entryRowHeight: CGFloat = 84
 
+    @Environment(\.displayScale) private var displayScale
     @Environment(NetworkMonitor.self) private var networkMonitor
 
     let dateString: String
@@ -188,7 +189,7 @@ struct MealPlanDayCard: View {
     private func recipeImage(_ entry: PersistedMealPlanEntry) -> some View {
         Group {
             if let url = Constants.API.resolveURL(entry.recipeCoverImageUrl) {
-                CachedRecipeImage(url: url) { image in
+                CachedRecipeImage(url: url, maxPixelSize: Self.recipeThumbnailSize * self.displayScale) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Color.hauptgangSurfaceRaised

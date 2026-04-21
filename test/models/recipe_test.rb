@@ -155,7 +155,20 @@ class RecipeTest < ActiveSupport::TestCase
     assert_nil ActiveStorage::Blob.find_by(id: blob_id)
   end
 
-  test "cover image has thumbnail variant" do
+  test "cover image has semantic variants" do
+    recipe = recipes(:one)
+    recipe.cover_image.attach(
+      io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
+      filename: "test_image.png",
+      content_type: "image/png"
+    )
+
+    assert recipe.cover_image.variant(:thumb).present?
+    assert recipe.cover_image.variant(:card).present?
+    assert recipe.cover_image.variant(:hero).present?
+  end
+
+  test "cover image keeps legacy variant aliases" do
     recipe = recipes(:one)
     recipe.cover_image.attach(
       io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
@@ -164,9 +177,10 @@ class RecipeTest < ActiveSupport::TestCase
     )
 
     assert recipe.cover_image.variant(:thumbnail).present?
+    assert recipe.cover_image.variant(:display).present?
   end
 
-  test "cover image has display variant" do
+  test "cover image urls returns semantic variants" do
     recipe = recipes(:one)
     recipe.cover_image.attach(
       io: File.open(Rails.root.join("test/fixtures/files/test_image.png")),
@@ -174,7 +188,10 @@ class RecipeTest < ActiveSupport::TestCase
       content_type: "image/png"
     )
 
-    assert recipe.cover_image.variant(:display).present?
+    assert_equal %i[thumb card hero], recipe.cover_image_urls.keys
+    assert recipe.cover_image_urls[:thumb].present?
+    assert recipe.cover_image_urls[:card].present?
+    assert recipe.cover_image_urls[:hero].present?
   end
 
   # ===================

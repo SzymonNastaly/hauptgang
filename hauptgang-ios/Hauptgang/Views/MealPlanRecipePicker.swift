@@ -7,6 +7,7 @@ struct MealPlanRecipePicker: View {
     let onRecipePicked: (PersistedRecipe) -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
     @Environment(\.modelContext) private var modelContext
     @State private var searchText = ""
     @State private var recipes: [PersistedRecipe] = []
@@ -78,8 +79,8 @@ struct MealPlanRecipePicker: View {
 
     private func recipeImage(_ recipe: PersistedRecipe) -> some View {
         Group {
-            if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-                CachedRecipeImage(url: url) { image in
+            if let url = Constants.API.resolveURL(recipe.thumbnailCoverImageUrl) {
+                CachedRecipeImage(url: url, maxPixelSize: 48 * self.displayScale) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
                     Color.hauptgangSurfaceRaised

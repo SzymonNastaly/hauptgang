@@ -111,7 +111,7 @@ final class MealPlanRepository: MealPlanRepositoryProtocol {
                 if let existing = try modelContext.fetch(existingDescriptor).first {
                     existing.serverId = apiEntry.id
                     existing.recipeName = apiEntry.recipe.name
-                    existing.recipeCoverImageUrl = apiEntry.recipe.coverImageUrl
+                    existing.recipeCoverImageUrl = apiEntry.recipe.thumbnailCoverImageUrl
                     existing.proposedByEmail = apiEntry.proposedBy?.email
                     existing.voteCount = apiEntry.voteCount
                     existing.votedByCurrentUser = apiEntry.votedByCurrentUser
@@ -123,7 +123,7 @@ final class MealPlanRepository: MealPlanRepositoryProtocol {
                         serverId: apiEntry.id,
                         recipeId: apiEntry.recipe.id,
                         recipeName: apiEntry.recipe.name,
-                        recipeCoverImageUrl: apiEntry.recipe.coverImageUrl,
+                        recipeCoverImageUrl: apiEntry.recipe.thumbnailCoverImageUrl,
                         proposedByEmail: apiEntry.proposedBy?.email,
                         voteCount: apiEntry.voteCount,
                         votedByCurrentUser: apiEntry.votedByCurrentUser,

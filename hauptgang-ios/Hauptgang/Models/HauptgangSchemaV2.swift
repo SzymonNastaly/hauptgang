@@ -2,10 +2,67 @@ import Foundation
 import SwiftData
 
 /// Schema V2 — adds cookbookId to recipes and shopping list items
+/// Frozen so later schema changes do not mutate historical versions.
 enum HauptgangSchemaV2: VersionedSchema {
     static let versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [Hauptgang.PersistedRecipe.self, Hauptgang.PersistedShoppingListItem.self]
+        [PersistedRecipe.self, PersistedShoppingListItem.self]
+    }
+
+    @Model
+    final class PersistedRecipe {
+        @Attribute(.unique) var id: Int
+        var cookbookId: Int
+        var name: String
+        var prepTime: Int?
+        var cookTime: Int?
+        var favorite: Bool
+        var coverImageUrl: String?
+        var importStatus: String?
+        var errorMessage: String?
+        var updatedAt: Date
+        var lastFetchedAt: Date
+        var servings: Int?
+        var notes: String?
+        var sourceUrl: String?
+        var createdAt: Date?
+        var detailLastFetchedAt: Date?
+        var ingredientsJson: String?
+        var instructionsJson: String?
+        var tagsJson: String?
+
+        init() {
+            self.id = 0
+            self.cookbookId = 0
+            self.name = ""
+            self.favorite = false
+            self.updatedAt = Date()
+            self.lastFetchedAt = Date()
+        }
+    }
+
+    @Model
+    final class PersistedShoppingListItem {
+        @Attribute(.unique) var scopedClientId: String
+        var clientId: String
+        var cookbookId: Int
+        var serverId: Int?
+        var name: String
+        var checkedAt: Date?
+        var sourceRecipeId: Int?
+        var createdAt: Date
+        var updatedAt: Date
+        var syncStateRaw: String
+
+        init() {
+            self.scopedClientId = ""
+            self.clientId = ""
+            self.cookbookId = 0
+            self.name = ""
+            self.createdAt = Date()
+            self.updatedAt = Date()
+            self.syncStateRaw = "synced"
+        }
     }
 }

@@ -79,7 +79,7 @@ final class MealPlanViewModel {
                 date: date,
                 recipeId: recipe.id,
                 recipeName: recipe.name,
-                recipeCoverImageUrl: recipe.coverImageUrl
+                recipeCoverImageUrl: recipe.thumbnailCoverImageUrl
             )
             self.loadCachedData()
             Task { await self.syncAddEntry(cookbookId: cookbookId, date: date, recipeId: recipe.id) }

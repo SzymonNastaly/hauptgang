@@ -3,6 +3,7 @@ import UIKit
 
 struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View {
     let url: URL?
+    let maxPixelSize: CGFloat?
     let cache: RecipeImageCache
     @ViewBuilder let content: (Image) -> Content
     @ViewBuilder let placeholder: () -> Placeholder
@@ -12,12 +13,14 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
 
     init(
         url: URL?,
+        maxPixelSize: CGFloat? = nil,
         cache: RecipeImageCache = .shared,
         @ViewBuilder content: @escaping (Image) -> Content,
         @ViewBuilder placeholder: @escaping () -> Placeholder,
         @ViewBuilder failure: @escaping () -> Failure
     ) {
         self.url = url
+        self.maxPixelSize = maxPixelSize
         self.cache = cache
         self.content = content
         self.placeholder = placeholder
@@ -50,7 +53,7 @@ struct CachedRecipeImage<Content: View, Placeholder: View, Failure: View>: View 
         self.phase = .empty
 
         do {
-            let image = try await cache.image(for: url)
+            let image = try await cache.image(for: url, maxPixelSize: self.maxPixelSize)
             if Task.isCancelled {
                 return
             }

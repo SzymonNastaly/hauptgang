@@ -14,7 +14,13 @@ final class PersistedRecipe {
     var prepTime: Int?
     var cookTime: Int?
     var favorite: Bool
+    /// Legacy single-url field kept as a fallback while the store migrates to semantic variants.
+    /// TODO: Remove this field after older app builds and older persisted stores no longer
+    /// depend on the legacy cover_image_url compatibility path.
     var coverImageUrl: String?
+    var coverImageThumbUrl: String?
+    var coverImageCardUrl: String?
+    var coverImageHeroUrl: String?
     var importStatus: String?
     var errorMessage: String?
     var updatedAt: Date
@@ -78,6 +84,18 @@ final class PersistedRecipe {
         self.detailLastFetchedAt != nil
     }
 
+    var thumbnailCoverImageUrl: String? {
+        self.coverImageThumbUrl
+    }
+
+    var cardCoverImageUrl: String? {
+        self.coverImageCardUrl
+    }
+
+    var heroCoverImageUrl: String? {
+        self.coverImageHeroUrl
+    }
+
     // MARK: - Initializers
 
     init(
@@ -88,6 +106,9 @@ final class PersistedRecipe {
         cookTime: Int? = nil,
         favorite: Bool = false,
         coverImageUrl: String? = nil,
+        coverImageThumbUrl: String? = nil,
+        coverImageCardUrl: String? = nil,
+        coverImageHeroUrl: String? = nil,
         importStatus: String? = nil,
         errorMessage: String? = nil,
         updatedAt: Date,
@@ -100,6 +121,9 @@ final class PersistedRecipe {
         self.cookTime = cookTime
         self.favorite = favorite
         self.coverImageUrl = coverImageUrl
+        self.coverImageThumbUrl = coverImageThumbUrl
+        self.coverImageCardUrl = coverImageCardUrl
+        self.coverImageHeroUrl = coverImageHeroUrl
         self.importStatus = importStatus
         self.errorMessage = errorMessage
         self.updatedAt = updatedAt
@@ -116,6 +140,9 @@ final class PersistedRecipe {
             cookTime: listItem.cookTime,
             favorite: listItem.favorite,
             coverImageUrl: listItem.coverImageUrl,
+            coverImageThumbUrl: listItem.thumbnailCoverImageUrl,
+            coverImageCardUrl: listItem.cardCoverImageUrl,
+            coverImageHeroUrl: listItem.heroCoverImageUrl,
             importStatus: listItem.importStatus,
             errorMessage: listItem.errorMessage,
             updatedAt: listItem.updatedAt
@@ -132,6 +159,9 @@ final class PersistedRecipe {
             cookTime: detail.cookTime,
             favorite: detail.favorite,
             coverImageUrl: detail.coverImageUrl,
+            coverImageThumbUrl: detail.thumbnailCoverImageUrl,
+            coverImageCardUrl: detail.cardCoverImageUrl,
+            coverImageHeroUrl: detail.heroCoverImageUrl,
             updatedAt: detail.updatedAt
         )
         self.updateDetails(from: detail)
@@ -149,6 +179,9 @@ final class PersistedRecipe {
         self.cookTime = listItem.cookTime
         self.favorite = listItem.favorite
         self.coverImageUrl = listItem.coverImageUrl
+        self.coverImageThumbUrl = listItem.thumbnailCoverImageUrl
+        self.coverImageCardUrl = listItem.cardCoverImageUrl
+        self.coverImageHeroUrl = listItem.heroCoverImageUrl
         self.importStatus = listItem.importStatus
         self.errorMessage = listItem.errorMessage
         self.updatedAt = listItem.updatedAt
@@ -165,6 +198,9 @@ final class PersistedRecipe {
         self.cookTime = detail.cookTime
         self.favorite = detail.favorite
         self.coverImageUrl = detail.coverImageUrl
+        self.coverImageThumbUrl = detail.thumbnailCoverImageUrl
+        self.coverImageCardUrl = detail.cardCoverImageUrl
+        self.coverImageHeroUrl = detail.heroCoverImageUrl
         self.updatedAt = detail.updatedAt
         self.lastFetchedAt = Date()
         self.updateDetails(from: detail)
@@ -193,7 +229,12 @@ final class PersistedRecipe {
             prepTime: self.prepTime,
             cookTime: self.cookTime,
             favorite: self.favorite,
-            coverImageUrl: self.coverImageUrl,
+            coverImageUrl: self.heroCoverImageUrl,
+            coverImages: RecipeCoverImages(
+                thumb: self.thumbnailCoverImageUrl,
+                card: self.cardCoverImageUrl,
+                hero: self.heroCoverImageUrl
+            ),
             servings: self.servings,
             ingredients: self.ingredients,
             instructions: self.instructions,

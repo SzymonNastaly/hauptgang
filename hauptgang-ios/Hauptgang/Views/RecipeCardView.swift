@@ -3,26 +3,33 @@ import SwiftUI
 /// Card-style recipe display matching web design
 /// Two visual modes: with image (gradient overlay) or without (solid background)
 struct RecipeCardView: View {
+    @Environment(\.displayScale) private var displayScale
+
     let recipe: PersistedRecipe
 
     /// Fixed card height matching web design (224px)
     private let cardHeight: CGFloat = 224
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Background layer
-            if let url = Constants.API.resolveURL(recipe.coverImageUrl) {
-                self.imageBackgroundView(url: url)
-            } else {
-                self.solidBackgroundView
-            }
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                // Background layer
+                if let url = Constants.API.resolveURL(self.recipe.cardCoverImageUrl) {
+                    self.imageBackgroundView(
+                        url: url,
+                        maxPixelSize: max(proxy.size.width, proxy.size.height) * self.displayScale
+                    )
+                } else {
+                    self.solidBackgroundView
+                }
 
-            // Content overlay
-            self.contentView
+                // Content overlay
+                self.contentView
 
-            // Import status overlay
-            if let status = recipe.importStatus {
-                self.importStatusOverlay(status: status)
+                // Import status overlay
+                if let status = self.recipe.importStatus {
+                    self.importStatusOverlay(status: status)
+                }
             }
         }
         .frame(height: self.cardHeight)
@@ -37,12 +44,12 @@ struct RecipeCardView: View {
 
     // MARK: - Background Views
 
-    private func imageBackgroundView(url: URL) -> some View {
+    private func imageBackgroundView(url: URL, maxPixelSize: CGFloat) -> some View {
         // Use Color.clear as sizing anchor - it fills exactly the proposed size (like Shape)
         // AsyncImage in .background doesn't affect layout, .clipped clips overflow
         Color.clear
             .background {
-                CachedRecipeImage(url: url) { image in
+                CachedRecipeImage(url: url, maxPixelSize: maxPixelSize) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -137,7 +144,7 @@ struct RecipeCardView: View {
     // MARK: - Helpers
 
     private var hasImage: Bool {
-        self.recipe.coverImageUrl != nil
+        self.recipe.cardCoverImageUrl != nil
     }
 
     /// Combined prep + cook time

@@ -54,6 +54,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert recipe.key?("cook_time")
     assert recipe.key?("favorite")
     assert recipe.key?("cover_image_url")
+    assert recipe.key?("cover_images")
     assert recipe.key?("updated_at")
   end
 
@@ -142,6 +143,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal recipe.ingredients, json["ingredients"]
     assert_equal recipe.instructions, json["instructions"]
     assert json.key?("tags")
+    assert json.key?("cover_images")
     assert json.key?("created_at")
     assert json.key?("updated_at")
   end
@@ -634,6 +636,10 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert recipe.reload.cover_image.attached?
     json = response.parsed_body
     assert json["cover_image_url"].present?
+    assert_equal %w[card hero thumb], json.fetch("cover_images").keys.sort
+    assert json.dig("cover_images", "card").present?
+    assert json.dig("cover_images", "hero").present?
+    assert json.dig("cover_images", "thumb").present?
   end
 
   test "update replaces existing cover image" do

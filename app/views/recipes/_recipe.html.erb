@@ -2,7 +2,7 @@
   <%# Cover Image %>
   <% if recipe.cover_image.attached? %>
     <div class="mb-6 md:mb-8 rounded-lg overflow-hidden shadow-md">
-      <%= image_tag recipe.cover_image.variant(:display),
+      <%= image_tag recipe.cover_image.variant(:hero),
           alt: recipe.name,
           class: "w-full h-auto object-cover max-h-[400px]",
           loading: "eager" %>

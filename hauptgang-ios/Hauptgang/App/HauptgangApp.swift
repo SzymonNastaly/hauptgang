@@ -19,7 +19,10 @@ struct HauptgangApp: App {
             options.dsn = Constants.Sentry.dsn
             options.environment = Constants.Sentry.environment
             options.tracesSampleRate = 0.1
-            options.profilesSampleRate = 0.1
+            options.configureProfiling = { profiling in
+                profiling.lifecycle = .trace
+                profiling.sessionSampleRate = 0.1
+            }
             options.enableMetricKit = true
             options.enableTimeToFullDisplayTracing = true
 

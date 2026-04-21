@@ -24,14 +24,17 @@ final class MealPlanViewModel {
     private var activeCookbookId: Int?
     private let repository: MealPlanRepositoryProtocol
     private let service: MealPlanServiceProtocol
+    private let networkMonitor: any NetworkStatusProviding
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "MealPlanViewModel")
 
     init(
         repository: MealPlanRepositoryProtocol? = nil,
-        service: MealPlanServiceProtocol = MealPlanService.shared
+        service: MealPlanServiceProtocol = MealPlanService.shared,
+        networkMonitor: any NetworkStatusProviding = NetworkMonitor.shared
     ) {
         self.repository = repository ?? MealPlanRepository()
         self.service = service
+        self.networkMonitor = networkMonitor
     }
 
     func configure(modelContext: ModelContext) {
@@ -117,7 +120,7 @@ final class MealPlanViewModel {
             return
         }
 
-        guard !NetworkMonitor.shared.isOffline else { return }
+        guard !self.networkMonitor.isOffline else { return }
 
         Task {
             do {

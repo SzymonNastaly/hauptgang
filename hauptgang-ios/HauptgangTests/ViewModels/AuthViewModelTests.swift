@@ -26,8 +26,9 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertNil(self.sut.emailError)
     }
 
-    func testEmailValidation_invalidEmail_showsError() {
+    func testEmailValidation_invalidEmail_showsErrorAfterFieldIsDirty() {
         self.sut.email = "foo"
+        self.sut.emailDirty = true
 
         XCTAssertEqual(self.sut.emailError, "Please enter a valid email")
     }
@@ -45,8 +46,9 @@ final class AuthViewModelTests: XCTestCase {
         XCTAssertNil(self.sut.emailError)
     }
 
-    func testEmailValidation_emailMissingDomain_showsError() {
+    func testEmailValidation_emailMissingDomain_showsErrorAfterFieldIsDirty() {
         self.sut.email = "user@"
+        self.sut.emailDirty = true
 
         XCTAssertEqual(self.sut.emailError, "Please enter a valid email")
     }

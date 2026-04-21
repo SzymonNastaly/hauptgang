@@ -3,6 +3,11 @@ import Network
 import Observation
 import os
 
+@MainActor
+protocol NetworkStatusProviding: AnyObject {
+    var isOffline: Bool { get }
+}
+
 protocol NetworkPathMonitoring: AnyObject {
     var currentStatus: NWPath.Status { get }
     var pathUpdateHandler: (@Sendable (NWPath.Status) -> Void)? { get set }
@@ -52,6 +57,7 @@ final class NetworkMonitor {
     private let queue = DispatchQueue(label: "app.hauptgang.network-monitor")
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "NetworkMonitor")
     private let recoveryIntervalNanoseconds: UInt64
+    private let automaticMonitoringEnabled: Bool
     private var probeTask: Task<Void, Never>?
     private var recoveryTask: Task<Void, Never>?
 
@@ -67,26 +73,34 @@ final class NetworkMonitor {
         self.session = URLSession(configuration: configuration)
         self.healthCheckURL = Constants.API.healthCheckURL
         self.recoveryIntervalNanoseconds = 3_000_000_000
+        self.automaticMonitoringEnabled = !Self.shouldDisableAutomaticMonitoring
 
-        self.configurePathMonitor()
+        if self.automaticMonitoringEnabled {
+            self.configurePathMonitor()
+        }
     }
 
     init(
         pathMonitor: any NetworkPathMonitoring,
         session: URLSession,
         healthCheckURL: URL = Constants.API.healthCheckURL,
-        recoveryIntervalNanoseconds: UInt64 = 3_000_000_000
+        recoveryIntervalNanoseconds: UInt64 = 3_000_000_000,
+        automaticMonitoringEnabled: Bool = true
     ) {
         self.pathMonitor = pathMonitor
         self.session = session
         self.healthCheckURL = healthCheckURL
         self.recoveryIntervalNanoseconds = recoveryIntervalNanoseconds
+        self.automaticMonitoringEnabled = automaticMonitoringEnabled
 
-        self.configurePathMonitor()
+        if self.automaticMonitoringEnabled {
+            self.configurePathMonitor()
+        }
     }
 
     /// Recheck backend reachability explicitly, for example during pull-to-refresh.
     func refreshStatus() async {
+        guard self.automaticMonitoringEnabled else { return }
         self.cancelScheduledProbe()
         self.cancelRecoveryPolling()
         await self.runHealthCheck(source: "manual-refresh")
@@ -94,7 +108,19 @@ final class NetworkMonitor {
 
     /// Recheck backend reachability when the app becomes active again.
     func appDidBecomeActive() {
+        guard self.automaticMonitoringEnabled else { return }
         self.scheduleHealthCheck(source: "app-active")
+    }
+
+    func shutdown() {
+        self.cancelScheduledProbe()
+        self.cancelRecoveryPolling()
+        self.pathMonitor.cancel()
+    }
+
+    private static var shouldDisableAutomaticMonitoring: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil || environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
     }
 
     private func configurePathMonitor() {
@@ -204,3 +230,5 @@ final class NetworkMonitor {
         self.cancelRecoveryPolling()
     }
 }
+
+extension NetworkMonitor: NetworkStatusProviding {}

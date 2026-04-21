@@ -35,7 +35,6 @@ final class RecipeDetailViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipe?.id, 42)
         XCTAssertEqual(self.sut.recipe?.name, "Spaghetti Carbonara")
         XCTAssertFalse(self.sut.isLoading)
-        XCTAssertFalse(self.sut.isRefreshing)
         XCTAssertNil(self.sut.errorMessage)
     }
 
@@ -60,12 +59,10 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     func testLoadRecipe_noCache_setsIsLoading() async {
         XCTAssertFalse(self.sut.isLoading)
-        XCTAssertFalse(self.sut.isRefreshing)
 
         await self.sut.loadRecipe(id: 1)
 
         XCTAssertFalse(self.sut.isLoading)
-        XCTAssertFalse(self.sut.isRefreshing)
     }
 
     // MARK: - Cache Tests
@@ -142,16 +139,15 @@ final class RecipeDetailViewModelTests: XCTestCase {
 
     // MARK: - Loading Flag Cleanup Tests
 
-    func testLoadRecipe_alwaysResetsLoadingFlags() async {
+    func testLoadRecipe_alwaysResetsLoadingFlag() async {
         self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
 
         await self.sut.loadRecipe(id: 42)
 
         XCTAssertFalse(self.sut.isLoading)
-        XCTAssertFalse(self.sut.isRefreshing)
     }
 
-    func testLoadRecipe_withCache_alwaysResetsRefreshingFlag() async {
+    func testLoadRecipe_withCache_keepsLoadingFlagReset() async {
         let cachedRecipe = self.createMockPersistedRecipe(id: 42, name: "Cached")
         self.mockRepository.cachedRecipe = cachedRecipe
         self.mockRecipeService.fetchRecipeDetailResult = .failure(MockRecipeError.networkError)
@@ -159,7 +155,6 @@ final class RecipeDetailViewModelTests: XCTestCase {
         await self.sut.loadRecipe(id: 42)
 
         XCTAssertFalse(self.sut.isLoading)
-        XCTAssertFalse(self.sut.isRefreshing)
     }
 
     // MARK: - Helpers

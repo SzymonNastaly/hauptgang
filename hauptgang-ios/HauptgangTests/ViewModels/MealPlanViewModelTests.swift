@@ -61,9 +61,14 @@ struct MealPlanViewModelTests {
 
     private func makeVM(
         repository: MockMealPlanRepository = MockMealPlanRepository(),
-        service: MockMealPlanService = MockMealPlanService()
+        service: MockMealPlanService = MockMealPlanService(),
+        networkMonitor: MockNetworkStatusProvider = MockNetworkStatusProvider()
     ) -> (MealPlanViewModel, MockMealPlanRepository, MockMealPlanService) {
-        let vm = MealPlanViewModel(repository: repository, service: service)
+        let vm = MealPlanViewModel(
+            repository: repository,
+            service: service,
+            networkMonitor: networkMonitor
+        )
         return (vm, repository, service)
     }
 
@@ -118,7 +123,11 @@ struct MealPlanViewModelTests {
         service.addEntryResult = self.makeMealPlanDay(entries: [self.makeEntry()])
         service.fetchResult = []
 
-        let vm = MealPlanViewModel(repository: repo, service: service)
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: MockNetworkStatusProvider()
+        )
         await vm.refresh(cookbookId: self.cookbookId)
 
         #expect(service.addEntryCallCount == 1)
@@ -132,7 +141,11 @@ struct MealPlanViewModelTests {
         let entry = self.makeEntry()
         service.addEntryResult = self.makeMealPlanDay(entries: [entry])
 
-        let vm = MealPlanViewModel(repository: repo, service: service)
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: MockNetworkStatusProvider()
+        )
         let recipe = self.makeTestRecipe()
 
         vm.addEntry(cookbookId: self.cookbookId, date: MealPlanViewModel.dateString(for: Date()), recipe: recipe)
@@ -177,7 +190,11 @@ struct MealPlanViewModelTests {
         service.shouldThrow = true
         service.errorToThrow = APIError.notFound
 
-        let vm = MealPlanViewModel(repository: repo, service: service)
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: MockNetworkStatusProvider()
+        )
         let recipe = self.makeTestRecipe()
         let date = MealPlanViewModel.dateString(for: Date())
 
@@ -289,7 +306,11 @@ struct MealPlanViewModelTests {
 
     @Test func clearData_clearsRepoAndState() {
         let repo = MockMealPlanRepository()
-        let vm = MealPlanViewModel(repository: repo, service: MockMealPlanService())
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: MockMealPlanService(),
+            networkMonitor: MockNetworkStatusProvider()
+        )
 
         vm.clearData()
 
@@ -343,4 +364,9 @@ struct MealPlanViewModelTests {
             lastFetchedAt: Date()
         )
     }
+}
+
+@MainActor
+private final class MockNetworkStatusProvider: NetworkStatusProviding {
+    var isOffline = false
 }

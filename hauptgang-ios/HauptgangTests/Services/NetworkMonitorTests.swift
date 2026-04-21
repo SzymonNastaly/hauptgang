@@ -27,6 +27,7 @@ final class NetworkMonitorTests: XCTestCase {
     }
 
     override func tearDown() async throws {
+        self.sut?.shutdown()
         NetworkMonitorMockURLProtocol.reset()
         self.sut = nil
         self.pathMonitor = nil
@@ -145,6 +146,27 @@ final class NetworkMonitorTests: XCTestCase {
         XCTAssertTrue(self.sut.isOffline)
     }
 
+    func testDisabledAutomaticMonitoring_doesNotStartMonitorOrProbe() async {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [NetworkMonitorMockURLProtocol.self]
+
+        let session = URLSession(configuration: configuration)
+        let pathMonitor = MockPathMonitor(initialStatus: .satisfied)
+        let monitor = NetworkMonitor(
+            pathMonitor: pathMonitor,
+            session: session,
+            healthCheckURL: self.healthCheckURL,
+            recoveryIntervalNanoseconds: self.recoveryIntervalNanoseconds,
+            automaticMonitoringEnabled: false
+        )
+
+        await monitor.refreshStatus()
+        monitor.appDidBecomeActive()
+
+        XCTAssertEqual(pathMonitor.startCallCount, 0)
+        XCTAssertFalse(monitor.isOffline)
+    }
+
     private func waitUntil(
         timeoutNanoseconds: UInt64 = 1_000_000_000,
         condition: @escaping @MainActor () -> Bool
@@ -165,14 +187,20 @@ final class NetworkMonitorTests: XCTestCase {
 private final class MockPathMonitor: NetworkPathMonitoring {
     var currentStatus: NWPath.Status
     var pathUpdateHandler: (@Sendable (NWPath.Status) -> Void)?
+    private(set) var startCallCount = 0
+    private(set) var cancelCallCount = 0
 
     init(initialStatus: NWPath.Status) {
         self.currentStatus = initialStatus
     }
 
-    func start(queue: DispatchQueue) {}
+    func start(queue: DispatchQueue) {
+        self.startCallCount += 1
+    }
 
-    func cancel() {}
+    func cancel() {
+        self.cancelCallCount += 1
+    }
 
     func send(_ status: NWPath.Status) {
         self.currentStatus = status
@@ -197,7 +225,8 @@ private final class NetworkMonitorMockURLProtocol: URLProtocol {
 
     override func startLoading() {
         guard let handler = Self.requestHandler else {
-            fatalError("No handler set for NetworkMonitorMockURLProtocol")
+            self.client?.urlProtocol(self, didFailWithError: URLError(.cancelled))
+            return
         }
 
         do {

@@ -36,6 +36,12 @@
       "ref": "main",
       "sourceType": "github",
       "computedHash": "71e5e4409443aa9ccd845df6536822dde7df1a566aa4ce3ceb00f82f22731960"
+    },
+    "xcodebuildmcp-cli": {
+      "source": "getsentry/XcodeBuildMCP",
+      "ref": "main",
+      "sourceType": "github",
+      "computedHash": "4bdeb5d978bf410d4e99a7b89dda396e49ef457945633174f7f9ad0eff056cfb"
     }
   }
 }

@@ -51,12 +51,9 @@ struct RecipeDetailView: View {
                 }
             }
             if self.viewModel.recipe != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        self.showEditSheet = true
-                    } label: {
-                        Image(systemName: "pencil")
-                    }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    self.addToShoppingListToolbarButton
+                    self.editToolbarButton
                 }
             }
         }
@@ -285,11 +282,7 @@ struct RecipeDetailView: View {
 
     private func ingredientsSection(_ ingredients: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            HStack {
-                self.sectionHeader("Ingredients")
-                Spacer()
-                self.addIngredientsButton(ingredients)
-            }
+            self.sectionHeader("Ingredients")
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 ForEach(Array(ingredients.enumerated()), id: \.offset) { _, ingredient in
@@ -314,62 +307,6 @@ struct RecipeDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private func addIngredientsButton(_ ingredients: [String]) -> some View {
-        if #available(iOS 26, *) {
-            self.addIngredientsButtonGlass(ingredients)
-        } else {
-            self.addIngredientsButtonLegacy(ingredients)
-        }
-    }
-
-    @available(iOS 26, *)
-    @ViewBuilder
-    private func addIngredientsButtonGlass(_ ingredients: [String]) -> some View {
-        let button = Button {
-            self.handleAddIngredients(ingredients)
-        } label: {
-            Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
-                .font(.caption)
-                .fontWeight(.medium)
-        }
-        .controlSize(.small)
-
-        if self.showShoppingListConfirmation {
-            button
-                .buttonStyle(.glassProminent)
-                .tint(Color.hauptgangSuccess)
-        } else {
-            button.buttonStyle(.glass)
-        }
-    }
-
-    private func addIngredientsButtonLegacy(_ ingredients: [String]) -> some View {
-        Button {
-            self.handleAddIngredients(ingredients)
-        } label: {
-            Text(self.showShoppingListConfirmation ? "Added!" : "Add to shopping list")
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(self.showShoppingListConfirmation ? .white : Color.hauptgangTextSecondary)
-                .padding(.horizontal, Theme.Spacing.sm + 4)
-                .padding(.vertical, Theme.Spacing.xs + 2)
-                .background(
-                    Capsule()
-                        .fill(self.showShoppingListConfirmation ? Color.hauptgangSuccess : Color.hauptgangBackground)
-                )
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .strokeBorder(
-                            Color.hauptgangTextMuted.opacity(self.showShoppingListConfirmation ? 0 : 0.4),
-                            lineWidth: 1
-                        )
-                )
-        }
-        .buttonStyle(PressDownButtonStyle())
-    }
-
     private func handleAddIngredients(_ ingredients: [String]) {
         withAnimation(.smooth(duration: 0.4)) {
             self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
@@ -381,6 +318,71 @@ struct RecipeDetailView: View {
                 self.showShoppingListConfirmation = false
             }
         }
+    }
+
+    // MARK: - Toolbar Actions
+
+    @ViewBuilder
+    private var addToShoppingListToolbarButton: some View {
+        if let ingredients = self.viewModel.recipe?.ingredients, !ingredients.isEmpty {
+            if #available(iOS 26, *) {
+                self.addToShoppingListToolbarButtonGlass(ingredients)
+            } else {
+                self.addToShoppingListToolbarButtonLegacy(ingredients)
+            }
+        }
+    }
+
+    @available(iOS 26, *)
+    private func addToShoppingListToolbarButtonGlass(_ ingredients: [String]) -> some View {
+        Button {
+            self.handleAddIngredients(ingredients)
+        } label: {
+            Image(systemName: self.showShoppingListConfirmation ? "checkmark.circle.fill" : "cart.badge.plus")
+        }
+        .tint(self.showShoppingListConfirmation ? Color.hauptgangSuccess : Color.hauptgangPrimary)
+        .accessibilityLabel(self.showShoppingListConfirmation ? "Added to shopping list" : "Add to shopping list")
+        .accessibilityHint("Adds this recipe's ingredients to your shopping list")
+    }
+
+    private func addToShoppingListToolbarButtonLegacy(_ ingredients: [String]) -> some View {
+        Button {
+            self.handleAddIngredients(ingredients)
+        } label: {
+            Image(systemName: self.showShoppingListConfirmation ? "cart.fill" : "cart")
+        }
+        .accessibilityLabel(self.showShoppingListConfirmation ? "Added to shopping list" : "Add to shopping list")
+        .accessibilityHint("Adds this recipe's ingredients to your shopping list")
+        .tint(self.showShoppingListConfirmation ? .hauptgangSuccess : .hauptgangPrimary)
+    }
+
+    @ViewBuilder
+    private var editToolbarButton: some View {
+        if #available(iOS 26, *) {
+            self.editToolbarButtonGlass
+        } else {
+            self.editToolbarButtonLegacy
+        }
+    }
+
+    @available(iOS 26, *)
+    private var editToolbarButtonGlass: some View {
+        Button {
+            self.showEditSheet = true
+        } label: {
+            Image(systemName: "pencil")
+        }
+        .tint(Color.hauptgangPrimary)
+        .accessibilityLabel("Edit recipe")
+    }
+
+    private var editToolbarButtonLegacy: some View {
+        Button {
+            self.showEditSheet = true
+        } label: {
+            Image(systemName: "pencil")
+        }
+        .accessibilityLabel("Edit recipe")
     }
 
     // MARK: - Instructions Section

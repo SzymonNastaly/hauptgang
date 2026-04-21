@@ -1,6 +1,6 @@
 ---
 name: codebase-docs
-description: Consult and maintain codebase documentation in docs/. Use when starting work on a feature area (check for relevant docs first), or after completing work that produced lasting insights about how things work, are structured, or should be approached.
+description: Consult and maintain codebase documentation in docs/ for large, complex, or time-intensive feature work. Use when starting substantial work in a feature area (check for relevant docs first), or after completing such work when it produced lasting insights about how things work, are structured, or should be approached.
 ---
 
 # Codebase Documentation

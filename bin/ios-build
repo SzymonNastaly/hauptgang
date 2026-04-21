@@ -1,0 +1,94 @@
+#!/bin/bash
+set -euo pipefail
+
+cd "$(dirname "$0")/../hauptgang-ios"
+
+SCHEME="Hauptgang"
+ACTION="build"
+RUN_XCODEGEN=1
+SIMULATOR_ID=""
+PROJECT_PATH="$PWD/Hauptgang.xcodeproj"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/ios-build [options]
+
+Compile-check the Hauptgang iOS app with xcodebuildmcp using a concrete simulator id.
+
+Options:
+  --scheme NAME          Xcode scheme to build (default: Hauptgang)
+  --simulator-id UUID    Build against a specific simulator id
+  --run                  Use xcodebuildmcp simulator build-and-run instead of build
+  --skip-xcodegen        Skip xcodegen generate
+  -h, --help             Show this help
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --scheme)
+      SCHEME="$2"
+      shift 2
+      ;;
+    --simulator-id)
+      SIMULATOR_ID="$2"
+      shift 2
+      ;;
+    --run)
+      ACTION="build-and-run"
+      shift
+      ;;
+    --skip-xcodegen)
+      RUN_XCODEGEN=0
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if ! command -v xcodebuildmcp >/dev/null 2>&1; then
+  echo "Error: xcodebuildmcp is not installed or not on PATH." >&2
+  exit 1
+fi
+
+if [[ $RUN_XCODEGEN -eq 1 ]]; then
+  echo "==> Regenerating Xcode project..."
+  xcodegen generate
+fi
+
+SIMULATOR_DETAILS=$(
+  xcrun simctl list devices available --json | ruby -rjson -e '
+    data = JSON.parse(STDIN.read)
+    devices = data.fetch("devices").values.flatten
+    iphone = devices.select { |device| device["isAvailable"] && device["name"].include?("iPhone") }
+
+    preferred =
+      if ARGV[0] && !ARGV[0].empty?
+        iphone.find { |device| device["udid"] == ARGV[0] }
+      else
+        iphone.find { |device| device["state"] == "Booted" } || iphone.first
+      end
+
+    abort "No matching iPhone simulator found." unless preferred
+    puts "#{preferred["udid"]}\t#{preferred["name"]}"
+  ' "$SIMULATOR_ID"
+)
+
+SIMULATOR_ID=${SIMULATOR_DETAILS%%$'\t'*}
+SIMULATOR_NAME=${SIMULATOR_DETAILS#*$'\t'}
+
+echo "    Using simulator: $SIMULATOR_NAME ($SIMULATOR_ID)"
+echo "==> Running xcodebuildmcp simulator $ACTION..."
+
+xcodebuildmcp simulator "$ACTION" \
+  --project-path "$PROJECT_PATH" \
+  --scheme "$SCHEME" \
+  --simulator-id "$SIMULATOR_ID"

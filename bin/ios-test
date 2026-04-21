@@ -19,7 +19,7 @@ echo "==> Regenerating Xcode project..."
 xcodegen generate
 
 echo "==> Running iOS tests..."
-LOG_FILE=$(mktemp /tmp/ios-test.XXXXXX.log)
+LOG_FILE=$(mktemp -t ios-test)
 if xcodebuild -project Hauptgang.xcodeproj -scheme Hauptgang \
   -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
   test 2>&1 | tee "$LOG_FILE" | grep -E "(Test Suite|passed|failed|BUILD|TEST)"; then

@@ -52,7 +52,7 @@ final class NetworkMonitor {
     private(set) var isOffline = false
 
     private let pathMonitor: any NetworkPathMonitoring
-    private let session: URLSession
+    private let sessionFactory: () -> URLSession
     private let healthCheckURL: URL
     private let queue = DispatchQueue(label: "app.hauptgang.network-monitor")
     private let logger = Logger(subsystem: "app.hauptgang.ios", category: "NetworkMonitor")
@@ -62,15 +62,8 @@ final class NetworkMonitor {
     private var recoveryTask: Task<Void, Never>?
 
     private init() {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 5
-        configuration.timeoutIntervalForResource = 5
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        configuration.urlCache = nil
-        configuration.waitsForConnectivity = false
-
         self.pathMonitor = NWPathStatusMonitor()
-        self.session = URLSession(configuration: configuration)
+        self.sessionFactory = { URLSession(configuration: Self.makeHealthCheckSessionConfiguration()) }
         self.healthCheckURL = Constants.API.healthCheckURL
         self.recoveryIntervalNanoseconds = 3_000_000_000
         self.automaticMonitoringEnabled = !Self.shouldDisableAutomaticMonitoring
@@ -88,7 +81,25 @@ final class NetworkMonitor {
         automaticMonitoringEnabled: Bool = true
     ) {
         self.pathMonitor = pathMonitor
-        self.session = session
+        self.sessionFactory = { session }
+        self.healthCheckURL = healthCheckURL
+        self.recoveryIntervalNanoseconds = recoveryIntervalNanoseconds
+        self.automaticMonitoringEnabled = automaticMonitoringEnabled
+
+        if self.automaticMonitoringEnabled {
+            self.configurePathMonitor()
+        }
+    }
+
+    init(
+        pathMonitor: any NetworkPathMonitoring,
+        sessionFactory: @escaping () -> URLSession,
+        healthCheckURL: URL = Constants.API.healthCheckURL,
+        recoveryIntervalNanoseconds: UInt64 = 3_000_000_000,
+        automaticMonitoringEnabled: Bool = true
+    ) {
+        self.pathMonitor = pathMonitor
+        self.sessionFactory = sessionFactory
         self.healthCheckURL = healthCheckURL
         self.recoveryIntervalNanoseconds = recoveryIntervalNanoseconds
         self.automaticMonitoringEnabled = automaticMonitoringEnabled
@@ -121,6 +132,16 @@ final class NetworkMonitor {
     private static var shouldDisableAutomaticMonitoring: Bool {
         let environment = ProcessInfo.processInfo.environment
         return environment["XCTestConfigurationFilePath"] != nil || environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+
+    private static func makeHealthCheckSessionConfiguration() -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 5
+        configuration.timeoutIntervalForResource = 5
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.urlCache = nil
+        configuration.waitsForConnectivity = false
+        return configuration
     }
 
     private func configurePathMonitor() {
@@ -189,8 +210,11 @@ final class NetworkMonitor {
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 5
 
+        let session = self.sessionFactory()
+        defer { session.finishTasksAndInvalidate() }
+
         do {
-            let (_, response) = try await self.session.data(for: request)
+            let (_, response) = try await session.data(for: request)
             guard !Task.isCancelled else { return }
 
             guard let httpResponse = response as? HTTPURLResponse else {

@@ -6,7 +6,7 @@ import XCTest
 final class NetworkMonitorTests: XCTestCase {
     private var sut: NetworkMonitor!
     private var pathMonitor: MockPathMonitor!
-    private var urlSession: URLSession!
+    private var sessionConfiguration: URLSessionConfiguration!
     private let healthCheckURL = URL(string: "https://example.com/up")!
     private let recoveryIntervalNanoseconds: UInt64 = 20_000_000
 
@@ -16,11 +16,11 @@ final class NetworkMonitorTests: XCTestCase {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [NetworkMonitorMockURLProtocol.self]
 
-        self.urlSession = URLSession(configuration: configuration)
+        self.sessionConfiguration = configuration
         self.pathMonitor = MockPathMonitor(initialStatus: .unsatisfied)
         self.sut = NetworkMonitor(
             pathMonitor: self.pathMonitor,
-            session: self.urlSession,
+            sessionFactory: { URLSession(configuration: configuration) },
             healthCheckURL: self.healthCheckURL,
             recoveryIntervalNanoseconds: self.recoveryIntervalNanoseconds
         )
@@ -31,7 +31,7 @@ final class NetworkMonitorTests: XCTestCase {
         NetworkMonitorMockURLProtocol.reset()
         self.sut = nil
         self.pathMonitor = nil
-        self.urlSession = nil
+        self.sessionConfiguration = nil
         try await super.tearDown()
     }
 
@@ -146,6 +146,34 @@ final class NetworkMonitorTests: XCTestCase {
         XCTAssertTrue(self.sut.isOffline)
     }
 
+    func testRefreshStatus_usesFreshSessionForLaterProbeRecovery() async throws {
+        let failingConfiguration = URLSessionConfiguration.ephemeral
+        failingConfiguration.protocolClasses = [AlwaysFailingNetworkMonitorURLProtocol.self]
+        let failingSession = URLSession(configuration: failingConfiguration)
+
+        let succeedingConfiguration = URLSessionConfiguration.ephemeral
+        succeedingConfiguration.protocolClasses = [AlwaysSucceedingNetworkMonitorURLProtocol.self]
+        let succeedingSession = URLSession(configuration: succeedingConfiguration)
+
+        let sessionFactory = MutableSessionFactory(session: failingSession)
+        let pathMonitor = MockPathMonitor(initialStatus: .unsatisfied)
+        let monitor = NetworkMonitor(
+            pathMonitor: pathMonitor,
+            sessionFactory: { sessionFactory.session },
+            healthCheckURL: self.healthCheckURL,
+            recoveryIntervalNanoseconds: self.recoveryIntervalNanoseconds
+        )
+        defer { monitor.shutdown() }
+
+        await monitor.refreshStatus()
+        XCTAssertTrue(monitor.isOffline)
+
+        sessionFactory.session = succeedingSession
+
+        await monitor.refreshStatus()
+        XCTAssertFalse(monitor.isOffline)
+    }
+
     func testDisabledAutomaticMonitoring_doesNotStartMonitorOrProbe() async {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [NetworkMonitorMockURLProtocol.self]
@@ -184,6 +212,14 @@ final class NetworkMonitorTests: XCTestCase {
     }
 }
 
+private final class MutableSessionFactory {
+    var session: URLSession
+
+    init(session: URLSession) {
+        self.session = session
+    }
+}
+
 private final class MockPathMonitor: NetworkPathMonitoring {
     var currentStatus: NWPath.Status
     var pathUpdateHandler: (@Sendable (NWPath.Status) -> Void)?
@@ -206,6 +242,46 @@ private final class MockPathMonitor: NetworkPathMonitoring {
         self.currentStatus = status
         self.pathUpdateHandler?(status)
     }
+}
+
+private final class AlwaysFailingNetworkMonitorURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        self.client?.urlProtocol(self, didFailWithError: URLError(.notConnectedToInternet))
+    }
+
+    override func stopLoading() {}
+}
+
+private final class AlwaysSucceedingNetworkMonitorURLProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        let response = HTTPURLResponse(
+            url: self.request.url!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        self.client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        self.client?.urlProtocol(self, didLoad: Data())
+        self.client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
 }
 
 private final class NetworkMonitorMockURLProtocol: URLProtocol {

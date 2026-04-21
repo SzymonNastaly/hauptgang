@@ -90,9 +90,13 @@ final class RecipeViewModelTests: XCTestCase {
         self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
 
         // Set up repository to return persisted versions after save
-        let persistedRecipes = apiRecipes.map { self.createMockPersistedRecipe(from: $0) }
+        let persistedRecipes = [
+            self.createMockPersistedRecipe(id: 1, name: "Recipe 1", cookbookId: 1),
+            self.createMockPersistedRecipe(id: 2, name: "Recipe 2", cookbookId: 1)
+        ]
         self.mockRepository.allRecipes = persistedRecipes
 
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
         await self.sut.refreshRecipes()
 
         XCTAssertEqual(self.sut.recipes.count, 2)
@@ -102,18 +106,20 @@ final class RecipeViewModelTests: XCTestCase {
     func testRefreshRecipes_networkFailure_preservesLoadingState() async {
         self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
 
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
         await self.sut.refreshRecipes()
 
         XCTAssertFalse(self.sut.isLoading)
     }
 
     func testRefreshRecipes_failure_keepsCachedData() async {
-        let cachedRecipe = self.createMockPersistedRecipe(id: 1, name: "Cached Recipe")
+        let cachedRecipe = self.createMockPersistedRecipe(id: 1, name: "Cached Recipe", cookbookId: 1)
         self.mockRepository.allRecipes = [cachedRecipe]
         self.loadCachedRecipesIntoViewModel()
 
         self.mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
 
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
         await self.sut.refreshRecipes()
 
         XCTAssertEqual(self.sut.recipes.count, 1)
@@ -124,6 +130,7 @@ final class RecipeViewModelTests: XCTestCase {
         let apiRecipes = [RecipeListItem.mock(id: 1, name: "New Recipe")]
         self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
 
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
         await self.sut.refreshRecipes()
 
         XCTAssertEqual(self.mockRepository.savedRecipes.count, 1)
@@ -171,9 +178,44 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipes.first?.cookbookId, 2)
     }
 
+    func testOfflineLaunch_beforeCookbookSelectionIsResolved_keepsCachedRecipesVisible() async {
+        let personalRecipe = self.createMockPersistedRecipe(id: 1, name: "Personal", cookbookId: 1)
+        let sharedRecipe = self.createMockPersistedRecipe(id: 2, name: "Shared", cookbookId: 2)
+        self.mockRepository.allRecipes = [personalRecipe, sharedRecipe]
+
+        self.loadCachedRecipesIntoViewModel()
+        XCTAssertEqual(self.sut.recipes.map(\.id), [1, 2])
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: nil)
+
+        XCTAssertEqual(
+            self.sut.recipes.map(\.id),
+            [1, 2],
+            "When the active cookbook has not loaded yet, cached recipes should stay visible instead of being filtered to an empty placeholder scope."
+        )
+        let configuredCookbookId = await self.mockSearchIndex.configuredCookbookId
+        XCTAssertNil(configuredCookbookId)
+    }
+
+    func testRefreshRecipes_beforeCookbookSelectionIsResolved_skipsNetworkSync() async {
+        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock(id: 1, name: "Server Recipe")])
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: nil)
+        await self.sut.refreshRecipes()
+
+        XCTAssertFalse(
+            self.mockRecipeService.fetchRecipesCalled,
+            "Refreshing before cookbook selection resolves should not fetch and persist into a placeholder cookbook scope."
+        )
+        XCTAssertTrue(self.mockRepository.savedRecipes.isEmpty)
+        XCTAssertFalse(self.sut.isLoading)
+    }
+
     // MARK: - refreshRecipes Cancellation Tests
 
     func testRefreshRecipes_cancelsPreviousRefresh() async {
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
+
         // First refresh will be slow (simulates a hanging network request)
         self.mockRecipeService.fetchRecipesDelay = 500_000_000 // 500ms
         self.mockRecipeService.fetchRecipesResult = .failure(APIError.networkError(URLError(.notConnectedToInternet)))
@@ -187,7 +229,7 @@ final class RecipeViewModelTests: XCTestCase {
         // Second refresh: fast and successful — should cancel the first
         self.mockRecipeService.fetchRecipesDelay = 0
         self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock()])
-        let persistedRecipe = self.createMockPersistedRecipe(id: 1, name: "Test Recipe")
+        let persistedRecipe = self.createMockPersistedRecipe(id: 1, name: "Test Recipe", cookbookId: 1)
         self.mockRepository.allRecipes = [persistedRecipe]
 
         await self.sut.refreshRecipes()

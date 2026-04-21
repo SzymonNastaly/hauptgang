@@ -43,7 +43,7 @@ final class RecipeViewModel {
     private var searchTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
     private var currentUserId: Int?
-    private var currentCookbookId: Int?
+    private(set) var currentCookbookId: Int?
 
     /// Polling configuration
     private let pollingInterval: UInt64 = 3_000_000_000 // 3 seconds in nanoseconds
@@ -68,11 +68,16 @@ final class RecipeViewModel {
         self.loadCachedRecipes()
     }
 
-    /// Configure search indexing for the current user and cookbook
-    func configureSearchIndex(userId: Int, cookbookId: Int = 0) async {
+    /// Configure search indexing for the current user and cookbook.
+    ///
+    /// When cookbook selection has not resolved yet (for example during an offline cold launch),
+    /// keep cached recipes visible and defer cookbook-scoped sync/search setup until we know the scope.
+    func configureSearchIndex(userId: Int, cookbookId: Int? = nil) async {
         self.currentUserId = userId
         self.currentCookbookId = cookbookId
         self.loadCachedRecipes()
+
+        guard let cookbookId else { return }
         await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
     }
 }
@@ -135,6 +140,11 @@ extension RecipeViewModel {
     }
 
     private func performRefresh() async {
+        guard self.currentCookbookId != nil else {
+            self.logger.info("Skipping recipe refresh until cookbook selection is resolved")
+            return
+        }
+
         do {
             try await self.fetchAndPersistRecipes()
             self.logger.info("Recipe refresh completed successfully")
@@ -487,6 +497,7 @@ extension RecipeViewModel {
     private func startDetailSyncIfNeeded() {
         guard self.detailSyncTask == nil else { return }
         guard let userId = self.currentUserId else { return }
+        guard self.currentCookbookId != nil else { return }
 
         let recipeService = self.recipeService
         let repository = self.repository

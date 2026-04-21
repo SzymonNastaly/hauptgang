@@ -28,7 +28,7 @@ The monitor owns a single `isOffline` flag. Views read that flag from the SwiftU
 
 ## Health Check Behavior
 
-The `/up` probe uses a dedicated `URLSession` configured to avoid cached reachability decisions:
+Each `/up` probe builds a fresh ephemeral `URLSession` configured to avoid cached reachability decisions and stale reachability state from a session created while offline:
 
 - `URLSessionConfiguration.ephemeral`
 - `requestCachePolicy = .reloadIgnoringLocalCacheData`

@@ -55,7 +55,7 @@ struct RecipesView: View {
                 logger.info("RecipesView appeared, configuring recipe view model")
                 self.recipeViewModel.configure(modelContext: self.modelContext)
                 if let userId = self.authManager.authState.user?.id {
-                    let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
+                    let cookbookId = await self.resolvedCookbookId()
                     await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
                 }
                 await self.recipeViewModel.refreshRecipes()
@@ -63,7 +63,8 @@ struct RecipesView: View {
             .onChange(of: self.authManager.authState) { _, newValue in
                 self.handleAuthChange(newValue)
             }
-            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, _ in
+            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, newValue in
+                guard newValue != self.recipeViewModel.currentCookbookId else { return }
                 self.handleCookbookSwitch()
             }
             .onChange(of: self.recipeViewModel.didReceiveForbidden) { _, forbidden in
@@ -199,8 +200,10 @@ struct RecipesView: View {
         case .unauthenticated:
             self.recipeViewModel.clearData()
         case let .authenticated(user):
-            let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
-            Task { await self.recipeViewModel.configureSearchIndex(userId: user.id, cookbookId: cookbookId) }
+            Task {
+                let cookbookId = await self.resolvedCookbookId()
+                await self.recipeViewModel.configureSearchIndex(userId: user.id, cookbookId: cookbookId)
+            }
         case .unknown:
             break
         }
@@ -208,12 +211,20 @@ struct RecipesView: View {
 
     private func handleCookbookSwitch() {
         guard let userId = self.authManager.authState.user?.id else { return }
-        let cookbookId = self.cookbookViewModel.activeCookbook?.id ?? 0
         self.recipeViewModel.resetForCookbookSwitch()
         Task {
+            let cookbookId = await self.resolvedCookbookId()
             await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
             await self.recipeViewModel.refreshRecipes()
         }
+    }
+
+    private func resolvedCookbookId() async -> Int? {
+        if let activeCookbookId = self.cookbookViewModel.activeCookbook?.id {
+            return activeCookbookId
+        }
+
+        return await CookbookContext.shared.getActiveCookbookId()
     }
 
     // MARK: - Subviews
@@ -367,6 +378,8 @@ struct RecipesView: View {
 
             Button {
                 Task {
+                    await self.networkMonitor.refreshStatus()
+                    await self.cookbookViewModel.refresh()
                     await self.recipeViewModel.refreshRecipes()
                 }
             } label: {

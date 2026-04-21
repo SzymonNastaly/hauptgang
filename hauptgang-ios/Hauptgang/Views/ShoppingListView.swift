@@ -37,15 +37,6 @@ struct ShoppingListView: View {
                 self.cookbookSwitcherButton(cookbook)
             }
         }
-        .toolbar {
-            if self.viewModel.isSyncing {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .tint(.hauptgangTextSecondary)
-                }
-            }
-        }
         .task {
             self.viewModel.configure(modelContext: self.modelContext)
             await self.viewModel.refresh()

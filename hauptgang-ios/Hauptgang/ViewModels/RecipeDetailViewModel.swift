@@ -7,7 +7,6 @@ import SwiftData
 final class RecipeDetailViewModel {
     private(set) var recipe: RecipeDetail?
     private(set) var isLoading = false
-    private(set) var isRefreshing = false
     private(set) var errorMessage: String?
 
     private let recipeService: RecipeServiceProtocol
@@ -39,11 +38,9 @@ final class RecipeDetailViewModel {
         self.loadCachedRecipe(id: id)
 
         self.isLoading = (self.recipe == nil)
-        self.isRefreshing = (self.recipe != nil)
 
         defer {
             isLoading = false
-            isRefreshing = false
         }
 
         do {

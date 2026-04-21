@@ -53,15 +53,6 @@ struct MealPlanView: View {
                 self.cookbookSwitcherButton(cookbook)
             }
         }
-        .toolbar {
-            if self.viewModel.isSyncing {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .tint(.hauptgangTextSecondary)
-                }
-            }
-        }
         .refreshable {
             await self.networkMonitor.refreshStatus()
             if let cookbookId = self.cookbookViewModel.activeCookbook?.id {

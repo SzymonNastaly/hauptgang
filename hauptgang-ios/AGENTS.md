@@ -10,7 +10,8 @@ Native SwiftUI app for iOS 17+ that communicates with the Rails backend API. Use
 
 ```bash
 # From project root (hauptgang/):
-bin/ios-build        # Compile-check iOS app via xcodebuildmcp on a concrete simulator
+bin/ios-build        # Canonical iOS compile-check: runs xcodegen, builds via xcodebuildmcp, saves tmp/ios-build-*.log, prints warning/error summary
+bin/ios-build --simulator-id UUID  # Same, but force a concrete simulator UDID
 bin/ios-test         # Run all iOS tests (auto-finds simulator)
 bin/ios-release      # Build, export, upload to TestFlight (internal testers)
 bin/ios-release --external  # Same + distribute to external testers & submit for beta review
@@ -23,13 +24,21 @@ xcodegen generate    # Regenerate Xcode project after adding/removing files
 
 ## XcodeBuildMCP Workflow
 
-When an agent needs to verify or build the iOS app with `xcodebuildmcp`, prefer the repo wrapper first:
+When an agent needs a compile check or compiler warnings for the iOS app, use the repo wrapper first:
 
 ```bash
 bin/ios-build
 ```
 
-Use raw `xcodebuildmcp` commands only when you need more control (custom scheme, explicit simulator, launch, logging, UI automation). The equivalent repo-specific flow is:
+`bin/ios-build` is the canonical agent entrypoint. It always:
+
+- runs `xcodegen generate`
+- builds scheme `Hauptgang` via `xcodebuildmcp simulator build`
+- resolves a concrete iPhone simulator UDID automatically unless `--simulator-id` is provided
+- writes the full build log to `tmp/ios-build-*.log`
+- prints a warnings/errors summary at the end
+
+Use raw `xcodebuildmcp` commands only when you need something `bin/ios-build` does not do, such as launching the app, UI automation, log capture, or lower-level project discovery. The equivalent repo-specific flow is:
 
 ```bash
 # 1. Discover the generated project
@@ -39,7 +48,7 @@ xcodebuildmcp simulator discover-projects --workspace-root /Users/szymonnastaly/
 xcodebuildmcp simulator list-schemes --project-path /Users/szymonnastaly/projects/hauptgang/hauptgang-ios/Hauptgang.xcodeproj
 
 # 3. List concrete simulator IDs
-xcodebuildmcp simulator list --output json
+xcodebuildmcp simulator list
 
 # 4. Compile-check on a specific simulator
 xcodebuildmcp simulator build \
@@ -51,9 +60,10 @@ xcodebuildmcp simulator build \
 Notes:
 
 - Use the real app scheme: `Hauptgang`. `list-schemes` also shows package/example schemes that are usually not what you want.
-- Always target a concrete `--simulator-id` from `xcodebuildmcp simulator list --output json`. Do not rely on guessed device names or `OS:latest` behavior.
-- `xcodebuildmcp simulator list` does **not** support ad-hoc flags like `--no-booted`; check `--help` instead of assuming `simctl`-style options.
-- If `bin/ios-test` fails before compilation, use `xcodebuildmcp simulator build` directly to verify Swift/UI changes.
+- Prefer `bin/ios-build` for compile checks and warning sweeps; it already handles XcodeGen, simulator selection, log capture, and summary output.
+- If you need a deterministic destination, pass `bin/ios-build --simulator-id UUID` or use raw `xcodebuildmcp simulator build --simulator-id UUID`.
+- `xcodebuildmcp simulator list` does **not** support ad-hoc `simctl`-style flags; check `--help` instead of assuming them.
+- If `bin/ios-test` fails before compilation, `bin/ios-build` is the quickest repo-level way to verify Swift/UI changes.
 
 ## XcodeGen Rules
 

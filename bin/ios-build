@@ -1,11 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-cd "$(dirname "$0")/../hauptgang-ios"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+IOS_ROOT="$REPO_ROOT/hauptgang-ios"
+
+cd "$IOS_ROOT"
 
 SCHEME="Hauptgang"
-ACTION="build"
-RUN_XCODEGEN=1
 SIMULATOR_ID=""
 PROJECT_PATH="$PWD/Hauptgang.xcodeproj"
 
@@ -13,34 +14,32 @@ usage() {
   cat <<'EOF'
 Usage: bin/ios-build [options]
 
-Compile-check the Hauptgang iOS app with xcodebuildmcp using a concrete simulator id.
+Compile-check the Hauptgang iOS app with xcodebuildmcp using a concrete simulator id,
+capture the full build log, and print a warnings/errors summary.
 
 Options:
-  --scheme NAME          Xcode scheme to build (default: Hauptgang)
   --simulator-id UUID    Build against a specific simulator id
-  --run                  Use xcodebuildmcp simulator build-and-run instead of build
-  --skip-xcodegen        Skip xcodegen generate
   -h, --help             Show this help
 EOF
 }
 
+require_value() {
+  local flag="$1"
+  local value="${2:-}"
+
+  if [[ -z "$value" || "$value" == --* ]]; then
+    echo "Error: Missing value for $flag" >&2
+    usage >&2
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --scheme)
-      SCHEME="$2"
-      shift 2
-      ;;
     --simulator-id)
+      require_value "$1" "${2:-}"
       SIMULATOR_ID="$2"
       shift 2
-      ;;
-    --run)
-      ACTION="build-and-run"
-      shift
-      ;;
-    --skip-xcodegen)
-      RUN_XCODEGEN=0
-      shift
       ;;
     -h|--help)
       usage
@@ -56,39 +55,114 @@ done
 
 if ! command -v xcodebuildmcp >/dev/null 2>&1; then
   echo "Error: xcodebuildmcp is not installed or not on PATH." >&2
+  echo "Install it with: brew install xcodebuildmcp" >&2
   exit 1
 fi
 
-if [[ $RUN_XCODEGEN -eq 1 ]]; then
-  echo "==> Regenerating Xcode project..."
-  xcodegen generate
-fi
+echo "==> Regenerating Xcode project..."
+xcodegen generate
 
-SIMULATOR_DETAILS=$(
-  xcrun simctl list devices available --json | ruby -rjson -e '
-    data = JSON.parse(STDIN.read)
-    devices = data.fetch("devices").values.flatten
-    iphone = devices.select { |device| device["isAvailable"] && device["name"].include?("iPhone") }
+resolve_simulator() {
+  local requested_id="$1"
 
-    preferred =
-      if ARGV[0] && !ARGV[0].empty?
-        iphone.find { |device| device["udid"] == ARGV[0] }
+  xcodebuildmcp --style minimal simulator list | ruby -e '
+    requested_id = ARGV[0]
+    devices = []
+    runtime = nil
+    order = 0
+
+    STDIN.each_line do |line|
+      case line
+      when /^com\.apple\.CoreSimulator\.SimRuntime\.([^:]+):$/
+        runtime = Regexp.last_match(1)
+      when /^- (.+) \(([A-F0-9-]{36})\)$/
+        name = Regexp.last_match(1)
+        udid = Regexp.last_match(2)
+        next unless name.include?("iPhone")
+
+        devices << {
+          name: name,
+          udid: udid,
+          runtime: runtime,
+          version: runtime.to_s.sub(/^iOS-/, "").split("-").map { |part| part.to_i },
+          order: order,
+        }
+        order += 1
+      end
+    end
+
+    abort "No iPhone simulator found in xcodebuildmcp simulator list output." if devices.empty?
+
+    selected =
+      if !requested_id.nil? && !requested_id.empty?
+        devices.find { |device| device[:udid] == requested_id }
       else
-        iphone.find { |device| device["state"] == "Booted" } || iphone.first
+        devices.max_by { |device| [device[:version], -device[:order]] }
       end
 
-    abort "No matching iPhone simulator found." unless preferred
-    puts "#{preferred["udid"]}\t#{preferred["name"]}"
-  ' "$SIMULATOR_ID"
+    abort "No matching iPhone simulator found for id #{requested_id.inspect}." if selected.nil?
+
+    puts [selected[:udid], selected[:name], selected[:runtime]].join("\t")
+  ' "$requested_id"
+}
+
+SIMULATOR_DETAILS=$(resolve_simulator "$SIMULATOR_ID")
+SIMULATOR_ID=${SIMULATOR_DETAILS%%$'\t'*}
+SIMULATOR_REST=${SIMULATOR_DETAILS#*$'\t'}
+SIMULATOR_NAME=${SIMULATOR_REST%%$'\t'*}
+SIMULATOR_RUNTIME=${SIMULATOR_REST#*$'\t'}
+
+LOG_DIR="$REPO_ROOT/tmp"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/ios-build-$(date +%Y%m%d-%H%M%S).log"
+
+BUILD_CMD=(
+  xcodebuildmcp
+  --style minimal
+  simulator
+  build
+  --project-path "$PROJECT_PATH"
+  --scheme "$SCHEME"
+  --simulator-id "$SIMULATOR_ID"
 )
 
-SIMULATOR_ID=${SIMULATOR_DETAILS%%$'\t'*}
-SIMULATOR_NAME=${SIMULATOR_DETAILS#*$'\t'}
+print_diagnostics_summary() {
+  local log_file="$1"
+  local status="$2"
+  local warning_count
+  local error_count
 
-echo "    Using simulator: $SIMULATOR_NAME ($SIMULATOR_ID)"
-echo "==> Running xcodebuildmcp simulator $ACTION..."
+  warning_count=$(grep -c 'warning:' "$log_file" || true)
+  error_count=$(grep -c 'error:' "$log_file" || true)
 
-xcodebuildmcp simulator "$ACTION" \
-  --project-path "$PROJECT_PATH" \
-  --scheme "$SCHEME" \
-  --simulator-id "$SIMULATOR_ID"
+  echo
+  if [[ "$status" -eq 0 ]]; then
+    echo "==> Build succeeded"
+  else
+    echo "==> Build failed"
+  fi
+
+  echo "==> Diagnostics summary: ${warning_count} warning(s), ${error_count} error(s)"
+
+  if [[ "$warning_count" -gt 0 || "$error_count" -gt 0 ]]; then
+    echo "==> warning:/error: lines"
+    grep -nE 'warning:|error:' "$log_file" || true
+  else
+    echo "==> No warning:/error: lines matched in build output"
+  fi
+
+  echo "==> Full log: $log_file"
+}
+
+echo "==> Using simulator: $SIMULATOR_NAME ($SIMULATOR_ID) [$SIMULATOR_RUNTIME]"
+echo "==> Running xcodebuildmcp simulator build..."
+echo "==> Full log: $LOG_FILE"
+
+action_status=0
+set +e
+"${BUILD_CMD[@]}" 2>&1 | tee "$LOG_FILE"
+action_status=${PIPESTATUS[0]}
+set -e
+
+print_diagnostics_summary "$LOG_FILE" "$action_status"
+exit "$action_status"

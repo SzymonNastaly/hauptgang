@@ -32,7 +32,8 @@ struct RecipesView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    var recipeViewModel: RecipeViewModel
+    let recipeViewModel: RecipeViewModel
+    let suppressTransientUI: Bool
 
     @State private var showingCamera = false
     @State private var showingPhotoPicker = false
@@ -47,7 +48,10 @@ struct RecipesView: View {
         NavigationStack(path: self.$navigationPath) {
             self.recipeContent
         }
-        .offlineToast(isOffline: self.networkMonitor.isOffline, showToast: !self.isScrolledDown)
+        .offlineToast(
+            isOffline: self.networkMonitor.isOffline,
+            showToast: self.shouldShowOfflineToast
+        )
     }
 
     private var recipeContent: some View {
@@ -138,8 +142,10 @@ struct RecipesView: View {
 
     private var recipeLayout: some View {
         Group {
-            if self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading {
+            if self.shouldShowEmptyState {
                 self.emptyStateView
+            } else if self.recipeViewModel.recipes.isEmpty {
+                Color.clear
             } else {
                 self.recipeListView
             }
@@ -192,6 +198,14 @@ struct RecipesView: View {
             }
         }
         .photosPicker(isPresented: self.$showingPhotoPicker, selection: self.$selectedPhotoItem, matching: .images)
+    }
+
+    private var shouldShowOfflineToast: Bool {
+        !self.isScrolledDown && !self.suppressTransientUI
+    }
+
+    private var shouldShowEmptyState: Bool {
+        self.recipeViewModel.recipes.isEmpty && !self.recipeViewModel.isLoading && !self.suppressTransientUI
     }
 
     // MARK: - Handlers
@@ -424,7 +438,7 @@ private struct ImportingOverlayBackground: ViewModifier {
 
 #Preview {
     let authManager = AuthManager()
-    return RecipesView(recipeViewModel: RecipeViewModel())
+    return RecipesView(recipeViewModel: RecipeViewModel(), suppressTransientUI: false)
         .environmentObject(authManager)
         .environment(CookbookViewModel())
         .environment(NetworkMonitor.shared)

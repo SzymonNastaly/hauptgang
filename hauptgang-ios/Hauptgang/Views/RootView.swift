@@ -79,23 +79,14 @@ struct SplashView: View {
     var body: some View {
         ZStack {
             Color.hauptgangBackground
-                .ignoresSafeArea()
 
-            VStack(spacing: Theme.Spacing.md) {
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 60))
-                    .foregroundColor(.hauptgangPrimary)
-
-                Text("Hauptgang")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.hauptgangTextPrimary)
-
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .hauptgangPrimary))
-                    .padding(.top, Theme.Spacing.lg)
-            }
+            Image("LaunchLogo")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 96, height: 96)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .ignoresSafeArea()
     }
 }
 

@@ -10,6 +10,7 @@ final class RecipeViewModel {
     private(set) var recipes: [PersistedRecipe] = []
     private(set) var isLoading = false
     private(set) var isImporting = false
+    private(set) var hasResolvedInitialContent = false
     private(set) var searchResults: [PersistedRecipe] = []
     private(set) var pendingDeletionIDs: Set<Int> = []
     var importError: String?
@@ -78,6 +79,9 @@ final class RecipeViewModel {
         self.loadCachedRecipes()
 
         guard let cookbookId else { return }
+        if !self.recipes.isEmpty {
+            self.hasResolvedInitialContent = true
+        }
         await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
     }
 }
@@ -135,6 +139,9 @@ extension RecipeViewModel {
         // Only clear isLoading if this task wasn't superseded
         if self.refreshTask == task {
             self.isLoading = false
+            if self.currentCookbookId != nil {
+                self.hasResolvedInitialContent = true
+            }
             self.refreshTask = nil
         }
     }
@@ -347,6 +354,7 @@ extension RecipeViewModel {
     /// Clear all recipe data (call on logout)
     func clearData() {
         self.logger.info("Clearing recipe data")
+        self.hasResolvedInitialContent = false
         do {
             try self.repository.clearAllRecipes()
             self.recipes = []

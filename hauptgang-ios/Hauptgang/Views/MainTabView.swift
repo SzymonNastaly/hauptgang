@@ -2,10 +2,12 @@ import SwiftUI
 
 /// Main tab view container for authenticated users
 struct MainTabView: View {
+    @Environment(CookbookViewModel.self) private var cookbookViewModel
     @State private var selectedTab: Tab = .recipes
     @State private var shoppingListViewModel = ShoppingListViewModel()
     @State private var recipeViewModel = RecipeViewModel()
     @State private var searchQuery = ""
+    @State private var showsStartupSplash = true
 
     enum Tab: Hashable {
         case recipes
@@ -16,20 +18,37 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        self.tabContent
-            .tint(.hauptgangPrimary)
-            .modifier(TabBarBackgroundModifier())
-            .modifier(TabBarMinimizeModifier())
-            .modifier(TabSearchActivationModifier())
-            .onChange(of: self.searchQuery) { _, newValue in
-                Task { await self.recipeViewModel.search(query: newValue) }
+        ZStack {
+            self.tabContent
+
+            if self.showsStartupSplash {
+                SplashView()
+                    .transition(.opacity)
+                    .zIndex(1)
             }
+        }
+        .tint(.hauptgangPrimary)
+        .modifier(TabBarBackgroundModifier())
+        .modifier(TabBarMinimizeModifier())
+        .modifier(TabSearchActivationModifier())
+        .onChange(of: self.searchQuery) { _, newValue in
+            Task { await self.recipeViewModel.search(query: newValue) }
+        }
+        .onChange(of: self.startupCanDismissSplash, initial: true) { _, canDismiss in
+            guard canDismiss, self.showsStartupSplash else { return }
+            withAnimation(.easeOut(duration: 0.08)) {
+                self.showsStartupSplash = false
+            }
+        }
     }
 
     private var tabContent: some View {
         TabView(selection: self.$selectedTab) {
             SwiftUI.Tab("Recipes", systemImage: "fork.knife", value: Tab.recipes) {
-                RecipesView(recipeViewModel: self.recipeViewModel)
+                RecipesView(
+                    recipeViewModel: self.recipeViewModel,
+                    suppressTransientUI: self.showsStartupSplash
+                )
             }
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
@@ -48,6 +67,14 @@ struct MainTabView: View {
                 RecipeSearchView(recipeViewModel: self.recipeViewModel, searchQuery: self.$searchQuery)
             }
         }
+    }
+
+    private var startupCanDismissSplash: Bool {
+        self.cookbookViewModel.error != nil || (
+            !self.cookbookViewModel.isLoading &&
+            self.cookbookViewModel.activeCookbook != nil &&
+            self.recipeViewModel.hasResolvedInitialContent
+        )
     }
 }
 

@@ -14,7 +14,7 @@ extension Color {
     // MARK: - Backgrounds
 
     /// Off-white background - #FDFBF7
-    static let hauptgangBackground = Color(red: 253 / 255, green: 251 / 255, blue: 247 / 255)
+    static let hauptgangBackground = Color("HauptgangBackground")
 
     /// Card background - #FFFFFF
     static let hauptgangCard = Color.white

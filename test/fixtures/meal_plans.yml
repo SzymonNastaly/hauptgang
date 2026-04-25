@@ -4,11 +4,11 @@ today_plan:
 
 tomorrow_plan:
   cookbook: one_personal
-  date: <%= Date.tomorrow %>
+  date: <%= Date.today + 1 %>
 
 selected_plan:
   cookbook: one_personal
-  date: <%= 3.days.from_now.to_date %>
+  date: <%= Date.today + 3 %>
   selected_entry: selected_entry
   selected_by_user: one
   selected_at: <%= 1.hour.ago %>

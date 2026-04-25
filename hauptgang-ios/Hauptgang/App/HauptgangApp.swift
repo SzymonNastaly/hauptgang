@@ -8,6 +8,7 @@ private let logger = Logger(subsystem: "app.hauptgang.ios", category: "App")
 
 @main
 struct HauptgangApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authManager = AuthManager()
     @StateObject private var subscriptionManager = SubscriptionManager()
 

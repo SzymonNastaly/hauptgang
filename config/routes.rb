@@ -4,6 +4,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
+      resources :device_tokens, only: [ :create, :destroy ], param: :token, constraints: { token: /[^\/]+/ }
       resources :shopping_list_items, only: [ :index, :create, :update, :destroy ] do
         collection do
           delete :destroy_all

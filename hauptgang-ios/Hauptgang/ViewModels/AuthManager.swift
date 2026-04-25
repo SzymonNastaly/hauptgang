@@ -63,6 +63,9 @@ final class AuthManager: ObservableObject {
     /// Sign out and clear credentials
     func signOut() async {
         await CookbookContext.shared.reset()
+        // Drop the device token server-side BEFORE clearing the API token.
+        await PushNotificationService.shared.unregister()
+        await PushNotificationService.shared.setAuthenticated(false)
         await self.authService.logout()
         self.authState = .unauthenticated
     }

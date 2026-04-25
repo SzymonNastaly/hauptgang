@@ -55,7 +55,7 @@ class MealPlanTest < ActiveSupport::TestCase
 
     # today_plan is in one_personal, other_cookbook_plan is in two_personal
     # but other_cookbook_plan also uses Date.today, so use a different date
-    plan.date = Date.tomorrow
+    plan.date = Date.today + 1
 
     assert plan.valid?
   end

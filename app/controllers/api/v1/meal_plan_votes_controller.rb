@@ -8,7 +8,15 @@ module Api
           return render json: { error: "Meal plan has already been finalized" }, status: :unprocessable_entity
         end
 
-        @entry.votes.find_or_create_by!(user: current_user)
+        vote = @entry.votes.find_or_create_by!(user: current_user)
+        if vote.previously_new_record?
+          PendingNotification.record_event!(
+            cookbook: current_cookbook,
+            actor: current_user,
+            category: :meal_plan_activity,
+            event: { kind: "vote", recipe_name: @entry.recipe.name }
+          )
+        end
 
         render json: MealPlanSerializer.new(
           @entry.meal_plan.reload,

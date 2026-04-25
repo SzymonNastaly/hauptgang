@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :api_tokens, dependent: :destroy
+  has_many :device_tokens, dependent: :destroy
   has_many :cookbook_memberships, dependent: :delete_all
   has_many :cookbooks, through: :cookbook_memberships
   has_many :recipes, dependent: :nullify

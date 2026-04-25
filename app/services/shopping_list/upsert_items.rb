@@ -13,6 +13,7 @@ module ShoppingList
 
       created = []
       errors = []
+      newly_added = []
 
       ActiveRecord::Base.transaction do
         @items.each do |item_params|
@@ -33,6 +34,7 @@ module ShoppingList
           item = upsert_item(client_id, name, source_recipe_id, item_params[:checked_at])
           if item.persisted? && item.errors.empty?
             created << item
+            newly_added << item if item.previously_new_record?
           else
             errors << { client_id: client_id, error: item.errors.full_messages.to_sentence }
           end
@@ -46,6 +48,7 @@ module ShoppingList
       if errors.any?
         Result.new(success?: false, items: [], errors: errors)
       else
+        notify_collaborators(newly_added)
         Result.new(success?: true, items: created, errors: [])
       end
     end
@@ -83,6 +86,17 @@ module ShoppingList
       return source_recipe_id if @cookbook.recipes.exists?(id: source_recipe_id)
 
       nil
+    end
+
+    def notify_collaborators(items)
+      return if items.empty?
+
+      PendingNotification.record_events!(
+        cookbook: @cookbook,
+        actor: @user,
+        category: :shopping_list,
+        events: items.map { |item| { name: item.name } }
+      )
     end
 
     def empty_items_error

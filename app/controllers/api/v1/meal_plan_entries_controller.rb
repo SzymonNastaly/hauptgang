@@ -15,6 +15,12 @@ module Api
         if entry.new_record?
           entry.proposed_by_user = current_user
           entry.save!
+          PendingNotification.record_event!(
+            cookbook: current_cookbook,
+            actor: current_user,
+            category: :meal_plan_activity,
+            event: { kind: "entry_added", recipe_name: recipe.name, date: date.iso8601 }
+          )
         end
 
         meal_plan.reload

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_19_120949) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_25_100001) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -83,6 +83,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_19_120949) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "device_tokens", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "environment", default: "production", null: false
+    t.datetime "last_used_at"
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["token"], name: "index_device_tokens_on_token", unique: true
+    t.index ["user_id"], name: "index_device_tokens_on_user_id"
+  end
+
   create_table "meal_plan_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "meal_plan_id", null: false
@@ -117,6 +128,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_19_120949) do
     t.index ["cookbook_id"], name: "index_meal_plans_on_cookbook_id"
     t.index ["selected_by_user_id"], name: "index_meal_plans_on_selected_by_user_id"
     t.index ["selected_entry_id"], name: "index_meal_plans_on_selected_entry_id"
+  end
+
+  create_table "pending_notifications", force: :cascade do |t|
+    t.integer "actor_id", null: false
+    t.string "category", null: false
+    t.integer "cookbook_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "delivery_scheduled_at"
+    t.json "payload", default: [], null: false
+    t.integer "recipient_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_pending_notifications_on_actor_id"
+    t.index ["cookbook_id", "recipient_id", "actor_id", "category"], name: "index_pending_notifications_on_bucket", unique: true
+    t.index ["cookbook_id"], name: "index_pending_notifications_on_cookbook_id"
+    t.index ["recipient_id"], name: "index_pending_notifications_on_recipient_id"
   end
 
   create_table "recipe_tags", force: :cascade do |t|
@@ -202,6 +228,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_19_120949) do
   add_foreign_key "cookbook_invitations", "users", column: "inviter_id", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "users", on_delete: :cascade
+  add_foreign_key "device_tokens", "users", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "meal_plans", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "recipes", on_delete: :restrict
   add_foreign_key "meal_plan_entries", "users", column: "proposed_by_user_id", on_delete: :nullify
@@ -210,6 +237,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_19_120949) do
   add_foreign_key "meal_plans", "cookbooks", on_delete: :cascade
   add_foreign_key "meal_plans", "meal_plan_entries", column: "selected_entry_id", on_delete: :nullify
   add_foreign_key "meal_plans", "users", column: "selected_by_user_id", on_delete: :nullify
+  add_foreign_key "pending_notifications", "cookbooks", on_delete: :cascade
+  add_foreign_key "pending_notifications", "users", column: "actor_id", on_delete: :cascade
+  add_foreign_key "pending_notifications", "users", column: "recipient_id", on_delete: :cascade
   add_foreign_key "recipe_tags", "recipes", on_delete: :cascade
   add_foreign_key "recipe_tags", "tags"
   add_foreign_key "recipes", "cookbooks", on_delete: :cascade

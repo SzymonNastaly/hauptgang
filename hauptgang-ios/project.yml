@@ -34,16 +34,21 @@ targets:
         excludes:
           - "**/.DS_Store"
     settings:
-      PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios
-      INFOPLIST_FILE: Hauptgang/Resources/Info.plist
-      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-      ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-      CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.entitlements
-      CODE_SIGN_STYLE: Automatic
-      DEVELOPMENT_TEAM: R69J54A3P5
-      ENABLE_PREVIEWS: YES
-      GENERATE_INFOPLIST_FILE: NO
-      SWIFT_EMIT_LOC_STRINGS: YES
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.hauptgang.ios
+        INFOPLIST_FILE: Hauptgang/Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: R69J54A3P5
+        ENABLE_PREVIEWS: YES
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_EMIT_LOC_STRINGS: YES
+      configs:
+        Debug:
+          CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.entitlements
+        Release:
+          CODE_SIGN_ENTITLEMENTS: Hauptgang/Hauptgang.Release.entitlements
     dependencies:
       - target: ImportRecipeExtension
         embed: true

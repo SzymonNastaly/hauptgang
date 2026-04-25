@@ -61,6 +61,9 @@ gem "sentry-rails"
 # Tame noisy Rails logs into single-line structured output [https://github.com/roidrage/lograge]
 gem "lograge"
 
+# APNs HTTP/2 client for iOS push notifications [https://github.com/ostinelli/apnotic]
+gem "apnotic"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

@@ -50,22 +50,10 @@ struct MealPlanRecipePicker: View {
                 HStack(spacing: Theme.Spacing.md) {
                     self.recipeImage(recipe)
 
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        Text(recipe.name)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Color.hauptgangTextPrimary)
-                            .lineLimit(2)
-
-                        if let totalTime = self.totalTime(recipe) {
-                            HStack(spacing: Theme.Spacing.xs) {
-                                Image(systemName: "clock")
-                                    .font(.caption2)
-                                Text("\(totalTime)m")
-                                    .font(.caption)
-                            }
-                            .foregroundStyle(Color.hauptgangTextSecondary)
-                        }
-                    }
+                    Text(recipe.name)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.hauptgangTextPrimary)
+                        .lineLimit(2)
                 }
                 .padding(.vertical, Theme.Spacing.xs)
             }
@@ -83,17 +71,12 @@ struct MealPlanRecipePicker: View {
                 CachedRecipeImage(url: url, maxPixelSize: 48 * self.displayScale) { image in
                     image.resizable().aspectRatio(contentMode: .fill)
                 } placeholder: {
-                    Color.hauptgangSurfaceRaised
+                    Color.clear
                 } failure: {
-                    Color.hauptgangSurfaceRaised
+                    Color.clear
                 }
             } else {
-                Color.hauptgangSurfaceRaised
-                    .overlay {
-                        Image(systemName: "fork.knife")
-                            .foregroundStyle(Color.hauptgangTextMuted)
-                            .font(.caption)
-                    }
+                Color.clear
             }
         }
         .frame(width: 48, height: 48)
@@ -114,17 +97,12 @@ struct MealPlanRecipePicker: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func totalTime(_ recipe: PersistedRecipe) -> Int? {
-        let total = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0)
-        return total > 0 ? total : nil
-    }
-
     private func loadRecipes() {
         do {
             let descriptor = FetchDescriptor<PersistedRecipe>()
             self.recipes = try self.modelContext.fetch(descriptor)
                 .filter { $0.cookbookId == self.cookbookId && $0.importStatus != "failed" }
-                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+                .sorted { $0.updatedAt > $1.updatedAt }
         } catch {
             self.recipes = []
         }

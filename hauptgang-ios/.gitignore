@@ -31,3 +31,6 @@ fastlane/test_output
 
 # macOS
 .DS_Store
+
+# sourcekit-lsp build server config (machine-specific paths to DerivedData)
+buildServer.json

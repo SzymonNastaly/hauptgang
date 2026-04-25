@@ -33,9 +33,11 @@ struct ShoppingListView: View {
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Shopping List")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
-            ForEach(self.cookbookViewModel.cookbooks) { cookbook in
-                self.cookbookSwitcherButton(cookbook)
-            }
+            CookbookTitleMenu(
+                cookbooks: self.cookbookViewModel.cookbooks,
+                activeCookbookId: self.cookbookViewModel.activeCookbook?.id,
+                onSelect: self.selectCookbook
+            )
         }
         .task {
             self.viewModel.configure(modelContext: self.modelContext)
@@ -60,20 +62,10 @@ struct ShoppingListView: View {
         }
     }
 
-    private func cookbookSwitcherButton(_ cookbook: Cookbook) -> some View {
-        Button {
-            Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
-        } label: {
-            Label(cookbook.name, systemImage: self.cookbookSymbol(for: cookbook))
+    private func selectCookbook(_ cookbook: Cookbook) {
+        Task {
+            await self.cookbookViewModel.setActiveCookbook(cookbook)
         }
-        .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
-    }
-
-    private func cookbookSymbol(for cookbook: Cookbook) -> String {
-        if cookbook.id == self.cookbookViewModel.activeCookbook?.id {
-            return "checkmark"
-        }
-        return cookbook.personal ? "person.fill" : "person.2.fill"
     }
 
     private var gridColumns: [GridItem] {
@@ -292,10 +284,6 @@ struct ShoppingListView: View {
                 ShoppingAddItemBar(viewModel: self.viewModel, text: self.$addItemText)
 
                 Spacer()
-
-                Image(systemName: "cart")
-                    .font(.system(size: 50))
-                    .foregroundStyle(Color.hauptgangTextMuted)
 
                 Text("Your shopping list is empty")
                     .font(.headline)

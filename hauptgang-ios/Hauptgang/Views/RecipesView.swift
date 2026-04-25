@@ -154,18 +154,11 @@ struct RecipesView: View {
         .navigationTitle(self.cookbookViewModel.activeCookbook?.name ?? "Recipes")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarTitleMenu {
-            ForEach(self.cookbookViewModel.cookbooks) { cookbook in
-                Button {
-                    Task { await self.cookbookViewModel.setActiveCookbook(cookbook) }
-                } label: {
-                    let isActive = cookbook.id == self.cookbookViewModel.activeCookbook?.id
-                    Label(
-                        cookbook.name,
-                        systemImage: isActive ? "checkmark" : (cookbook.personal ? "person.fill" : "person.2.fill")
-                    )
-                }
-                .disabled(cookbook.id == self.cookbookViewModel.activeCookbook?.id)
-            }
+            CookbookTitleMenu(
+                cookbooks: self.cookbookViewModel.cookbooks,
+                activeCookbookId: self.cookbookViewModel.activeCookbook?.id,
+                onSelect: self.selectCookbook
+            )
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -240,6 +233,12 @@ struct RecipesView: View {
         }
 
         return await CookbookContext.shared.getActiveCookbookId()
+    }
+
+    private func selectCookbook(_ cookbook: Cookbook) {
+        Task {
+            await self.cookbookViewModel.setActiveCookbook(cookbook)
+        }
     }
 
     // MARK: - Subviews
@@ -389,10 +388,6 @@ struct RecipesView: View {
     private var emptyStateView: some View {
         VStack(spacing: Theme.Spacing.lg) {
             Spacer()
-
-            Image(systemName: "fork.knife")
-                .font(.system(size: 60))
-                .foregroundColor(.hauptgangTextMuted)
 
             VStack(spacing: Theme.Spacing.sm) {
                 Text("No recipes yet")

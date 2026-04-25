@@ -16,7 +16,6 @@ enum MealPlanRepositoryError: Error, LocalizedError {
 @MainActor
 protocol MealPlanRepositoryProtocol {
     func configure(modelContext: ModelContext)
-    func getDays(cookbookId: Int, dates: [String]) throws -> [PersistedMealPlanDay]
     func getEntries(cookbookId: Int, date: String) throws -> [PersistedMealPlanEntry]
     func saveDays(_ days: [MealPlanDay], cookbookId: Int) throws
     func addLocalEntry(
@@ -39,18 +38,6 @@ final class MealPlanRepository: MealPlanRepositoryProtocol {
     func configure(modelContext: ModelContext) {
         self.modelContext = modelContext
         self.logger.info("MealPlanRepository configured with model context")
-    }
-
-    func getDays(cookbookId: Int, dates: [String]) throws -> [PersistedMealPlanDay] {
-        guard let modelContext else { throw MealPlanRepositoryError.notConfigured }
-
-        let descriptor = FetchDescriptor<PersistedMealPlanDay>(
-            predicate: #Predicate { day in
-                day.cookbookId == cookbookId
-            }
-        )
-        let allDays = try modelContext.fetch(descriptor)
-        return allDays.filter { dates.contains($0.date) }
     }
 
     func getEntries(cookbookId: Int, date: String) throws -> [PersistedMealPlanEntry] {

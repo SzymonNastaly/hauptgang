@@ -5,21 +5,13 @@ import SwiftUI
 
 @MainActor @Observable
 final class MealPlanViewModel {
-    private(set) var todayEntries: [PersistedMealPlanEntry] = []
-    private(set) var tomorrowEntries: [PersistedMealPlanEntry] = []
-    private(set) var todayDay: PersistedMealPlanDay?
-    private(set) var tomorrowDay: PersistedMealPlanDay?
+    private(set) var visibleDates: [String] = []
+    private(set) var entriesByDate: [String: [PersistedMealPlanEntry]] = [:]
     private(set) var isSyncing = false
-    private(set) var isSelecting = false
     var didReceiveForbidden = false
 
-    var todayDateString: String {
-        Self.dateString(for: Date())
-    }
-
-    var tomorrowDateString: String {
-        Self.dateString(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
-    }
+    private let initialPast = 1
+    private let initialFuture = 8
 
     private var activeCookbookId: Int?
     private let repository: MealPlanRepositoryProtocol
@@ -39,7 +31,6 @@ final class MealPlanViewModel {
 
     func configure(modelContext: ModelContext) {
         self.repository.configure(modelContext: modelContext)
-        self.loadCachedData()
     }
 
     // MARK: - Refresh
@@ -49,14 +40,22 @@ final class MealPlanViewModel {
 
         self.activeCookbookId = cookbookId
         self.isSyncing = true
+        defer { self.isSyncing = false }
+
+        guard let window = self.currentVisibleWindow() else { return }
+
+        self.visibleDates = window.dates
+        self.loadCachedData()
+
+        guard !self.networkMonitor.isOffline else { return }
 
         await self.syncPendingEntries(cookbookId: cookbookId)
 
         do {
             let plans = try await service.fetchMealPlans(
                 cookbookId: cookbookId,
-                from: self.todayDateString,
-                to: self.tomorrowDateString
+                from: Self.dateString(for: window.start),
+                to: Self.dateString(for: window.end)
             )
             try self.repository.saveDays(plans, cookbookId: cookbookId)
             self.loadCachedData()
@@ -66,13 +65,13 @@ final class MealPlanViewModel {
                 self.didReceiveForbidden = true
             }
         }
-
-        self.isSyncing = false
     }
 
     // MARK: - Add Entry
 
     func addEntry(cookbookId: Int, date: String, recipe: PersistedRecipe) {
+        guard !self.networkMonitor.isOffline else { return }
+
         do {
             try self.repository.addLocalEntry(
                 cookbookId: cookbookId,
@@ -110,6 +109,8 @@ final class MealPlanViewModel {
     // MARK: - Delete Entry
 
     func deleteEntry(_ entry: PersistedMealPlanEntry, cookbookId: Int) {
+        guard !self.networkMonitor.isOffline else { return }
+
         guard let serverId = entry.serverId else {
             try? self.repository.deletePendingEntry(
                 cookbookId: entry.cookbookId,
@@ -119,8 +120,6 @@ final class MealPlanViewModel {
             self.loadCachedData()
             return
         }
-
-        guard !self.networkMonitor.isOffline else { return }
 
         Task {
             do {
@@ -141,6 +140,7 @@ final class MealPlanViewModel {
     // MARK: - Vote
 
     func toggleVote(entry: PersistedMealPlanEntry, cookbookId: Int) {
+        guard !self.networkMonitor.isOffline else { return }
         guard let serverId = entry.serverId else { return }
 
         let wasVoted = entry.votedByCurrentUser
@@ -164,57 +164,20 @@ final class MealPlanViewModel {
         }
     }
 
-    // MARK: - Select / Deselect
-
-    func selectEntry(_ entry: PersistedMealPlanEntry, cookbookId: Int) {
-        guard let serverId = entry.serverId else { return }
-        self.isSelecting = true
-
-        Task {
-            do {
-                let updatedDay = try await service.select(cookbookId: cookbookId, date: entry.date, entryId: serverId)
-                try self.repository.saveDays([updatedDay], cookbookId: cookbookId)
-                self.loadCachedData()
-            } catch {
-                self.logger.error("Failed to select entry: \(error.localizedDescription)")
-            }
-            self.isSelecting = false
-        }
-    }
-
-    func deselectDay(date: String, cookbookId: Int) {
-        self.isSelecting = true
-
-        Task {
-            do {
-                let updatedDay = try await service.deselect(cookbookId: cookbookId, date: date)
-                try self.repository.saveDays([updatedDay], cookbookId: cookbookId)
-                self.loadCachedData()
-            } catch {
-                self.logger.error("Failed to deselect: \(error.localizedDescription)")
-            }
-            self.isSelecting = false
-        }
-    }
-
     // MARK: - Reset
 
     func resetForCookbookSwitch() {
         self.activeCookbookId = nil
-        self.todayEntries = []
-        self.tomorrowEntries = []
-        self.todayDay = nil
-        self.tomorrowDay = nil
+        self.visibleDates = []
+        self.entriesByDate = [:]
         self.isSyncing = false
     }
 
     func clearData() {
         do {
             try self.repository.clearAll()
-            self.todayEntries = []
-            self.tomorrowEntries = []
-            self.todayDay = nil
-            self.tomorrowDay = nil
+            self.visibleDates = []
+            self.entriesByDate = [:]
         } catch {
             self.logger.error("Failed to clear meal plan data: \(error.localizedDescription)")
         }
@@ -223,25 +186,37 @@ final class MealPlanViewModel {
     // MARK: - Private
 
     private func loadCachedData() {
-        guard let cookbookId = self.activeCookbookId else { return }
+        guard let cookbookId = self.activeCookbookId, !self.visibleDates.isEmpty else { return }
+
+        self.entriesByDate = [:]
 
         do {
-            let dates = [self.todayDateString, self.tomorrowDateString]
-            let days = try self.repository.getDays(cookbookId: cookbookId, dates: dates)
-
-            self.todayDay = days.first { $0.date == self.todayDateString }
-            self.tomorrowDay = days.first { $0.date == self.tomorrowDateString }
-
-            self.todayEntries = try self.repository.getEntries(cookbookId: cookbookId, date: self.todayDateString)
-                .sorted { $0.voteCount > $1.voteCount }
-            self.tomorrowEntries = try self.repository.getEntries(cookbookId: cookbookId, date: self.tomorrowDateString)
-                .sorted { $0.voteCount > $1.voteCount }
+            var newEntries: [String: [PersistedMealPlanEntry]] = [:]
+            for date in self.visibleDates {
+                let entries = try self.repository.getEntries(cookbookId: cookbookId, date: date)
+                newEntries[date] = entries.sorted { $0.voteCount > $1.voteCount }
+            }
+            self.entriesByDate = newEntries
         } catch {
             self.logger.error("Failed to load cached meal plan data: \(error.localizedDescription)")
         }
     }
 
+    private func currentVisibleWindow() -> (start: Date, end: Date, dates: [String])? {
+        let today = Date()
+        let cal = Calendar.current
+        guard
+            let start = cal.date(byAdding: .day, value: -self.initialPast, to: today),
+            let end = cal.date(byAdding: .day, value: self.initialFuture, to: today)
+        else {
+            return nil
+        }
+
+        return (start: start, end: end, dates: Self.datesInRange(from: start, to: end))
+    }
+
     private func syncPendingEntries(cookbookId: Int) async {
+
         do {
             let pending = try repository.getPendingEntries(cookbookId: cookbookId)
             for entry in pending {
@@ -268,11 +243,12 @@ final class MealPlanViewModel {
                     }
                 }
             }
-            self.loadCachedData()
         } catch {
             self.logger.error("Failed to get pending entries: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Date helpers
 
     static func dateString(for date: Date) -> String {
         let formatter = DateFormatter()
@@ -281,19 +257,56 @@ final class MealPlanViewModel {
         return formatter.string(from: date)
     }
 
-    static func displayDate(for dateString: String) -> String {
-        let today = Self.dateString(for: Date())
-        let tomorrow = Self.dateString(for: Calendar.current.date(byAdding: .day, value: 1, to: Date())!)
-
-        if dateString == today { return "Today" }
-        if dateString == tomorrow { return "Tomorrow" }
-
+    static func date(from dateString: String) -> Date? {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        if let date = formatter.date(from: dateString) {
-            formatter.dateStyle = .medium
-            return formatter.string(from: date)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.date(from: dateString)
+    }
+
+    struct DayComponents {
+        let dayNumber: String
+        let weekday: String
+        let month: String
+        let isToday: Bool
+        let isPast: Bool
+    }
+
+    static func dayComponents(for dateString: String) -> DayComponents {
+        guard let date = Self.date(from: dateString) else {
+            return DayComponents(dayNumber: dateString, weekday: "", month: "", isToday: false, isPast: false)
         }
-        return dateString
+        let cal = Calendar.current
+        let isToday = cal.isDateInToday(date)
+        let isPast = cal.startOfDay(for: date) < cal.startOfDay(for: Date())
+
+        let dayF = DateFormatter()
+        dayF.dateFormat = "dd"
+        let weekdayF = DateFormatter()
+        weekdayF.dateFormat = "EEEE"
+        let monthF = DateFormatter()
+        monthF.dateFormat = "MMMM"
+
+        return DayComponents(
+            dayNumber: dayF.string(from: date),
+            weekday: weekdayF.string(from: date),
+            month: monthF.string(from: date),
+            isToday: isToday,
+            isPast: isPast
+        )
+    }
+
+    private static func datesInRange(from start: Date, to end: Date) -> [String] {
+        let cal = Calendar.current
+        let startDay = cal.startOfDay(for: start)
+        let endDay = cal.startOfDay(for: end)
+        var dates: [String] = []
+        var current = startDay
+        while current <= endDay {
+            dates.append(Self.dateString(for: current))
+            guard let next = cal.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+        return dates
     }
 }

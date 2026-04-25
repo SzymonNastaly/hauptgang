@@ -87,6 +87,21 @@ struct MealPlanViewModelTests {
         #expect(vm.isSyncing == false)
     }
 
+    @Test func refresh_limitsVisibleDatesToFixedWindow() async throws {
+        let (vm, _, service) = self.makeVM()
+        service.fetchResult = []
+
+        await vm.refresh(cookbookId: self.cookbookId)
+
+        let calendar = Calendar.current
+        let expectedStart = MealPlanViewModel.dateString(for: try #require(calendar.date(byAdding: .day, value: -2, to: Date())))
+        let expectedEnd = MealPlanViewModel.dateString(for: try #require(calendar.date(byAdding: .day, value: 8, to: Date())))
+
+        #expect(vm.visibleDates.count == 11)
+        #expect(vm.visibleDates.first == expectedStart)
+        #expect(vm.visibleDates.last == expectedEnd)
+    }
+
     @Test func refresh_networkError_resetsSyncing() async {
         let (vm, _, service) = self.makeVM()
         service.shouldThrow = true
@@ -95,6 +110,49 @@ struct MealPlanViewModelTests {
         await vm.refresh(cookbookId: self.cookbookId)
 
         #expect(vm.isSyncing == false)
+    }
+
+    @Test func refresh_offline_loadsCachedMealPlanWithoutFetching() async {
+        let repo = MockMealPlanRepository()
+        let service = MockMealPlanService()
+        let networkMonitor = MockNetworkStatusProvider()
+        networkMonitor.isOffline = true
+
+        let today = MealPlanViewModel.dateString(for: Date())
+        repo.entries[today] = [self.makePersistedEntry(cookbookId: self.cookbookId, date: today, recipeName: "Cached Meal")]
+
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: networkMonitor
+        )
+
+        await vm.refresh(cookbookId: self.cookbookId)
+
+        #expect(service.fetchCallCount == 0)
+        #expect(vm.visibleDates.contains(today))
+        #expect(vm.entriesByDate[today]?.first?.recipeName == "Cached Meal")
+    }
+
+    @Test func refresh_networkError_keepsCachedMealPlanVisible() async {
+        let repo = MockMealPlanRepository()
+        let service = MockMealPlanService()
+        let today = MealPlanViewModel.dateString(for: Date())
+        repo.entries[today] = [self.makePersistedEntry(cookbookId: self.cookbookId, date: today, recipeName: "Cached Meal")]
+        service.shouldThrow = true
+        service.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
+
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: MockNetworkStatusProvider()
+        )
+
+        await vm.refresh(cookbookId: self.cookbookId)
+
+        #expect(service.fetchCallCount == 1)
+        #expect(vm.visibleDates.contains(today))
+        #expect(vm.entriesByDate[today]?.first?.recipeName == "Cached Meal")
     }
 
     @Test func refresh_setsForbiddenOnForbiddenError() async {
@@ -156,6 +214,26 @@ struct MealPlanViewModelTests {
         // Wait for background sync
         try? await Task.sleep(for: .milliseconds(100))
         #expect(service.addEntryCallCount == 1)
+    }
+
+    @Test func addEntry_offline_isReadOnly() async {
+        let repo = MockMealPlanRepository()
+        let service = MockMealPlanService()
+        let networkMonitor = MockNetworkStatusProvider()
+        networkMonitor.isOffline = true
+
+        let vm = MealPlanViewModel(
+            repository: repo,
+            service: service,
+            networkMonitor: networkMonitor
+        )
+        let recipe = self.makeTestRecipe()
+
+        vm.addEntry(cookbookId: self.cookbookId, date: MealPlanViewModel.dateString(for: Date()), recipe: recipe)
+
+        #expect(repo.addedLocalEntries.isEmpty)
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(service.addEntryCallCount == 0)
     }
 
     // MARK: - Delete Entry
@@ -246,48 +324,24 @@ struct MealPlanViewModelTests {
         #expect(service.unvoteCallCount == 0)
     }
 
-    // MARK: - Select / Deselect
-
-    @Test func selectEntry_callsServiceAndSaves() async {
+    @Test func toggleVote_offline_isReadOnly() async {
         let service = MockMealPlanService()
-        let entry = self.makeEntry(id: 5)
-        service.selectResult = self.makeMealPlanDay(entries: [entry], selectedEntryId: 5)
-        let (vm, repo, _) = self.makeVM(service: service)
-        let persistedEntry = self.makePersistedEntry(serverId: 5)
+        let networkMonitor = MockNetworkStatusProvider()
+        networkMonitor.isOffline = true
+        let vm = MealPlanViewModel(
+            repository: MockMealPlanRepository(),
+            service: service,
+            networkMonitor: networkMonitor
+        )
+        let entry = self.makePersistedEntry(serverId: 10, voteCount: 1, votedByCurrentUser: true)
 
-        vm.selectEntry(persistedEntry, cookbookId: self.cookbookId)
-
-        #expect(vm.isSelecting == true)
-
-        try? await Task.sleep(for: .milliseconds(100))
-        #expect(service.selectCallCount == 1)
-        #expect(service.lastSelectedEntryId == 5)
-        #expect(repo.savedDays.count == 1)
-        #expect(vm.isSelecting == false)
-    }
-
-    @Test func selectEntry_ignoresEntryWithoutServerId() async {
-        let (vm, _, service) = self.makeVM()
-        let entry = self.makePersistedEntry(serverId: nil)
-
-        vm.selectEntry(entry, cookbookId: self.cookbookId)
+        vm.toggleVote(entry: entry, cookbookId: self.cookbookId)
 
         try? await Task.sleep(for: .milliseconds(50))
-        #expect(service.selectCallCount == 0)
-    }
-
-    @Test func deselectDay_callsServiceAndSaves() async {
-        let service = MockMealPlanService()
-        service.deselectResult = self.makeMealPlanDay()
-        let (vm, repo, _) = self.makeVM(service: service)
-        let date = MealPlanViewModel.dateString(for: Date())
-
-        vm.deselectDay(date: date, cookbookId: self.cookbookId)
-
-        try? await Task.sleep(for: .milliseconds(100))
-        #expect(service.deselectCallCount == 1)
-        #expect(repo.savedDays.count == 1)
-        #expect(vm.isSelecting == false)
+        #expect(entry.votedByCurrentUser == true)
+        #expect(entry.voteCount == 1)
+        #expect(service.voteCallCount == 0)
+        #expect(service.unvoteCallCount == 0)
     }
 
     // MARK: - Reset
@@ -297,10 +351,8 @@ struct MealPlanViewModelTests {
 
         vm.resetForCookbookSwitch()
 
-        #expect(vm.todayEntries.isEmpty)
-        #expect(vm.tomorrowEntries.isEmpty)
-        #expect(vm.todayDay == nil)
-        #expect(vm.tomorrowDay == nil)
+        #expect(vm.visibleDates.isEmpty)
+        #expect(vm.entriesByDate.isEmpty)
         #expect(vm.isSyncing == false)
     }
 
@@ -314,8 +366,8 @@ struct MealPlanViewModelTests {
 
         vm.clearData()
 
-        #expect(vm.todayEntries.isEmpty)
-        #expect(vm.tomorrowEntries.isEmpty)
+        #expect(vm.visibleDates.isEmpty)
+        #expect(vm.entriesByDate.isEmpty)
     }
 
     // MARK: - Date Helpers
@@ -329,27 +381,6 @@ struct MealPlanViewModelTests {
         let expected = formatter.string(from: today)
 
         #expect(MealPlanViewModel.dateString(for: today) == expected)
-    }
-
-    @Test func displayDate_returnsTodayForToday() {
-        let todayStr = MealPlanViewModel.dateString(for: Date())
-        #expect(MealPlanViewModel.displayDate(for: todayStr) == "Today")
-    }
-
-    @Test func displayDate_returnsTomorrowForTomorrow() throws {
-        let tomorrowStr = try MealPlanViewModel.dateString(for: #require(Calendar.current.date(
-            byAdding: .day,
-            value: 1,
-            to: Date()
-        )))
-        #expect(MealPlanViewModel.displayDate(for: tomorrowStr) == "Tomorrow")
-    }
-
-    @Test func displayDate_returnsFormattedDateForOtherDates() {
-        let result = MealPlanViewModel.displayDate(for: "2025-06-15")
-        #expect(result != "Today")
-        #expect(result != "Tomorrow")
-        #expect(!result.isEmpty)
     }
 
     // MARK: - Helpers

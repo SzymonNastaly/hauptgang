@@ -12,7 +12,7 @@ Relevant files:
 - `hauptgang-ios/Hauptgang/Views/RecipesView.swift`
 - `hauptgang-ios/Hauptgang/Views/ShoppingListView.swift`
 - `hauptgang-ios/Hauptgang/Views/MealPlanView.swift`
-- `hauptgang-ios/Hauptgang/Views/MealPlanDayCard.swift`
+- `hauptgang-ios/Hauptgang/Views/MealPlanDayRow.swift`
 - `hauptgang-ios/HauptgangTests/Services/NetworkMonitorTests.swift`
 
 ## Architecture
@@ -86,7 +86,8 @@ Current consumers:
 - `RecipesView` shows the offline toast and probes before pull-to-refresh.
 - `ShoppingListView` shows the offline toast and probes before pull-to-refresh.
 - `MealPlanView` shows the offline toast and probes before pull-to-refresh.
-- `MealPlanDayCard` disables actions that should not run while offline.
+- `MealPlanViewModel` seeds its fixed visible date window from SwiftData before attempting a network refresh, so cached meal plan content remains visible during offline launches and request failures.
+- `MealPlanDayRow` disables actions that should not run while offline.
 
 `ContentView` also calls `NetworkMonitor.shared.appDidBecomeActive()` when the scene phase returns to `.active`, so the app re-checks reachability after foregrounding.
 
@@ -97,6 +98,7 @@ Offline UI now follows one shared pattern:
 - Read `networkMonitor.isOffline` from the environment.
 - Show the shared `offlineToast(isOffline:)` modifier where appropriate.
 - For user-driven refresh, call `await networkMonitor.refreshStatus()` before the feature's own refresh work.
+- Prefer loading cached content before a network fetch when a screen already persists its data locally. `MealPlanViewModel` uses this pattern so offline mode is read-only instead of blank.
 - Do not add a second `isOffline` flag to a feature view model unless the state is feature-specific rather than app-wide connectivity.
 
 ## Testing

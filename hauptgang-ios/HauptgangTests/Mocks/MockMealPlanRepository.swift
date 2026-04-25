@@ -6,7 +6,6 @@ import SwiftData
 final class MockMealPlanRepository: MealPlanRepositoryProtocol {
     var configuredCalled = false
     var savedDays: [[MealPlanDay]] = []
-    var days: [PersistedMealPlanDay] = []
     var entries: [String: [PersistedMealPlanEntry]] = [:]
     var pendingEntries: [PersistedMealPlanEntry] = []
     var addedLocalEntries: [(cookbookId: Int, date: String, recipeId: Int)] = []
@@ -17,11 +16,6 @@ final class MockMealPlanRepository: MealPlanRepositoryProtocol {
 
     func configure(modelContext _: ModelContext) {
         self.configuredCalled = true
-    }
-
-    func getDays(cookbookId _: Int, dates: [String]) throws -> [PersistedMealPlanDay] {
-        if self.shouldThrowOnGet { throw MockMealPlanRepoError.testError }
-        return self.days.filter { dates.contains($0.date) }
     }
 
     func getEntries(cookbookId _: Int, date: String) throws -> [PersistedMealPlanEntry] {
@@ -55,7 +49,6 @@ final class MockMealPlanRepository: MealPlanRepositoryProtocol {
     }
 
     func clearAll() throws {
-        self.days = []
         self.entries = [:]
         self.pendingEntries = []
     }

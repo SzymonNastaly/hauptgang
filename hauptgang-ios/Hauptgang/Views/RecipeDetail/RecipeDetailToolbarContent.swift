@@ -2,7 +2,6 @@ import SwiftUI
 
 struct RecipeDetailToolbarContent: ToolbarContent {
     let ingredients: [String]
-    let showShoppingListConfirmation: Bool
     let onAddToShoppingList: () -> Void
     let onEdit: () -> Void
 
@@ -18,18 +17,18 @@ struct RecipeDetailToolbarContent: ToolbarContent {
         if !self.ingredients.isEmpty {
             if #available(iOS 26, *) {
                 Button(action: self.onAddToShoppingList) {
-                    Image(systemName: self.showShoppingListConfirmation ? "checkmark.circle.fill" : "cart.badge.plus")
+                    Image(systemName: "cart.badge.plus")
                 }
-                .tint(self.showShoppingListConfirmation ? Color.hauptgangSuccess : Color.hauptgangPrimary)
-                .accessibilityLabel(self.showShoppingListConfirmation ? "Added to shopping list" : "Add to shopping list")
-                .accessibilityHint("Adds this recipe's ingredients to your shopping list")
+                .tint(Color.hauptgangPrimary)
+                .accessibilityLabel("Add to shopping list")
+                .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
             } else {
                 Button(action: self.onAddToShoppingList) {
-                    Image(systemName: self.showShoppingListConfirmation ? "cart.fill" : "cart")
+                    Image(systemName: "cart")
                 }
-                .accessibilityLabel(self.showShoppingListConfirmation ? "Added to shopping list" : "Add to shopping list")
-                .accessibilityHint("Adds this recipe's ingredients to your shopping list")
-                .tint(self.showShoppingListConfirmation ? .hauptgangSuccess : .hauptgangPrimary)
+                .accessibilityLabel("Add to shopping list")
+                .accessibilityHint("Review this recipe's ingredients before adding them to your shopping list")
+                .tint(Color.hauptgangPrimary)
             }
         }
     }

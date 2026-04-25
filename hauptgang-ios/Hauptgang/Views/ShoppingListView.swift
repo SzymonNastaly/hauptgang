@@ -5,10 +5,36 @@ struct ShoppingListView: View {
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     let viewModel: ShoppingListViewModel
+
     @State private var showRemoveAllConfirmation = false
     @State private var addItemText = ""
+    @State private var checkedSectionExpanded = true
+
+    private var displayUncheckedItems: [ShoppingListDisplayItem] {
+        self.viewModel.uncheckedItems.map { item in
+            ShoppingListDisplayItem(
+                id: item.scopedClientId,
+                name: item.name,
+                isChecked: item.isChecked,
+                onTap: { self.viewModel.toggleItem(item) },
+                onDelete: { self.viewModel.deleteItem(item) }
+            )
+        }
+    }
+
+    private var displayCheckedItems: [ShoppingListDisplayItem] {
+        self.viewModel.checkedItems.map { item in
+            ShoppingListDisplayItem(
+                id: item.scopedClientId,
+                name: item.name,
+                isChecked: item.isChecked,
+                onTap: { self.viewModel.toggleItem(item) },
+                onDelete: { self.viewModel.deleteItem(item) }
+            )
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -68,27 +94,17 @@ struct ShoppingListView: View {
         }
     }
 
-    private var gridColumns: [GridItem] {
-        if horizontalSizeClass == .compact {
-            return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3)
-        } else {
-            return [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: Theme.Spacing.sm)]
-        }
-    }
-
     private var gridView: some View {
         ScrollView {
             VStack(spacing: 0) {
                 ShoppingAddItemBar(viewModel: self.viewModel, text: self.$addItemText)
 
-                LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    if !self.viewModel.uncheckedItems.isEmpty {
-                        self.uncheckedSection
-                    }
-
-                    if !self.viewModel.checkedItems.isEmpty {
-                        self.checkedSection
-                    }
+                ShoppingListSectionsContent(
+                    uncheckedItems: self.displayUncheckedItems,
+                    checkedItems: self.displayCheckedItems,
+                    checkedSectionExpanded: self.$checkedSectionExpanded
+                ) {
+                    self.removeAllButton
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.bottom, Theme.Spacing.lg)
@@ -99,114 +115,6 @@ struct ShoppingListView: View {
             }
         }
         .scrollDismissesKeyboard(.immediately)
-    }
-
-    private var uncheckedSection: some View {
-        Section {
-            LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                ForEach(self.viewModel.uncheckedItems, id: \.scopedClientId) { item in
-                    self.itemTile(item)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.5).combined(with: .opacity),
-                            removal: .identity
-                        ))
-                }
-            }
-            .animation(.snappy(duration: 0.25), value: self.viewModel.uncheckedItems.map(\.scopedClientId))
-        } header: {
-            HStack {
-                Text("To Buy")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.hauptgangTextSecondary)
-                    .textCase(.uppercase)
-                Spacer()
-                self.removeAllButton
-            }
-        }
-    }
-
-    @State private var checkedSectionExpanded = true
-
-    private var checkedSection: some View {
-        Section {
-            if self.checkedSectionExpanded {
-                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                    ForEach(self.viewModel.checkedItems, id: \.scopedClientId) { item in
-                        self.itemTile(item)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.5).combined(with: .opacity),
-                                removal: .identity
-                            ))
-                    }
-                }
-                .animation(.snappy(duration: 0.25), value: self.viewModel.checkedItems.map(\.scopedClientId))
-            }
-        } header: {
-            Button {
-                withAnimation(.snappy(duration: 0.25)) {
-                    self.checkedSectionExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: Theme.Spacing.sm) {
-                    Text("Already Got")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.hauptgangTextSecondary)
-                        .textCase(.uppercase)
-
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Color.hauptgangTextMuted)
-                        .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func itemTile(_ item: PersistedShoppingListItem) -> some View {
-        let isChecked = item.isChecked
-
-        return Button {
-            HapticManager.shared.lightTap()
-            self.viewModel.toggleItem(item)
-        } label: {
-            Text(item.name)
-                .font(.subheadline.weight(.medium))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
-                .foregroundStyle(isChecked ? Color.hauptgangTextMuted : .hauptgangTextPrimary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(Theme.Spacing.sm)
-                .aspectRatio(1, contentMode: .fit)
-                .background(
-                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                        .fill(isChecked ? Color.hauptgangSurfaceRaised : .hauptgangCard)
-                        .shadow(
-                            color: Color.black.opacity(isChecked ? 0 : 0.06),
-                            radius: 4,
-                            x: 0,
-                            y: 2
-                        )
-                )
-
-        }
-        .buttonStyle(.plain)
-        .geometryGroup()
-        .contentShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
-        .contextMenu {
-            Button(role: .destructive) {
-                self.viewModel.deleteItem(item)
-            } label: {
-                Label("Delete", systemImage: "trash")
-            }
-        }
-        .accessibilityLabel(item.name)
-        .accessibilityValue(isChecked ? "Bought" : "To buy")
-        .accessibilityHint(isChecked ? "Double-tap to move back to shopping list" : "Double-tap to mark as bought")
-        .accessibilityAction(named: "Delete") {
-            self.viewModel.deleteItem(item)
-        }
     }
 
     @ViewBuilder
@@ -305,7 +213,6 @@ struct ShoppingListView: View {
         }
         .scrollDismissesKeyboard(.immediately)
     }
-
 }
 
 struct ShoppingAddItemBar: View {

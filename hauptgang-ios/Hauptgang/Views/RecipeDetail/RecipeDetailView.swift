@@ -10,7 +10,7 @@ struct RecipeDetailView: View {
 
     @State private var viewModel: RecipeDetailViewModel
     @State private var shoppingListViewModel = ShoppingListViewModel()
-    @State private var showShoppingListConfirmation = false
+    @State private var shoppingListReviewDraft: ShoppingListReviewDraft?
     @State private var isCookingMode = false
     @State private var showEditSheet = false
 
@@ -67,8 +67,7 @@ struct RecipeDetailView: View {
             if let recipe = self.viewModel.recipe {
                 RecipeDetailToolbarContent(
                     ingredients: recipe.ingredients,
-                    showShoppingListConfirmation: self.showShoppingListConfirmation,
-                    onAddToShoppingList: { self.handleAddIngredients(recipe.ingredients) },
+                    onAddToShoppingList: { self.presentShoppingListReview(for: recipe.ingredients) },
                     onEdit: self.showEditRecipe
                 )
             }
@@ -77,6 +76,13 @@ struct RecipeDetailView: View {
             if let recipe = self.viewModel.recipe {
                 RecipeEditView(recipe: recipe, onSave: self.reloadRecipeAfterEdit)
             }
+        }
+        .sheet(item: self.$shoppingListReviewDraft) { draft in
+            ShoppingListReviewSheet(
+                recipeId: draft.recipeId,
+                initialItems: draft.items,
+                shoppingListViewModel: self.shoppingListViewModel
+            )
         }
         .task(id: self.recipeId) {
             await self.loadRecipeTask()
@@ -125,18 +131,17 @@ struct RecipeDetailView: View {
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
-    private func handleAddIngredients(_ ingredients: [String]) {
-        withAnimation(.smooth(duration: 0.4)) {
-            self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
-            self.showShoppingListConfirmation = true
+    private func presentShoppingListReview(for ingredients: [String]) {
+        let draftItems = ingredients
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .map { ShoppingListDraftItem(name: $0) }
+
+        guard !draftItems.isEmpty else {
+            return
         }
 
-        Task {
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            withAnimation(.smooth(duration: 0.4)) {
-                self.showShoppingListConfirmation = false
-            }
-        }
+        self.shoppingListReviewDraft = ShoppingListReviewDraft(recipeId: self.recipeId, items: draftItems)
     }
 }
 

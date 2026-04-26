@@ -18,7 +18,7 @@ module Apns
         notification.sound = aps[:sound] || "default"
         notification.badge = aps[:badge] if aps.key?(:badge)
         notification.topic = credentials.fetch(:bundle_id)
-        custom.each { |k, v| notification.custom_payload[k.to_s] = v }
+        notification.custom_payload = custom.transform_keys(&:to_s) if custom.any?
 
         connection_for(environment).with do |conn|
           response = conn.push(notification)

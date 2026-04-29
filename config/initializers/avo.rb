@@ -2,7 +2,7 @@
 # The values disaplayed here are the default ones. Uncomment and change them to fit your needs.
 Avo.configure do |config|
   ## == Routing ==
-  config.root_path = '/avo'
+  config.root_path = "/avo"
   # used only when you have custom `map` configuration in your config.ru
   # config.prefix_path = "/internal"
 
@@ -113,7 +113,7 @@ Avo.configure do |config|
 
   ## == Customization ==
   config.click_row_to_view_record = true
-  config.app_name = 'Hauptgang'
+  config.app_name = "Hauptgang"
   # config.timezone = 'UTC'
   # config.currency = 'USD'
   # config.hide_layout_when_printing = false

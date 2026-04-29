@@ -6,7 +6,7 @@ struct LoginView: View {
     @FocusState private var focusedField: Field?
 
     private enum Field {
-        case email, password, passwordConfirmation
+        case name, email, password, passwordConfirmation
     }
 
     var body: some View {
@@ -17,6 +17,7 @@ struct LoginView: View {
         .onTapGesture { self.focusedField = nil }
         .onChange(of: self.focusedField) { old, _ in
             switch old {
+            case .name: self.viewModel.nameDirty = true
             case .email: self.viewModel.emailDirty = true
             case .password: self.viewModel.passwordDirty = true
             case .passwordConfirmation: self.viewModel.passwordConfirmationDirty = true
@@ -58,6 +59,7 @@ struct LoginView: View {
 
     private var form: some View {
         VStack(spacing: Theme.Spacing.md) {
+            self.nameField
             self.emailField
             self.passwordField
             self.passwordConfirmationField
@@ -65,6 +67,29 @@ struct LoginView: View {
             self.submitButton
         }
         .id(self.viewModel.isSignUp)
+    }
+
+    @ViewBuilder
+    private var nameField: some View {
+        if self.viewModel.isSignUp {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                TextField("Your first name", text: self.$viewModel.name)
+                    .themeTextField(isError: self.viewModel.nameError != nil)
+                    .textContentType(.name)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .focused(self.$focusedField, equals: .name)
+                    .submitLabel(.next)
+                    .onSubmit { self.focusedField = .email }
+
+                if let error = self.viewModel.nameError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(Color.hauptgangError)
+                }
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
     }
 
     private var emailField: some View {

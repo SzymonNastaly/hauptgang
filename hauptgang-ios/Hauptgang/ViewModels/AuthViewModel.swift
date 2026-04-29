@@ -4,6 +4,7 @@ import SwiftUI
 /// Login/signup form state and validation
 @MainActor
 final class AuthViewModel: ObservableObject {
+    @Published var name = ""
     @Published var email = ""
     @Published var password = ""
     @Published var passwordConfirmation = ""
@@ -13,6 +14,7 @@ final class AuthViewModel: ObservableObject {
         didSet {
             self.errorMessage = nil
             self.passwordConfirmation = ""
+            self.nameDirty = false
             self.emailDirty = false
             self.passwordConfirmationDirty = false
             self.passwordDirty = false
@@ -20,6 +22,7 @@ final class AuthViewModel: ObservableObject {
     }
 
     /// Tracks whether fields have been blurred at least once
+    @Published var nameDirty = false
     @Published var emailDirty = false
     @Published var passwordDirty = false
     @Published var passwordConfirmationDirty = false
@@ -39,12 +42,22 @@ final class AuthViewModel: ObservableObject {
             self.isValidEmail(trimmedEmail)
 
         if self.isSignUp {
+            let trimmedName = self.name.trimmingCharacters(in: .whitespaces)
             return baseValid &&
+                !trimmedName.isEmpty &&
                 self.password.count >= 12 &&
                 self.password == self.passwordConfirmation
         }
 
         return baseValid
+    }
+
+    var nameError: String? {
+        guard self.isSignUp, self.nameDirty else { return nil }
+        if self.name.trimmingCharacters(in: .whitespaces).isEmpty {
+            return "Please enter your name"
+        }
+        return nil
     }
 
     var emailError: String? {
@@ -64,6 +77,7 @@ final class AuthViewModel: ObservableObject {
     }
 
     func markAllDirty() {
+        self.nameDirty = true
         self.emailDirty = true
         self.passwordDirty = true
         self.passwordConfirmationDirty = true
@@ -72,8 +86,8 @@ final class AuthViewModel: ObservableObject {
     // MARK: - Login
 
     func login(authManager: AuthManager) async {
-        await performAuthAction(authManager: authManager) {
-            try await authService.login(
+        await self.performAuthAction(authManager: authManager) {
+            try await self.authService.login(
                 email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
                 password: self.password
             )
@@ -83,8 +97,9 @@ final class AuthViewModel: ObservableObject {
     // MARK: - Signup
 
     func signup(authManager: AuthManager) async {
-        await performAuthAction(authManager: authManager) {
-            try await authService.signup(
+        await self.performAuthAction(authManager: authManager) {
+            try await self.authService.signup(
+                name: self.name.trimmingCharacters(in: .whitespaces),
                 email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
                 password: self.password,
                 passwordConfirmation: self.passwordConfirmation

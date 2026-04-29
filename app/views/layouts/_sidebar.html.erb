@@ -81,7 +81,7 @@
         <%= lucide_icon "user", class: "size-4 text-gray-500 dark:text-gray-400" %>
       </div>
       <div class="flex-1 min-w-0">
-        <div class="font-medium text-gray-900 dark:text-gray-100 truncate">Account</div>
+        <div class="font-medium text-gray-900 dark:text-gray-100 truncate"><%= Current.user&.name.presence || "Account" %></div>
         <div class="text-xs text-gray-500 dark:text-gray-400 truncate"><%= Current.user&.email_address %></div>
       </div>
       <%= lucide_icon "chevron-up", class: "size-3.5 text-gray-400 dark:text-gray-500" %>

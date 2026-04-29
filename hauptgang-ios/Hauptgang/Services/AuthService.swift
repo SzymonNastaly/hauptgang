@@ -36,10 +36,11 @@ final class AuthService: AuthServiceProtocol {
 
     // MARK: - Signup
 
-    func signup(email: String, password: String, passwordConfirmation: String) async throws -> User {
+    func signup(name: String, email: String, password: String, passwordConfirmation: String) async throws -> User {
         let deviceName = await getDeviceName()
 
         let request = SignupRequest(
+            name: name,
             email: email,
             password: password,
             passwordConfirmation: passwordConfirmation,
@@ -55,6 +56,22 @@ final class AuthService: AuthServiceProtocol {
         try await self.keychain.saveToken(response.token, expiresAt: response.expiresAt)
         try await self.keychain.saveUser(response.user)
 
+        return response.user
+    }
+
+    // MARK: - Update Profile
+
+    func updateName(_ name: String) async throws -> User {
+        let request = AccountUpdateRequest(user: AccountUpdateBody(name: name))
+
+        let response: AccountUpdateResponse = try await api.request(
+            endpoint: "account",
+            method: .patch,
+            body: request,
+            authenticated: true
+        )
+
+        try await self.keychain.saveUser(response.user)
         return response.user
     }
 
@@ -111,8 +128,21 @@ private struct LoginRequest: Encodable {
 }
 
 private struct SignupRequest: Encodable {
+    let name: String
     let email: String
     let password: String
     let passwordConfirmation: String
     let deviceName: String
+}
+
+private struct AccountUpdateRequest: Encodable {
+    let user: AccountUpdateBody
+}
+
+private struct AccountUpdateBody: Encodable {
+    let name: String
+}
+
+private struct AccountUpdateResponse: Decodable {
+    let user: User
 }

@@ -10,6 +10,7 @@ module Api
 
       def create
         user = User.new(
+          name: params[:name],
           email_address: params[:email],
           password: params[:password],
           password_confirmation: params[:password_confirmation]
@@ -20,7 +21,7 @@ module Api
           render json: {
             token: raw_token,
             expires_at: token_record.expires_at,
-            user: { id: user.id, email: user.email_address }
+            user: { id: user.id, name: user.name, email: user.email_address }
           }, status: :created
         else
           render json: { errors: user.errors.full_messages }, status: :unprocessable_entity

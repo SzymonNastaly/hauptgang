@@ -41,9 +41,14 @@ class DeliverPendingNotificationJob < ApplicationJob
   private
 
   def build_aps(category:, cookbook:, actor:, events:)
-    title = "#{actor_display_name(actor)} · #{cookbook.name}"
+    title = build_title(actor, cookbook)
     body = build_body(category, events)
     { alert: { title: title, body: body } }
+  end
+
+  def build_title(actor, cookbook)
+    name = actor.name.to_s.strip
+    name.empty? ? %("#{cookbook.name}") : %(#{name} in "#{cookbook.name}")
   end
 
   def build_body(category, events)
@@ -54,17 +59,17 @@ class DeliverPendingNotificationJob < ApplicationJob
     when "meal_plan_activity"
       adds = events.count { |e| e["kind"] == "entry_added" }
       votes = events.count { |e| e["kind"] == "vote" }
-      parts = []
-      parts << "added #{adds} #{'recipe'.pluralize(adds)}" if adds.positive?
-      parts << "voted on #{votes} #{'recipe'.pluralize(votes)}" if votes.positive?
-      sentence = parts.join(" and ")
-      sentence.empty? ? "Updated the meal plan" : sentence.capitalize
+      if adds.positive? && votes.positive?
+        "Added #{adds} #{'recipe'.pluralize(adds)} and voted on #{votes} in the meal plan"
+      elsif adds.positive?
+        "Added #{adds} #{'recipe'.pluralize(adds)} to the meal plan"
+      elsif votes.positive?
+        "Voted on #{votes} #{'recipe'.pluralize(votes)} in the meal plan"
+      else
+        "Updated the meal plan"
+      end
     else
       "New activity"
     end
-  end
-
-  def actor_display_name(actor)
-    actor.email_address.to_s.split("@").first.presence || "Someone"
   end
 end

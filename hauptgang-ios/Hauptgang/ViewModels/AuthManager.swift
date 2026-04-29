@@ -60,6 +60,12 @@ final class AuthManager: ObservableObject {
         self.authState = .authenticated(user)
     }
 
+    /// Update the current user's display name
+    func updateName(_ name: String) async throws {
+        let updated = try await authService.updateName(name)
+        self.authState = .authenticated(updated)
+    }
+
     /// Sign out and clear credentials
     func signOut() async {
         await CookbookContext.shared.reset()

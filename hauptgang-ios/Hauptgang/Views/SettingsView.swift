@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var showingLogoutConfirmation = false
     @State private var showingPaywall = false
     @State private var showingCustomerCenter = false
+    @State private var showingEditName = false
 
     var body: some View {
         NavigationStack {
@@ -31,6 +32,10 @@ struct SettingsView: View {
             .sheet(isPresented: self.$showingCustomerCenter) {
                 CustomerCenterView()
             }
+            .sheet(isPresented: self.$showingEditName) {
+                EditNameView()
+                    .environmentObject(self.authManager)
+            }
         }
     }
 
@@ -53,6 +58,24 @@ struct SettingsView: View {
                     }
                 }
                 .padding(.vertical, Theme.Spacing.xs)
+
+                Button {
+                    self.showingEditName = true
+                } label: {
+                    HStack {
+                        Image(systemName: "person.text.rectangle")
+                            .foregroundColor(.hauptgangPrimary)
+                        Text("Name")
+                            .foregroundColor(.hauptgangTextPrimary)
+                        Spacer()
+                        Text(user.name?.isEmpty == false ? user.name! : "Add your name")
+                            .foregroundColor(.hauptgangTextSecondary)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.hauptgangTextSecondary)
+                    }
+                }
             }
         }
     }

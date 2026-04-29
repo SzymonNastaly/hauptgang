@@ -4,6 +4,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       resource :registration, only: [ :create ]
       resource :session, only: [ :create, :destroy ]
+      resource :account, only: [ :update ]
       resources :device_tokens, only: [ :create, :destroy ], param: :token, constraints: { token: /[^\/]+/ }
       resources :shopping_list_items, only: [ :index, :create, :update, :destroy ] do
         collection do
@@ -65,10 +66,10 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   resource :registration, only: [ :new, :create ]
+  resource :settings, only: [ :edit, :update ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
-
 end

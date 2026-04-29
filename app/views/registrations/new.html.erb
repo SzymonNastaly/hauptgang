@@ -25,12 +25,23 @@
     <%# Form %>
     <%= form_with model: @user, url: registration_path, class: "space-y-4" do |form| %>
       <div>
+        <label for="user_name" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
+          Name
+        </label>
+        <%= form.text_field :name,
+            required: true,
+            autofocus: true,
+            autocomplete: "name",
+            placeholder: "What should we call you?",
+            class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>
+      </div>
+
+      <div>
         <label for="user_email_address" class="block text-sm font-medium text-text-primary dark:text-gray-200 mb-1">
           Email
         </label>
         <%= form.email_field :email_address,
             required: true,
-            autofocus: true,
             autocomplete: "username",
             placeholder: "you@example.com",
             class: "w-full bg-surface-overlay dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-brand-primary dark:focus:border-amber-600 focus:ring-1 focus:ring-brand-primary dark:focus:ring-amber-600 focus:outline-none transition-all text-text-primary dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500" %>

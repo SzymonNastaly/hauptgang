@@ -11,8 +11,10 @@ class User < ApplicationRecord
   has_many :shopping_list_items, dependent: :nullify
 
   normalizes :email_address, with: ->(email) { email.strip.downcase }
+  normalizes :name, with: ->(name) { name.to_s.strip }
 
   validates :email_address, presence: true, uniqueness: true
+  validates :name, length: { maximum: 50 }
 
   after_create :create_personal_cookbook!
   before_destroy :destroy_owned_cookbooks!, prepend: true

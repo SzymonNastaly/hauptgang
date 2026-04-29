@@ -1,0 +1,21 @@
+module Api
+  module V1
+    class AccountsController < BaseController
+      def update
+        if current_user.update(account_params)
+          render json: {
+            user: { id: current_user.id, name: current_user.name, email: current_user.email_address }
+          }, status: :ok
+        else
+          render json: { errors: current_user.errors.full_messages }, status: :unprocessable_entity
+        end
+      end
+
+      private
+
+      def account_params
+        params.expect(user: [ :name ])
+      end
+    end
+  end
+end

@@ -13,6 +13,12 @@
       "sourceType": "github",
       "computedHash": "cc28bb00c138bf1d8c841c5a137185a63d05a4b3197f5d360de0534b5e492c1a"
     },
+    "shots": {
+      "source": "hypersocialinc/shots",
+      "sourceType": "github",
+      "skillPath": "skills/shots/SKILL.md",
+      "computedHash": "bfe18c88b3b7604238c043e8bf0c2a1068f579b3ee45042f38cc95b9a10d94d6"
+    },
     "swiftui-liquid-glass": {
       "source": "openai/plugins",
       "ref": "main",

@@ -2,6 +2,8 @@ module Llm
   module RecipeExtraction
     Result = Data.define(:success?, :recipe_attributes, :error, :error_code)
 
+    INGREDIENT_KEYS = %w[name amount amount_max unit note raw].freeze
+
     private
 
     def build_result(content)
@@ -12,7 +14,7 @@ module Llm
 
       attributes = {
         name: name,
-        ingredients: normalize_array(content["ingredients"]),
+        ingredients: normalize_ingredients(content["ingredients"]),
         instructions: normalize_array(content["instructions"]),
         prep_time: content["prep_time"],
         cook_time: content["cook_time"],
@@ -26,6 +28,55 @@ module Llm
     def normalize_array(arr)
       return [] unless arr.is_a?(Array)
       arr.map { |item| item.to_s.strip }.reject(&:blank?)
+    end
+
+    def normalize_ingredients(arr)
+      return [] unless arr.is_a?(Array)
+
+      arr.filter_map do |entry|
+        hash = coerce_ingredient_hash(entry)
+        next nil unless hash
+
+        raw = hash["raw"].to_s.strip.presence || synthesize_raw(hash)
+        name = hash["name"].to_s.strip.presence || raw
+        next nil if raw.blank? && name.blank?
+
+        {
+          name: name,
+          amount: hash["amount"],
+          amount_max: hash["amount_max"],
+          unit: hash["unit"].to_s.strip.presence,
+          note: hash["note"].to_s.strip.presence,
+          raw: raw.presence || name
+        }
+      end
+    end
+
+    def coerce_ingredient_hash(entry)
+      case entry
+      when Hash
+        entry.transform_keys(&:to_s).slice(*INGREDIENT_KEYS)
+      when String
+        s = entry.strip
+        s.blank? ? nil : { "raw" => s }
+      else
+        nil
+      end
+    end
+
+    def synthesize_raw(hash)
+      [
+        format_amount_range(hash["amount"], hash["amount_max"]),
+        hash["unit"],
+        hash["name"],
+        hash["note"].present? ? "(#{hash["note"]})" : nil
+      ].compact.map(&:to_s).reject(&:blank?).join(" ").squish
+    end
+
+    def format_amount_range(amount, amount_max)
+      return nil if amount.blank?
+      return amount.to_s if amount_max.blank?
+      "#{amount}-#{amount_max}"
     end
 
     def extraction_failed(message)

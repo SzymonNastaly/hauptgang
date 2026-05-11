@@ -132,7 +132,7 @@ class RecipeImporterTest < ActiveSupport::TestCase
 
     assert result.success?
     assert_equal "Test Recipe", result.recipe_attributes[:name]
-    assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients]
+    assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     assert_equal [ "Mix well" ], result.recipe_attributes[:instructions]
     assert_equal "https://example.com/recipe", result.recipe_attributes[:source_url]
   end

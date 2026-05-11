@@ -180,7 +180,10 @@ namespace :recipe_corpus do
 
       print_inspect_section("Ingredients")
       if ingredients.any?
-        ingredients.each { |ingredient| puts "  - #{ingredient}" }
+        ingredients.each do |ingredient|
+          line = ingredient.is_a?(Hash) ? (ingredient[:raw] || ingredient[:name]) : ingredient
+          puts "  - #{line}"
+        end
       else
         puts "  (none)"
       end

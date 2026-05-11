@@ -31,7 +31,7 @@ module ShoppingList
             next
           end
 
-          item = upsert_item(client_id, name, source_recipe_id, item_params[:checked_at])
+          item = upsert_item(client_id, name, source_recipe_id, item_params[:checked_at], item_params[:details])
           if item.persisted? && item.errors.empty?
             created << item
             newly_added << item if item.previously_new_record?
@@ -55,10 +55,11 @@ module ShoppingList
 
     private
 
-    def upsert_item(client_id, name, source_recipe_id, checked_at)
+    def upsert_item(client_id, name, source_recipe_id, checked_at, details)
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
       item.user = @user
       item.name = name
+      item.details = details.presence
       item.source_recipe_id = source_recipe_id
       item.checked_at = checked_at.presence
       item.save
@@ -67,6 +68,7 @@ module ShoppingList
       item = @cookbook.shopping_list_items.find_by!(client_id: client_id)
       item.user = @user
       item.name = name
+      item.details = details.presence
       item.source_recipe_id = source_recipe_id
       item.checked_at = checked_at.presence
       item.save
@@ -75,6 +77,7 @@ module ShoppingList
       item = @cookbook.shopping_list_items.find_or_initialize_by(client_id: client_id)
       item.user = @user
       item.name = name
+      item.details = details.presence
       item.source_recipe_id = nil
       item.checked_at = checked_at.presence
       item.errors.add(:base, "Recipe not found")

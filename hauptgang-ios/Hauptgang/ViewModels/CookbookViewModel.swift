@@ -38,8 +38,7 @@ final class CookbookViewModel {
 
             // Fall back to cached cookbooks for offline launch
             if let data = await CookbookContext.shared.loadCachedCookbooksData(),
-               let cached = try? JSONDecoder().decode([Cookbook].self, from: data), !cached.isEmpty
-            {
+               let cached = try? JSONDecoder().decode([Cookbook].self, from: data), !cached.isEmpty {
                 self.logger.info("Using \(cached.count) cached cookbooks (offline)")
                 await self.applyAndCache(cached)
             } else {

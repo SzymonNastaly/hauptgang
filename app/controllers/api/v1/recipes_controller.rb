@@ -61,7 +61,14 @@ module Api
           end
         end
 
-        if recipe.update(recipe_params)
+        attrs = recipe_params
+        ingredients_strings = attrs.delete(:ingredients)
+
+        if recipe.update(attrs)
+          if ingredients_strings
+            recipe.replace_ingredients_from_strings(ingredients_strings)
+            ParseRecipeIngredientsJob.perform_later(recipe.id)
+          end
           render json: recipe_detail_json(recipe.reload)
         else
           render json: { errors: recipe.errors.full_messages }, status: :unprocessable_entity
@@ -227,7 +234,19 @@ module Api
           cook_time: recipe.cook_time,
           servings: recipe.servings,
           favorite: recipe.favorite,
-          ingredients: recipe.ingredients,
+          ingredients: recipe.ingredients.map(&:raw),
+          structured_ingredients: recipe.ingredients.map { |i|
+            {
+              id: i.id,
+              position: i.position,
+              amount: i.amount,
+              amount_max: i.amount_max,
+              unit: i.unit,
+              name: i.name.presence || i.raw,
+              note: i.note,
+              raw: i.raw
+            }
+          },
           instructions: recipe.instructions,
           notes: recipe.notes,
           source_url: recipe.source_url,

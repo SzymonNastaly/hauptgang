@@ -168,8 +168,6 @@ private struct MealPlanPickerSheet: View {
                     dateString: self.date,
                     onRecipePicked: self.onPickRecipe
                 )
-            } else {
-                EmptyView()
             }
         }
     }

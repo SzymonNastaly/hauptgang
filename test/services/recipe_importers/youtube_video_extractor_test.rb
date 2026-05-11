@@ -83,7 +83,7 @@ module RecipeImporters
 
       assert result.success?
       assert_equal "My Pasta Recipe", result.recipe_attributes[:name]
-      assert_equal [ "500g pasta", "2 cloves garlic" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "500g pasta", "2 cloves garlic" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     end
 
     test "returns thumbnail URL as cover image" do

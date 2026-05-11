@@ -9,18 +9,18 @@ final class HapticManager {
     private let notificationGenerator = UINotificationFeedbackGenerator()
 
     private init() {
-        lightImpact.prepare()
+        self.lightImpact.prepare()
     }
 
     func lightTap() {
-        lightImpact.impactOccurred()
+        self.lightImpact.impactOccurred()
     }
 
     func selection() {
-        selectionGenerator.selectionChanged()
+        self.selectionGenerator.selectionChanged()
     }
 
     func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        notificationGenerator.notificationOccurred(type)
+        self.notificationGenerator.notificationOccurred(type)
     }
 }

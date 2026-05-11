@@ -17,7 +17,8 @@ class RecipeImportJob < ApplicationJob
     domain = extract_domain(source_url)
 
     if result.success?
-      recipe.update!(result.recipe_attributes.merge(import_status: :completed))
+      recipe.apply_extracted_attributes!(result.recipe_attributes.merge(import_status: :completed))
+      enqueue_ingredient_parse(recipe)
       attach_cover_image(recipe, result.cover_image_url) if result.cover_image_url.present?
       Sentry.logger.info("recipe.import.success", domain: domain, channel: "url", recipe_id: recipe_id)
     else
@@ -42,6 +43,11 @@ class RecipeImportJob < ApplicationJob
   end
 
   private
+
+  def enqueue_ingredient_parse(recipe)
+    return unless recipe.ingredients.any? { |i| !i.parsed? }
+    ParseRecipeIngredientsJob.perform_later(recipe.id)
+  end
 
   def attach_cover_image(recipe, image_url)
     unless valid_cover_image_url?(recipe, image_url)

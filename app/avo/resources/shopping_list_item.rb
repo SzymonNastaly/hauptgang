@@ -8,6 +8,7 @@ class Avo::Resources::ShoppingListItem < Avo::BaseResource
   def fields
     field :id, as: :id
     field :name, as: :text
+    field :details, as: :text
     field :client_id, as: :text
     field :cookbook, as: :belongs_to
     field :user, as: :belongs_to

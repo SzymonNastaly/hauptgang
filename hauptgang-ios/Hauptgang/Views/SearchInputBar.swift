@@ -136,13 +136,13 @@ private struct NonDismissingTextField: UIViewRepresentable {
             self.text = textField.text ?? ""
         }
 
-        func textFieldDidBeginEditing(_ textField: UITextField) {
+        func textFieldDidBeginEditing(_: UITextField) {
             if !self.isFocused {
                 self.isFocused = true
             }
         }
 
-        func textFieldDidEndEditing(_ textField: UITextField) {
+        func textFieldDidEndEditing(_: UITextField) {
             if self.isFocused {
                 self.isFocused = false
             }

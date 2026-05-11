@@ -1,12 +1,11 @@
 # Fixtures for testing recipes
 # Note: 'one' belongs to user :one, 'two' belongs to user :two
-# This setup lets us test authorization (users can't access each other's recipes)
+# Ingredients live in test/fixtures/ingredients.yml
 
 one:
   name: Pasta Carbonara
   cookbook: one_personal
   user: one
-  ingredients: ["spaghetti", "eggs", "parmesan", "pancetta"]
   instructions: ["Boil pasta", "Fry pancetta", "Mix eggs with cheese", "Combine all"]
   servings: 4
   prep_time: 10
@@ -17,19 +16,16 @@ two:
   name: Chicken Curry
   cookbook: two_personal
   user: two
-  ingredients: ["chicken", "curry paste", "coconut milk", "rice"]
   instructions: ["Cook chicken", "Add curry paste", "Pour coconut milk", "Simmer"]
   servings: 4
   prep_time: 15
   cook_time: 30
   favorite: true
 
-# A second recipe for user one (useful for testing lists)
 three:
   name: Caesar Salad
   cookbook: one_personal
   user: one
-  ingredients: ["romaine lettuce", "croutons", "parmesan", "caesar dressing"]
   instructions: ["Chop lettuce", "Add croutons", "Drizzle dressing", "Top with parmesan"]
   servings: 2
   prep_time: 10

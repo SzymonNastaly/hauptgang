@@ -12,6 +12,27 @@ class ShoppingListItemTest < ActiveSupport::TestCase
     assert item.valid?
   end
 
+  test "details is optional and round-trips" do
+    item = ShoppingListItem.create!(
+      cookbook: cookbooks(:one_personal),
+      user: users(:one),
+      client_id: "details-client-id",
+      name: "Tomato",
+      details: "200g, halved"
+    )
+
+    assert_equal "200g, halved", item.reload.details
+
+    no_details = ShoppingListItem.create!(
+      cookbook: cookbooks(:one_personal),
+      user: users(:one),
+      client_id: "no-details-client-id",
+      name: "Salt"
+    )
+
+    assert_nil no_details.reload.details
+  end
+
   test "requires name" do
     item = ShoppingListItem.new(
       cookbook: cookbooks(:one_personal),

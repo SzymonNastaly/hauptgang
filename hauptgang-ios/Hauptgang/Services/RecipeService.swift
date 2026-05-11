@@ -13,7 +13,7 @@ protocol RecipeServiceProtocol: Sendable {
 }
 
 /// Parameters for updating a recipe via PATCH
-struct RecipeUpdateParams: Encodable, Sendable {
+struct RecipeUpdateParams: Encodable {
     var name: String?
     var prepTime: Int?
     var cookTime: Int?
@@ -145,5 +145,4 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
             self.logger.info("Recipe \(id) already deleted on server")
         }
     }
-
 }

@@ -8,6 +8,7 @@ class ShoppingListItemSerializer
       id: @item.id,
       client_id: @item.client_id,
       name: @item.name,
+      details: @item.details,
       checked_at: @item.checked_at,
       source_recipe_id: @item.source_recipe_id,
       created_at: @item.created_at,

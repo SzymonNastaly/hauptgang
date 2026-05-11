@@ -97,7 +97,7 @@ class RecipesControllerTest < ActionDispatch::IntegrationTest
     patch recipe_url(@recipe), params: {
       recipe: {
         name: "Updated Name",
-        ingredients: @recipe.ingredients,
+        ingredients: @recipe.ingredients.map(&:raw),
         instructions: @recipe.instructions,
         servings: @recipe.servings
       }

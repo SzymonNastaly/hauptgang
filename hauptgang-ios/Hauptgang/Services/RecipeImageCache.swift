@@ -65,7 +65,7 @@ actor RecipeImageCache {
 
     private func loadImage(
         for url: URL,
-        memoryKey: String,
+        memoryKey _: String,
         keyObject: NSString,
         maxPixelSize: CGFloat?
     ) async throws -> UIImage {
@@ -95,7 +95,8 @@ actor RecipeImageCache {
 
         let task = Task<Data, Error> {
             let (data, response) = try await self.session.data(from: url)
-            guard let httpResponse = response as? HTTPURLResponse, (200 ... 299).contains(httpResponse.statusCode) else {
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200 ... 299).contains(httpResponse.statusCode) else {
                 throw CacheError.badResponse
             }
             try self.writeToDisk(data: data, key: diskKey)

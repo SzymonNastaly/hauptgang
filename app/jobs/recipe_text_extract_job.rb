@@ -12,7 +12,8 @@ class RecipeTextExtractJob < ApplicationJob
     result = RecipeLlmService.new(text, prompt_type: :raw_text).extract
 
     if result.success?
-      recipe.update!(result.recipe_attributes.merge(import_status: :completed))
+      recipe.apply_extracted_attributes!(result.recipe_attributes.merge(import_status: :completed))
+      ParseRecipeIngredientsJob.perform_later(recipe.id) if recipe.ingredients.any? { |i| !i.parsed? }
     else
       recipe.update!(
         import_status: :failed,

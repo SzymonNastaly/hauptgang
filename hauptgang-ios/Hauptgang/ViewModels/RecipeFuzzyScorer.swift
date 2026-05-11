@@ -1,6 +1,6 @@
 import Foundation
 
-struct RecipeSearchSnapshot: Sendable {
+struct RecipeSearchSnapshot {
     let id: Int
     let name: String
     let ingredients: [String]

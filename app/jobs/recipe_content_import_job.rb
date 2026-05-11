@@ -16,7 +16,8 @@ class RecipeContentImportJob < ApplicationJob
     domain = extract_domain(source_url)
 
     if result.success?
-      recipe.update!(result.recipe_attributes.merge(import_status: :completed))
+      recipe.apply_extracted_attributes!(result.recipe_attributes.merge(import_status: :completed))
+      ParseRecipeIngredientsJob.perform_later(recipe.id) if recipe.ingredients.any? { |i| !i.parsed? }
       attach_best_cover_image(recipe, result.cover_image_url, meta_tags, cover_image_candidates)
       Sentry.logger.info("recipe.import.success", domain: domain, channel: "share_extension", recipe_id: recipe_id)
     else

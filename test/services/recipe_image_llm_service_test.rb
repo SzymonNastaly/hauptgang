@@ -20,7 +20,7 @@ class RecipeImageLlmServiceTest < ActiveSupport::TestCase
 
     assert result.success?
     assert_equal "Photo Recipe", result.recipe_attributes[:name]
-    assert_equal [ "2 eggs" ], result.recipe_attributes[:ingredients]
+    assert_equal [ "2 eggs" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     assert_equal [ "Cook" ], result.recipe_attributes[:instructions]
     assert_equal 5, result.recipe_attributes[:prep_time]
     assert_equal 10, result.recipe_attributes[:cook_time]

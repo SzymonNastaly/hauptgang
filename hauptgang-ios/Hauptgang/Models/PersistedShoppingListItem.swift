@@ -16,6 +16,7 @@ final class PersistedShoppingListItem {
     var cookbookId: Int
     var serverId: Int?
     var name: String
+    var details: String?
     var checkedAt: Date?
     var sourceRecipeId: Int?
     var createdAt: Date
@@ -40,6 +41,7 @@ final class PersistedShoppingListItem {
         clientId: String,
         cookbookId: Int = 0,
         name: String,
+        details: String? = nil,
         checkedAt: Date? = nil,
         sourceRecipeId: Int? = nil,
         createdAt: Date = Date(),
@@ -51,6 +53,7 @@ final class PersistedShoppingListItem {
         self.clientId = clientId
         self.cookbookId = cookbookId
         self.name = name
+        self.details = details
         self.checkedAt = checkedAt
         self.sourceRecipeId = sourceRecipeId
         self.createdAt = createdAt
@@ -64,6 +67,7 @@ final class PersistedShoppingListItem {
             clientId: response.clientId,
             cookbookId: cookbookId,
             name: response.name,
+            details: response.details,
             checkedAt: response.checkedAt,
             sourceRecipeId: response.sourceRecipeId,
             createdAt: response.createdAt,
@@ -76,6 +80,7 @@ final class PersistedShoppingListItem {
     func update(from response: ShoppingListItemResponse) {
         self.serverId = response.id
         self.name = response.name
+        self.details = response.details
         self.checkedAt = response.checkedAt
         self.sourceRecipeId = response.sourceRecipeId
         self.createdAt = response.createdAt

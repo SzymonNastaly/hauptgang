@@ -1,6 +1,6 @@
 import Foundation
 
-struct PageContent: Sendable {
+struct PageContent {
     let url: URL
     let jsonLd: [String]
     let metaTags: [String: String]

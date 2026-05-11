@@ -4,7 +4,7 @@ import UIKit
 /// SwiftUI app. Wired via `@UIApplicationDelegateAdaptor` in `HauptgangApp`.
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
-        _ application: UIApplication,
+        _: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         Task {
@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(
-        _ application: UIApplication,
+        _: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
         Task {

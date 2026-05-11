@@ -46,6 +46,7 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
     assert item.key?("id")
     assert item.key?("client_id")
     assert item.key?("name")
+    assert item.key?("details")
     assert item.key?("checked_at")
     assert item.key?("source_recipe_id")
     assert item.key?("created_at")
@@ -121,6 +122,16 @@ class Api::V1::ShoppingListItemsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :created
     assert_equal recipe.id, response.parsed_body.first["source_recipe_id"]
+  end
+
+  test "create with details round-trips through API" do
+    post api_v1_shopping_list_items_url,
+      params: { item: { client_id: "details-api-1", name: "Tomato", details: "200g, halved" } },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :created
+    assert_equal "200g, halved", response.parsed_body.first["details"]
   end
 
   test "create returns 422 for invalid data" do

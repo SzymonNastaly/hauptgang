@@ -45,7 +45,12 @@ final class ShoppingListService: ShoppingListServiceProtocol, @unchecked Sendabl
         return created
     }
 
-    func updateItem(id: Int, checked: Bool, checkedAt: Date?, createdAt: Date? = nil) async throws -> ShoppingListItemResponse {
+    func updateItem(
+        id: Int,
+        checked: Bool,
+        checkedAt: Date?,
+        createdAt: Date? = nil
+    ) async throws -> ShoppingListItemResponse {
         let request = UpdateShoppingListItemRequest(checked: checked, checkedAt: checkedAt, createdAt: createdAt)
         let item: ShoppingListItemResponse = try await api.request(
             endpoint: "shopping_list_items/\(id)",

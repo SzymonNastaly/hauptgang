@@ -140,7 +140,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_equal recipe.prep_time, json["prep_time"]
     assert_equal recipe.cook_time, json["cook_time"]
     assert_equal recipe.servings, json["servings"]
-    assert_equal recipe.ingredients, json["ingredients"]
+    assert_equal recipe.ingredients.map(&:raw), json["ingredients"]
     assert_equal recipe.instructions, json["instructions"]
     assert json.key?("tags")
     assert json.key?("cover_images")
@@ -583,7 +583,8 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update changes ingredients" do
-    recipe = @cookbook.recipes.create!(user: @user, name: "Test", ingredients: [ "old ingredient" ])
+    recipe = @cookbook.recipes.create!(user: @user, name: "Test")
+    recipe.replace_ingredients_from_strings([ "old ingredient" ])
 
     patch api_v1_recipe_url(recipe),
       params: { ingredients: [ "flour", "sugar", "butter" ] },
@@ -593,7 +594,7 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     json = response.parsed_body
     assert_equal [ "flour", "sugar", "butter" ], json["ingredients"]
-    assert_equal [ "flour", "sugar", "butter" ], recipe.reload.ingredients
+    assert_equal [ "flour", "sugar", "butter" ], recipe.reload.ingredients.map(&:raw)
   end
 
   test "update changes instructions" do
@@ -664,7 +665,8 @@ class Api::V1::RecipesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "update can change multiple fields at once" do
-    recipe = @cookbook.recipes.create!(user: @user, name: "Old", ingredients: [ "a" ], instructions: [ "b" ], notes: "old")
+    recipe = @cookbook.recipes.create!(user: @user, name: "Old", instructions: [ "b" ], notes: "old")
+    recipe.replace_ingredients_from_strings([ "a" ])
 
     patch api_v1_recipe_url(recipe),
       params: { name: "New", ingredients: [ "x", "y" ], instructions: [ "z" ], notes: "new", prep_time: 10, cook_time: 20, servings: 4 },

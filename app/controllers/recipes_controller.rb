@@ -34,7 +34,12 @@ class RecipesController < ApplicationController
 
   # GET /recipes/new/form - Manual recipe creation form
   def new_form
-    @recipe = personal_cookbook.recipes.build(imported_recipe_params.merge(user: Current.user))
+    attrs = imported_recipe_params
+    raw_lines = attrs.delete(:imported_ingredient_strings) || []
+    @recipe = personal_cookbook.recipes.build(attrs.merge(user: Current.user))
+    raw_lines.each_with_index do |raw, idx|
+      @recipe.ingredients.build(position: idx, raw: raw)
+    end
   end
 
   # GET /recipes/new/import - Import URL input
@@ -60,10 +65,14 @@ class RecipesController < ApplicationController
 
   # POST /recipes or /recipes.json
   def create
-    @recipe = personal_cookbook.recipes.build(recipe_params.merge(user: Current.user))
+    attrs = recipe_params
+    ingredients_strings = attrs.delete(:ingredients)
+    @recipe = personal_cookbook.recipes.build(attrs.merge(user: Current.user))
 
     respond_to do |format|
       if @recipe.save
+        @recipe.replace_ingredients_from_strings(ingredients_strings) if ingredients_strings
+        enqueue_parse_job(@recipe)
         format.html { redirect_to @recipe, notice: "Recipe was successfully created." }
         format.json { render :show, status: :created, location: @recipe }
       else
@@ -75,8 +84,13 @@ class RecipesController < ApplicationController
 
   # PATCH/PUT /recipes/1 or /recipes/1.json
   def update
+    attrs = recipe_params
+    ingredients_strings = attrs.delete(:ingredients)
+
     respond_to do |format|
-      if @recipe.update(recipe_params)
+      if @recipe.update(attrs)
+        @recipe.replace_ingredients_from_strings(ingredients_strings) if ingredients_strings
+        enqueue_parse_job(@recipe)
         format.html { redirect_to @recipe, notice: "Recipe was successfully updated.", status: :see_other }
         format.json { render :show, status: :ok, location: @recipe }
       else
@@ -124,21 +138,28 @@ class RecipesController < ApplicationController
       @personal_cookbook ||= Current.user.personal_cookbook
     end
 
-    # Params for imported recipe (from session storage)
+    # Params for imported recipe (from session storage). Returns a hash usable
+    # with Recipe.new — `imported_ingredients` is consumed separately by the form.
     def imported_recipe_params
       imported = session.delete(:imported_recipe)
       return {} unless imported.present?
 
-      imported.slice(
+      attrs = imported.slice(
         "name",
         "notes",
         "servings",
         "prep_time",
         "cook_time",
         "source_url",
-        "ingredients",
         "instructions"
       ).symbolize_keys
+
+      raw_lines = Array(imported["ingredients"]).map do |ing|
+        ing.is_a?(Hash) ? ing["raw"].presence || ing["name"].to_s : ing.to_s
+      end.reject(&:blank?)
+
+      attrs[:imported_ingredient_strings] = raw_lines if raw_lines.any?
+      attrs
     end
 
     # Only allow a list of trusted parameters through.
@@ -155,15 +176,19 @@ class RecipesController < ApplicationController
         instructions: []
       )
 
-      # Filter out empty strings from arrays
-      if permitted[:ingredients].is_a?(Array)
-        permitted[:ingredients] = permitted[:ingredients].reject(&:blank?)
-      end
-
       if permitted[:instructions].is_a?(Array)
         permitted[:instructions] = permitted[:instructions].reject(&:blank?)
       end
 
+      if permitted[:ingredients].is_a?(Array)
+        permitted[:ingredients] = permitted[:ingredients].reject(&:blank?)
+      end
+
       permitted
+    end
+
+    def enqueue_parse_job(recipe)
+      return unless recipe.ingredients.any? { |i| !i.parsed? }
+      ParseRecipeIngredientsJob.perform_later(recipe.id)
     end
 end

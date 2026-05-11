@@ -3,9 +3,26 @@ import SwiftUI
 struct ShoppingListDisplayItem: Identifiable {
     let id: String
     let name: String
+    let details: String?
     let isChecked: Bool
     let onTap: () -> Void
     let onDelete: (() -> Void)?
+
+    init(
+        id: String,
+        name: String,
+        details: String? = nil,
+        isChecked: Bool,
+        onTap: @escaping () -> Void,
+        onDelete: (() -> Void)? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.details = details
+        self.isChecked = isChecked
+        self.onTap = onTap
+        self.onDelete = onDelete
+    }
 }
 
 struct ShoppingListSectionsContent<UncheckedHeaderTrailing: View>: View {
@@ -30,9 +47,9 @@ struct ShoppingListSectionsContent<UncheckedHeaderTrailing: View>: View {
 
     private var gridColumns: [GridItem] {
         if self.horizontalSizeClass == .compact {
-            return Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3)
+            Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3)
         } else {
-            return [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: Theme.Spacing.sm)]
+            [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: Theme.Spacing.sm)]
         }
     }
 
@@ -115,25 +132,38 @@ private struct ShoppingListItemTile: View {
             HapticManager.shared.lightTap()
             self.item.onTap()
         } label: {
-            Text(self.item.name)
-                .font(.subheadline.weight(.medium))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.8)
-                .foregroundStyle(self.item.isChecked ? Color.hauptgangTextMuted : Color.hauptgangTextPrimary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(Theme.Spacing.sm)
-                .aspectRatio(1, contentMode: .fit)
-                .background(
-                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                        .fill(self.item.isChecked ? Color.hauptgangSurfaceRaised : Color.hauptgangCard)
-                        .shadow(
-                            color: Color.black.opacity(self.item.isChecked ? 0 : 0.06),
-                            radius: 4,
-                            x: 0,
-                            y: 2
-                        )
-                )
+            VStack(spacing: 2) {
+                Text(self.item.name)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+
+                if let trimmed = self.item.details?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                    !trimmed.isEmpty {
+                    Text(trimmed)
+                        .font(.caption.weight(.light))
+                        .italic()
+                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .multilineTextAlignment(.center)
+            .foregroundStyle(self.item.isChecked ? Color.hauptgangTextMuted : Color.hauptgangTextPrimary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(Theme.Spacing.sm)
+            .aspectRatio(1, contentMode: .fit)
+            .background(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    .fill(self.item.isChecked ? Color.hauptgangSurfaceRaised : Color.hauptgangCard)
+                    .shadow(
+                        color: Color.black.opacity(self.item.isChecked ? 0 : 0.06),
+                        radius: 4,
+                        x: 0,
+                        y: 2
+                    )
+            )
         }
         .buttonStyle(.plain)
         .geometryGroup()
@@ -149,7 +179,8 @@ private struct ShoppingListItemTile: View {
         }
         .accessibilityLabel(self.item.name)
         .accessibilityValue(self.item.isChecked ? "Bought" : "To buy")
-        .accessibilityHint(self.item.isChecked ? "Double-tap to move back to shopping list" : "Double-tap to mark as bought")
+        .accessibilityHint(self.item
+            .isChecked ? "Double-tap to move back to shopping list" : "Double-tap to mark as bought")
         .accessibilityAction(named: "Delete") {
             self.item.onDelete?()
         }

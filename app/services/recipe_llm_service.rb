@@ -58,7 +58,9 @@ class RecipeLlmService
       Extract recipe information from the following webpage content.
       Find the recipe name, ingredients list, and cooking instructions.
 
-      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on.
+      #{ingredient_field_instructions}
+
+      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on. Do not translate ingredient names.
 
       If you cannot find recipe content, return an empty name field.
 
@@ -77,7 +79,9 @@ class RecipeLlmService
       For the recipe name: ignore any social media titles, series names, hashtags, or catchphrases.
       Instead, create a short, descriptive name based on the actual dish being made.
 
-      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on.
+      #{ingredient_field_instructions}
+
+      Always respond in the same language as the recipe content. If the recipe is in German, return German. If Spanish, return Spanish. And so on. Do not translate ingredient names.
 
       If the text does not contain a valid recipe, return an empty name field.
 
@@ -86,5 +90,17 @@ class RecipeLlmService
       #{text}
       ---
     PROMPT
+  end
+
+  def ingredient_field_instructions
+    <<~INGR.strip
+      For each ingredient, return structured fields:
+      - `raw`: the original ingredient line, echoed verbatim. Required.
+      - `name`: the food name only (no amount or unit). Do not translate.
+      - `amount`: numeric quantity. Convert fractions to decimals (1/2 -> 0.5; unicode fractions accepted).
+      - `amount_max`: upper bound for ranges (e.g. "2-3 cloves" -> amount=2, amount_max=3). Accept en-dash, em-dash, '-', '~', 'to', 'bis'.
+      - `unit`: unit of measurement, lowercased best-effort (g, ml, tbsp, el, prise...). Open vocabulary.
+      - `note`: qualifier ("chopped", "to taste", "optional"). Optional.
+    INGR
   end
 end

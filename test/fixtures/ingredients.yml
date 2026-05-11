@@ -1,0 +1,71 @@
+one_spaghetti:
+  recipe: one
+  position: 0
+  raw: spaghetti
+  name: spaghetti
+
+one_eggs:
+  recipe: one
+  position: 1
+  raw: eggs
+  name: eggs
+
+one_parmesan:
+  recipe: one
+  position: 2
+  raw: parmesan
+  name: parmesan
+
+one_pancetta:
+  recipe: one
+  position: 3
+  raw: pancetta
+  name: pancetta
+
+two_chicken:
+  recipe: two
+  position: 0
+  raw: chicken
+  name: chicken
+
+two_curry_paste:
+  recipe: two
+  position: 1
+  raw: curry paste
+  name: curry paste
+
+two_coconut_milk:
+  recipe: two
+  position: 2
+  raw: coconut milk
+  name: coconut milk
+
+two_rice:
+  recipe: two
+  position: 3
+  raw: rice
+  name: rice
+
+three_lettuce:
+  recipe: three
+  position: 0
+  raw: romaine lettuce
+  name: romaine lettuce
+
+three_croutons:
+  recipe: three
+  position: 1
+  raw: croutons
+  name: croutons
+
+three_parmesan:
+  recipe: three
+  position: 2
+  raw: parmesan
+  name: parmesan
+
+three_dressing:
+  recipe: three
+  position: 3
+  raw: caesar dressing
+  name: caesar dressing

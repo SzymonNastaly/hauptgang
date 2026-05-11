@@ -28,7 +28,7 @@ class RecipeImageExtractJobTest < ActiveSupport::TestCase
     @recipe.reload
     assert_equal :completed, @recipe.import_status.to_sym
     assert_equal "Image Recipe", @recipe.name
-    assert_equal [ "1 cup flour" ], @recipe.ingredients
+    assert_equal [ "1 cup flour" ], @recipe.ingredients.map(&:raw)
     assert_equal [ "Mix and bake" ], @recipe.instructions
     assert_equal 10, @recipe.prep_time
     assert_equal 20, @recipe.cook_time

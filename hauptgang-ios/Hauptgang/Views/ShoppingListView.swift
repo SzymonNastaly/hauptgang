@@ -17,6 +17,7 @@ struct ShoppingListView: View {
             ShoppingListDisplayItem(
                 id: item.scopedClientId,
                 name: item.name,
+                details: item.details,
                 isChecked: item.isChecked,
                 onTap: { self.viewModel.toggleItem(item) },
                 onDelete: { self.viewModel.deleteItem(item) }
@@ -29,6 +30,7 @@ struct ShoppingListView: View {
             ShoppingListDisplayItem(
                 id: item.scopedClientId,
                 name: item.name,
+                details: item.details,
                 isChecked: item.isChecked,
                 onTap: { self.viewModel.toggleItem(item) },
                 onDelete: { self.viewModel.deleteItem(item) }
@@ -111,7 +113,12 @@ struct ShoppingListView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
             }
         }
         .scrollDismissesKeyboard(.immediately)
@@ -208,7 +215,12 @@ struct ShoppingListView: View {
             .frame(minHeight: UIScreen.main.bounds.height * 0.5)
             .contentShape(Rectangle())
             .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil
+                )
             }
         }
         .scrollDismissesKeyboard(.immediately)

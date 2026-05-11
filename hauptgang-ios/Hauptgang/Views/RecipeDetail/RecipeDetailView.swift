@@ -13,6 +13,7 @@ struct RecipeDetailView: View {
     @State private var shoppingListReviewDraft: ShoppingListReviewDraft?
     @State private var isCookingMode = false
     @State private var showEditSheet = false
+    @State private var currentServings: Int?
 
     private let heroImageHeight: CGFloat = 280
 
@@ -48,7 +49,8 @@ struct RecipeDetailView: View {
                     heroImageHeight: self.heroImageHeight,
                     isIOS26: self.isIOS26,
                     isCookingMode: self.isCookingMode,
-                    onToggleCookingMode: self.toggleCookingMode
+                    onToggleCookingMode: self.toggleCookingMode,
+                    currentServings: self.$currentServings
                 )
             }
 
@@ -66,8 +68,13 @@ struct RecipeDetailView: View {
         .toolbar {
             if let recipe = self.viewModel.recipe {
                 RecipeDetailToolbarContent(
-                    ingredients: recipe.ingredients,
-                    onAddToShoppingList: { self.presentShoppingListReview(for: recipe.ingredients) },
+                    hasIngredients: !recipe.resolvedIngredients.isEmpty,
+                    onAddToShoppingList: {
+                        self.presentShoppingListReview(
+                            for: recipe.resolvedIngredients,
+                            scale: self.scale(forBaseServings: recipe.servings)
+                        )
+                    },
                     onEdit: self.showEditRecipe
                 )
             }
@@ -131,17 +138,53 @@ struct RecipeDetailView: View {
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
-    private func presentShoppingListReview(for ingredients: [String]) {
-        let draftItems = ingredients
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .map { ShoppingListDraftItem(name: $0) }
+    private func scale(forBaseServings baseServings: Int?) -> Decimal {
+        guard let base = baseServings, base > 0 else { return 1 }
+        let effective = self.currentServings ?? base
+        return Decimal(effective) / Decimal(base)
+    }
+
+    private func presentShoppingListReview(for ingredients: [StructuredIngredient], scale: Decimal) {
+        let draftItems: [ShoppingListDraftItem] = ingredients.compactMap { ingredient in
+            let split = self.shoppingListSplit(for: ingredient, scale: scale)
+            let name = split.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return nil }
+            return ShoppingListDraftItem(name: name, details: split.details)
+        }
 
         guard !draftItems.isEmpty else {
             return
         }
 
         self.shoppingListReviewDraft = ShoppingListReviewDraft(recipeId: self.recipeId, items: draftItems)
+    }
+
+    /// Split a structured ingredient into a (name, details) pair for the
+    /// shopping list. Parsed rows put `ingredient.name` on the first line and
+    /// the formatted quantity (+ optional note) on the second. Unparsed rows
+    /// fall back to the raw string with no details.
+    private func shoppingListSplit(for ingredient: StructuredIngredient, scale: Decimal) -> (name: String, details: String?) {
+        guard ingredient.hasStructuredFields else {
+            return (ingredient.raw, nil)
+        }
+
+        let rawQuantity = IngredientFormatter.formatQuantity(
+            amount: ingredient.amount,
+            amountMax: ingredient.amountMax,
+            unit: ingredient.unit,
+            scale: scale
+        )
+        let quantity = rawQuantity.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = (ingredient.name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let note = ingredient.note?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        let detailParts = [quantity, note].filter { !$0.isEmpty }
+        let details = detailParts.isEmpty ? nil : detailParts.joined(separator: ", ")
+
+        if name.isEmpty {
+            return (ingredient.raw, details)
+        }
+        return (name, details)
     }
 }
 

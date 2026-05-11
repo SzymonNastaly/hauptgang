@@ -90,6 +90,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
                 case .pendingUpdate:
                     local.serverId = response.id
                     local.name = response.name
+                    local.details = response.details
                     local.checkedAt = response.checkedAt
                     local.createdAt = response.createdAt
                     local.updatedAt = response.updatedAt
@@ -115,6 +116,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
 
         local.serverId = response.id
         local.name = response.name
+        local.details = response.details
         local.checkedAt = response.checkedAt
         local.createdAt = response.createdAt
         local.updatedAt = response.updatedAt
@@ -132,6 +134,7 @@ final class ShoppingListRepository: ShoppingListRepositoryProtocol {
             let local = PersistedShoppingListItem(
                 clientId: item.clientId,
                 name: item.name,
+                details: item.details,
                 checkedAt: item.checkedAt,
                 sourceRecipeId: item.sourceRecipeId,
                 syncState: .pendingCreate

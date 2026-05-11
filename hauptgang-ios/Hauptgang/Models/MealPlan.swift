@@ -1,6 +1,6 @@
 import Foundation
 
-struct MealPlanDay: Codable, Identifiable, Sendable {
+struct MealPlanDay: Codable, Identifiable {
     let date: String
     let selectedEntryId: Int?
     let selectedByUserId: Int?
@@ -16,7 +16,7 @@ struct MealPlanDay: Codable, Identifiable, Sendable {
     }
 }
 
-struct MealPlanEntry: Codable, Identifiable, Sendable {
+struct MealPlanEntry: Codable, Identifiable {
     let id: Int
     let recipe: MealPlanRecipeSummary
     let proposedBy: MealPlanUser?
@@ -24,7 +24,7 @@ struct MealPlanEntry: Codable, Identifiable, Sendable {
     let votedByCurrentUser: Bool
 }
 
-struct MealPlanRecipeSummary: Codable, Sendable {
+struct MealPlanRecipeSummary: Codable {
     let id: Int
     let name: String
     // TODO: Remove legacy coverImageUrl fallback once the backend no longer serves
@@ -44,15 +44,15 @@ struct MealPlanRecipeSummary: Codable, Sendable {
     }
 }
 
-struct MealPlanUser: Codable, Sendable {
+struct MealPlanUser: Codable {
     let id: Int
     let email: String
 }
 
-struct MealPlanAddEntryRequest: Codable, Sendable {
+struct MealPlanAddEntryRequest: Codable {
     let recipeId: Int
 }
 
-struct MealPlanSelectRequest: Codable, Sendable {
+struct MealPlanSelectRequest: Codable {
     let entryId: Int
 }

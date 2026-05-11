@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Recipe List Item
 
 /// Represents a recipe in list views - from GET /api/v1/recipes
-struct RecipeListItem: Codable, Identifiable, Sendable {
+struct RecipeListItem: Codable, Identifiable {
     let id: Int
     let name: String
     let prepTime: Int?
@@ -57,7 +57,7 @@ struct RecipeListItem: Codable, Identifiable, Sendable {
 // MARK: - Recipe Detail
 
 /// Full recipe details - from GET /api/v1/recipes/:id
-struct RecipeDetail: Codable, Identifiable, Sendable {
+struct RecipeDetail: Codable, Identifiable {
     let id: Int
     let name: String
     let prepTime: Int?
@@ -69,6 +69,9 @@ struct RecipeDetail: Codable, Identifiable, Sendable {
     let coverImages: RecipeCoverImages?
     let servings: Int?
     let ingredients: [String]
+    /// Structured ingredient data; nil for older cached responses without it.
+    /// Use `resolvedIngredients` to get a non-empty list with raw-string fallback.
+    let structuredIngredients: [StructuredIngredient]?
     let instructions: [String]
     let notes: String?
     let sourceUrl: String?
@@ -86,6 +89,7 @@ struct RecipeDetail: Codable, Identifiable, Sendable {
         coverImages: RecipeCoverImages? = nil,
         servings: Int? = nil,
         ingredients: [String],
+        structuredIngredients: [StructuredIngredient]? = nil,
         instructions: [String],
         notes: String? = nil,
         sourceUrl: String? = nil,
@@ -102,6 +106,7 @@ struct RecipeDetail: Codable, Identifiable, Sendable {
         self.coverImages = coverImages
         self.servings = servings
         self.ingredients = ingredients
+        self.structuredIngredients = structuredIngredients
         self.instructions = instructions
         self.notes = notes
         self.sourceUrl = sourceUrl
@@ -121,11 +126,32 @@ struct RecipeDetail: Codable, Identifiable, Sendable {
     var heroCoverImageUrl: String? {
         self.coverImages?.heroURL(fallback: self.coverImageUrl)
     }
+
+    /// Returns structured ingredients when the server provided them, falling
+    /// back to a synthetic list built from the legacy `ingredients` strings.
+    /// Synthetic rows use negative ids so they never collide with server ids.
+    var resolvedIngredients: [StructuredIngredient] {
+        if let structured = self.structuredIngredients, !structured.isEmpty {
+            return structured.sorted { $0.position < $1.position }
+        }
+        return self.ingredients.enumerated().map { index, raw in
+            StructuredIngredient(
+                id: -(index + 1),
+                position: index,
+                amount: nil,
+                amountMax: nil,
+                unit: nil,
+                name: raw,
+                note: nil,
+                raw: raw
+            )
+        }
+    }
 }
 
 // MARK: - Recipe Tag
 
-struct RecipeTag: Codable, Identifiable, Sendable {
+struct RecipeTag: Codable, Identifiable {
     let id: Int
     let name: String
 }

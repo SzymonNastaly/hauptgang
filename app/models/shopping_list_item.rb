@@ -15,6 +15,6 @@ class ShoppingListItem < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[id name client_id]
+    %w[id name details client_id]
   end
 end

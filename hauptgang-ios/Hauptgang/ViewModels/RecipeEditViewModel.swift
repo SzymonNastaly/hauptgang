@@ -23,7 +23,9 @@ final class RecipeEditViewModel {
     var selectedPhoto: PhotosPickerItem?
     var coverImageData: Data?
     var coverImageMimeType: String = "image/jpeg"
-    var hasCoverImageChange: Bool { self.coverImageData != nil }
+    var hasCoverImageChange: Bool {
+        self.coverImageData != nil
+    }
 
     // MARK: - State
 
@@ -39,7 +41,9 @@ final class RecipeEditViewModel {
         return nil
     }
 
-    var isValid: Bool { self.nameError == nil }
+    var isValid: Bool {
+        self.nameError == nil
+    }
 
     // MARK: - Private
 
@@ -68,7 +72,11 @@ final class RecipeEditViewModel {
         self.prepTime = recipe.prepTime.map { String($0) } ?? ""
         self.cookTime = recipe.cookTime.map { String($0) } ?? ""
         self.servings = recipe.servings.map { String($0) } ?? ""
-        self.ingredients = recipe.ingredients.isEmpty ? [""] : recipe.ingredients
+        // Use resolvedIngredients so structured rows fall back to `raw` when
+        // `name` alone would lose meaningful data. v1 still edits raw strings;
+        // structured editing arrives in v2.
+        let rawList = recipe.resolvedIngredients.map(\.raw)
+        self.ingredients = rawList.isEmpty ? [""] : rawList
         self.instructions = recipe.instructions.isEmpty ? [""] : recipe.instructions
         self.notes = recipe.notes ?? ""
         self.sourceUrl = recipe.sourceUrl ?? ""
@@ -141,7 +149,7 @@ final class RecipeEditViewModel {
             var updatedRecipe = try await recipeService.updateRecipe(id: recipe.id, params: params)
 
             if let imageData = self.coverImageData {
-                updatedRecipe = try await recipeService.updateRecipeCoverImage(
+                updatedRecipe = try await self.recipeService.updateRecipeCoverImage(
                     id: recipe.id,
                     imageData: imageData,
                     mimeType: self.coverImageMimeType

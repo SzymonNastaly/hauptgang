@@ -245,7 +245,7 @@ struct RecipeEditView: View {
                         ),
                         axis: .vertical
                     )
-                    .lineLimit(1...5)
+                    .lineLimit(1 ... 5)
 
                     if self.viewModel.instructions.count > 1 {
                         Button {
@@ -277,7 +277,7 @@ struct RecipeEditView: View {
     private var notesSection: some View {
         Section("Notes") {
             TextField("Notes", text: self.$viewModel.notes, axis: .vertical)
-                .lineLimit(2...8)
+                .lineLimit(2 ... 8)
         }
     }
 
@@ -305,25 +305,4 @@ private extension Array {
             self[index] = newValue
         }
     }
-}
-
-// MARK: - Previews
-
-#Preview {
-    RecipeEditView(recipe: RecipeDetail(
-        id: 1,
-        name: "Spaghetti Carbonara",
-        prepTime: 10,
-        cookTime: 20,
-        favorite: false,
-        coverImageUrl: nil,
-        servings: 4,
-        ingredients: ["400g spaghetti", "200g guanciale", "4 egg yolks", "100g pecorino"],
-        instructions: ["Cook pasta", "Fry guanciale", "Mix eggs and cheese", "Combine"],
-        notes: nil,
-        sourceUrl: nil,
-        tags: [],
-        createdAt: Date(),
-        updatedAt: Date()
-    ))
 }

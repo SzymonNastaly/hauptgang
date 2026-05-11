@@ -1,27 +1,29 @@
 import Foundation
 
-struct ShoppingListItemResponse: Codable, Identifiable, Sendable {
+struct ShoppingListItemResponse: Codable, Identifiable {
     let id: Int
     let clientId: String
     let name: String
+    let details: String?
     let checkedAt: Date?
     let sourceRecipeId: Int?
     let createdAt: Date
     let updatedAt: Date
 }
 
-struct ShoppingListItemCreate: Codable, Sendable {
+struct ShoppingListItemCreate: Codable {
     let clientId: String
     let name: String
+    let details: String?
     let checkedAt: Date?
     let sourceRecipeId: Int?
 }
 
-struct BulkCreateShoppingListItemsRequest: Codable, Sendable {
+struct BulkCreateShoppingListItemsRequest: Codable {
     let items: [ShoppingListItemCreate]
 }
 
-struct UpdateShoppingListItemRequest: Codable, Sendable {
+struct UpdateShoppingListItemRequest: Codable {
     let checked: Bool
     let checkedAt: Date?
     let createdAt: Date?

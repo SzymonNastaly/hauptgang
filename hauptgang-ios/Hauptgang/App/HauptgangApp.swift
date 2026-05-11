@@ -38,7 +38,7 @@ struct HauptgangApp: App {
     }
 
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema(versionedSchema: HauptgangSchemaV4.self)
+        let schema = Schema(versionedSchema: HauptgangSchemaV6.self)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         // Happy path: versioned store opens with migration plan

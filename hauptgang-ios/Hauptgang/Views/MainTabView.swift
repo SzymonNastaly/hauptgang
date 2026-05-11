@@ -72,8 +72,8 @@ struct MainTabView: View {
     private var startupCanDismissSplash: Bool {
         self.cookbookViewModel.error != nil || (
             !self.cookbookViewModel.isLoading &&
-            self.cookbookViewModel.activeCookbook != nil &&
-            self.recipeViewModel.hasResolvedInitialContent
+                self.cookbookViewModel.activeCookbook != nil &&
+                self.recipeViewModel.hasResolvedInitialContent
         )
     }
 }

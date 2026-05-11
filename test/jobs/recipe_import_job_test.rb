@@ -34,7 +34,7 @@ class RecipeImportJobTest < ActiveSupport::TestCase
     @recipe.reload
     assert_equal :completed, @recipe.import_status.to_sym
     assert_equal "Imported Recipe", @recipe.name
-    assert_equal [ "2 cups flour", "1 egg" ], @recipe.ingredients
+    assert_equal [ "2 cups flour", "1 egg" ], @recipe.ingredients.map(&:raw)
     assert_equal [ "Mix ingredients", "Bake at 350F" ], @recipe.instructions
     assert_equal 15, @recipe.prep_time
     assert_equal 30, @recipe.cook_time

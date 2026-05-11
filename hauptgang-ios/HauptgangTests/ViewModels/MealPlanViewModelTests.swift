@@ -94,8 +94,16 @@ struct MealPlanViewModelTests {
         await vm.refresh(cookbookId: self.cookbookId)
 
         let calendar = Calendar.current
-        let expectedStart = MealPlanViewModel.dateString(for: try #require(calendar.date(byAdding: .day, value: -2, to: Date())))
-        let expectedEnd = MealPlanViewModel.dateString(for: try #require(calendar.date(byAdding: .day, value: 8, to: Date())))
+        let expectedStart = try MealPlanViewModel.dateString(for: #require(calendar.date(
+            byAdding: .day,
+            value: -2,
+            to: Date()
+        )))
+        let expectedEnd = try MealPlanViewModel.dateString(for: #require(calendar.date(
+            byAdding: .day,
+            value: 8,
+            to: Date()
+        )))
 
         #expect(vm.visibleDates.count == 11)
         #expect(vm.visibleDates.first == expectedStart)
@@ -119,7 +127,11 @@ struct MealPlanViewModelTests {
         networkMonitor.isOffline = true
 
         let today = MealPlanViewModel.dateString(for: Date())
-        repo.entries[today] = [self.makePersistedEntry(cookbookId: self.cookbookId, date: today, recipeName: "Cached Meal")]
+        repo.entries[today] = [self.makePersistedEntry(
+            cookbookId: self.cookbookId,
+            date: today,
+            recipeName: "Cached Meal"
+        )]
 
         let vm = MealPlanViewModel(
             repository: repo,
@@ -138,7 +150,11 @@ struct MealPlanViewModelTests {
         let repo = MockMealPlanRepository()
         let service = MockMealPlanService()
         let today = MealPlanViewModel.dateString(for: Date())
-        repo.entries[today] = [self.makePersistedEntry(cookbookId: self.cookbookId, date: today, recipeName: "Cached Meal")]
+        repo.entries[today] = [self.makePersistedEntry(
+            cookbookId: self.cookbookId,
+            date: today,
+            recipeName: "Cached Meal"
+        )]
         service.shouldThrow = true
         service.errorToThrow = APIError.networkError(URLError(.notConnectedToInternet))
 

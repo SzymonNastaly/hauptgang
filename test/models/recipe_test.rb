@@ -93,19 +93,6 @@ class RecipeTest < ActiveSupport::TestCase
   # CALLBACK TESTS
   # ===================
 
-  test "ensures ingredients is an array" do
-    recipe = Recipe.new(
-      name: "Test",
-      cookbook: cookbooks(:one_personal),
-      user: users(:one),
-      ingredients: nil
-    )
-
-    recipe.valid?  # Triggers before_validation callback
-
-    assert_equal [], recipe.ingredients
-  end
-
   test "ensures instructions is an array" do
     recipe = Recipe.new(
       name: "Test",

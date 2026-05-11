@@ -10,7 +10,7 @@ module LlmStubHelper
   def stub_llm_response(name:, ingredients:, instructions:, prep_time: nil, cook_time: nil, servings: nil, notes: nil)
     content = {
       "name" => name,
-      "ingredients" => ingredients,
+      "ingredients" => normalize_ingredients_for_stub(ingredients),
       "instructions" => instructions,
       "prep_time" => prep_time,
       "cook_time" => cook_time,
@@ -19,6 +19,18 @@ module LlmStubHelper
     }.compact
 
     stub_openrouter_api(response_body: build_openrouter_response(content))
+  end
+
+  # Allow tests to pass either flat strings (legacy) or hashes for ingredients.
+  def normalize_ingredients_for_stub(ingredients)
+    return ingredients unless ingredients.is_a?(Array)
+    ingredients.map do |entry|
+      case entry
+      when Hash then entry
+      when String then { "raw" => entry, "name" => entry }
+      else entry
+      end
+    end
   end
 
   # Low-level stub for the OpenRouter API endpoint

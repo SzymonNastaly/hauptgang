@@ -1,7 +1,7 @@
 import Foundation
 
 /// Response from POST /api/v1/recipes/import
-struct ImportRecipeResponse: Codable, Sendable {
+struct ImportRecipeResponse: Codable {
     let id: Int
     let importStatus: String
 }

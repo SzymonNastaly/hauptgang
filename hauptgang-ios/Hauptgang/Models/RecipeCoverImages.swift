@@ -1,6 +1,6 @@
 import Foundation
 
-struct RecipeCoverImages: Codable, Sendable {
+struct RecipeCoverImages: Codable {
     let thumb: String?
     let card: String?
     let hero: String?

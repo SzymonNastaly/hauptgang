@@ -9,6 +9,58 @@ class Recipe < ApplicationRecord
   has_many :tags, through: :recipe_tags
   has_many :shopping_list_items, foreign_key: :source_recipe_id, dependent: :nullify
   has_many :meal_plan_entries, dependent: :restrict_with_error
+  has_many :ingredients, -> { order(:position) }, dependent: :destroy, inverse_of: :recipe
+
+  # Replace the ingredient rows from an array of raw strings.
+  # Existing rows are wiped. `name` is left nil until ParseRecipeIngredientsJob
+  # fills structured fields; consumers should fall back to `raw` for display.
+  def replace_ingredients_from_strings(strings)
+    cleaned = Array(strings).map { |s| s.to_s.strip }.reject(&:blank?)
+
+    transaction do
+      ingredients.destroy_all
+      cleaned.each_with_index do |raw, idx|
+        ingredients.create!(position: idx, raw: raw)
+      end
+    end
+  end
+
+  # Replace the ingredient rows from an array of structured hashes
+  # (as returned by the recipe extraction LLM call). Each hash should
+  # have at least `:raw`. Falls back to `name` if `raw` is missing.
+  # If the entry has structured fields, they are persisted directly.
+  def replace_ingredients_from_hashes(entries)
+    cleaned = Array(entries).filter_map do |entry|
+      hash = entry.is_a?(Hash) ? entry.symbolize_keys : { raw: entry.to_s, name: entry.to_s }
+      raw = hash[:raw].to_s.strip.presence || hash[:name].to_s.strip
+      next nil if raw.blank?
+      hash.merge(raw: raw, name: hash[:name].to_s.strip.presence || raw)
+    end
+
+    transaction do
+      ingredients.destroy_all
+      cleaned.each_with_index do |hash, idx|
+        ingredients.create!(
+          position: idx,
+          raw: hash[:raw],
+          name: hash[:name],
+          amount: hash[:amount],
+          amount_max: hash[:amount_max],
+          unit: hash[:unit].to_s.strip.presence,
+          note: hash[:note].to_s.strip.presence
+        )
+      end
+    end
+  end
+
+  # Apply extracted recipe attributes (from RecipeImporter result). Splits
+  # ingredients from the rest and persists each appropriately.
+  def apply_extracted_attributes!(attrs)
+    attrs = attrs.to_h.symbolize_keys
+    ingredient_entries = attrs.delete(:ingredients)
+    update!(attrs)
+    replace_ingredients_from_hashes(ingredient_entries) if ingredient_entries
+  end
 
   COVER_IMAGE_VARIANTS = {
     thumb: :thumb,
@@ -41,9 +93,6 @@ class Recipe < ApplicationRecord
   validate :acceptable_cover_image
   validate :acceptable_import_image
 
-  # Ensure ingredients and instructions are always arrays
-  # Rails 8 with SQLite JSON columns handles this automatically,
-  # but we add this for extra safety
   before_validation :ensure_array_fields
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -70,7 +119,6 @@ class Recipe < ApplicationRecord
   private
 
   def ensure_array_fields
-    self.ingredients ||= []
     self.instructions ||= []
   end
 

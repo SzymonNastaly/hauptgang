@@ -36,6 +36,7 @@ struct ShoppingListReviewSheet: View {
             ShoppingListDisplayItem(
                 id: item.id.uuidString,
                 name: item.name,
+                details: item.details,
                 isChecked: item.isChecked,
                 onTap: { self.toggleItem(item) },
                 onDelete: nil
@@ -48,6 +49,7 @@ struct ShoppingListReviewSheet: View {
             ShoppingListDisplayItem(
                 id: item.id.uuidString,
                 name: item.name,
+                details: item.details,
                 isChecked: item.isChecked,
                 onTap: { self.toggleItem(item) },
                 onDelete: nil
@@ -100,8 +102,10 @@ struct ShoppingListReviewSheet: View {
     }
 
     private func confirmAdd() {
-        let ingredients = self.uncheckedItems.map(\.name)
-        self.shoppingListViewModel.addIngredientsFromRecipe(ingredients, recipeId: self.recipeId)
+        self.shoppingListViewModel.addIngredientsFromRecipe(
+            self.uncheckedItems,
+            sourceRecipeId: self.recipeId
+        )
         self.dismiss()
     }
 }
@@ -110,9 +114,9 @@ struct ShoppingListReviewSheet: View {
     ShoppingListReviewSheet(
         recipeId: 1,
         initialItems: [
-            ShoppingListDraftItem(name: "2 onions"),
-            ShoppingListDraftItem(name: "1 bunch parsley"),
-            ShoppingListDraftItem(name: "500g pasta", isChecked: true)
+            ShoppingListDraftItem(name: "Onions", details: "2"),
+            ShoppingListDraftItem(name: "Parsley", details: "1 bunch"),
+            ShoppingListDraftItem(name: "Pasta", details: "500g", isChecked: true)
         ],
         shoppingListViewModel: ShoppingListViewModel()
     )

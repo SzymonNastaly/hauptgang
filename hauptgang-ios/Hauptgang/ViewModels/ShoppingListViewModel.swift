@@ -13,7 +13,7 @@ final class ShoppingListViewModel {
     }
 
     var checkedItems: [PersistedShoppingListItem] {
-        self.items.filter { $0.isChecked }
+        self.items.filter(\.isChecked)
     }
 
     private let repository: ShoppingListRepositoryProtocol
@@ -55,16 +55,26 @@ final class ShoppingListViewModel {
         self.isSyncing = false
     }
 
-    func addIngredientsFromRecipe(_ ingredients: [String], recipeId: Int?) {
-        let trimmed = ingredients.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-        guard !trimmed.isEmpty else { return }
+    func addIngredientsFromRecipe(_ items: [ShoppingListDraftItem], sourceRecipeId: Int?) {
+        let cleaned: [(name: String, details: String?)] = items.compactMap { item -> (
+            name: String,
+            details: String?
+        )? in
+            let name = item.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { return nil }
+            let trimmedDetails = item.details?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let details = (trimmedDetails?.isEmpty == false) ? trimmedDetails : nil
+            return (name, details)
+        }
+        guard !cleaned.isEmpty else { return }
 
-        let newItems = trimmed.map {
+        let newItems = cleaned.map {
             ShoppingListItemCreate(
                 clientId: UUID().uuidString,
-                name: $0,
+                name: $0.name,
+                details: $0.details,
                 checkedAt: nil,
-                sourceRecipeId: recipeId
+                sourceRecipeId: sourceRecipeId
             )
         }
 
@@ -84,6 +94,7 @@ final class ShoppingListViewModel {
         let newItem = ShoppingListItemCreate(
             clientId: UUID().uuidString,
             name: name,
+            details: nil,
             checkedAt: nil,
             sourceRecipeId: nil
         )
@@ -180,6 +191,7 @@ final class ShoppingListViewModel {
                     ShoppingListItemCreate(
                         clientId: $0.clientId,
                         name: $0.name,
+                        details: $0.details,
                         checkedAt: $0.checkedAt,
                         sourceRecipeId: $0.sourceRecipeId
                     )

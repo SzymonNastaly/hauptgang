@@ -1,12 +1,12 @@
 import Foundation
 
-struct SearchIndexNameInput: Sendable {
+struct SearchIndexNameInput {
     let id: Int
     let name: String
     let updatedAt: Date
 }
 
-struct SearchIndexDetailInput: Sendable {
+struct SearchIndexDetailInput {
     let id: Int
     let name: String
     let ingredients: [String]

@@ -21,7 +21,7 @@ module RecipeImporters
 
       assert result.success?
       assert_equal "Chocolate Chip Cookies", result.recipe_attributes[:name]
-      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
       assert_equal [ "Mix ingredients", "Bake at 350°F" ], result.recipe_attributes[:instructions]
       assert_equal 15, result.recipe_attributes[:prep_time]
       assert_equal 30, result.recipe_attributes[:cook_time]
@@ -473,7 +473,7 @@ module RecipeImporters
 
       result = JsonLdExtractor.new(html, "https://example.com").extract
 
-      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     end
 
     test "filters out blank ingredients" do
@@ -485,7 +485,7 @@ module RecipeImporters
 
       result = JsonLdExtractor.new(html, "https://example.com").extract
 
-      assert_equal [ "1 cup flour", "2 eggs" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "1 cup flour", "2 eggs" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     end
 
     test "handles ingredients key instead of recipeIngredient" do
@@ -497,7 +497,7 @@ module RecipeImporters
 
       result = JsonLdExtractor.new(html, "https://example.com").extract
 
-      assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
     end
 
     # ===================
@@ -554,7 +554,7 @@ module RecipeImporters
 
       assert result.success?
       assert_equal "Direct JSON-LD Recipe", result.recipe_attributes[:name]
-      assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "1 cup flour" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
       assert_equal [ "Mix" ], result.recipe_attributes[:instructions]
     end
 

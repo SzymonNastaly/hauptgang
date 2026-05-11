@@ -1,4 +1,4 @@
-<%= form_with(model: recipe, data: { controller: "recipe-form", recipe_form_ingredients_value: recipe.ingredients.to_json, recipe_form_instructions_value: recipe.instructions.to_json }, multipart: true, class: "pb-20") do |form| %>
+<%= form_with(model: recipe, data: { controller: "recipe-form", recipe_form_ingredients_value: recipe.ingredients.map(&:raw).to_json, recipe_form_instructions_value: recipe.instructions.to_json }, multipart: true, class: "pb-20") do |form| %>
 
   <%# Top Controls %>
   <div class="h-14 flex items-center justify-between sticky top-0 bg-surface-base dark:bg-gray-950 z-30 border-b border-border-subtle dark:border-gray-800 px-4 md:px-6">

@@ -216,7 +216,6 @@ final class MealPlanViewModel {
     }
 
     private func syncPendingEntries(cookbookId: Int) async {
-
         do {
             let pending = try repository.getPendingEntries(cookbookId: cookbookId)
             for entry in pending {

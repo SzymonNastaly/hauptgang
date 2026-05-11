@@ -37,6 +37,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
             if let local = self.items.first(where: { $0.clientId == response.clientId }) {
                 local.serverId = response.id
                 local.name = response.name
+                local.details = response.details
                 local.createdAt = response.createdAt
                 local.updatedAt = response.updatedAt
                 if local.syncState != .pendingUpdate {
@@ -47,6 +48,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
                 let newItem = PersistedShoppingListItem(
                     clientId: response.clientId,
                     name: response.name,
+                    details: response.details,
                     checkedAt: response.checkedAt,
                     sourceRecipeId: response.sourceRecipeId,
                     createdAt: response.createdAt,
@@ -66,6 +68,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
             let persisted = PersistedShoppingListItem(
                 clientId: item.clientId,
                 name: item.name,
+                details: item.details,
                 checkedAt: item.checkedAt,
                 sourceRecipeId: item.sourceRecipeId,
                 syncState: .pendingCreate
@@ -89,6 +92,7 @@ final class MockShoppingListRepository: ShoppingListRepositoryProtocol {
         guard let local = self.items.first(where: { $0.clientId == clientId }) else { return }
         local.serverId = response.id
         local.name = response.name
+        local.details = response.details
         local.checkedAt = response.checkedAt
         local.createdAt = response.createdAt
         local.updatedAt = response.updatedAt

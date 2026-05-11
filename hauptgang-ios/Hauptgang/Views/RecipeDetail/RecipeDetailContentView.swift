@@ -9,8 +9,28 @@ struct RecipeDetailContentView: View {
     let isCookingMode: Bool
     let onToggleCookingMode: () -> Void
 
+    /// Portion-scaling state owned by the parent so the toolbar's "add to
+    /// shopping list" action can read the current scale.
+    @Binding var currentServings: Int?
+
     private var hasHeroImage: Bool {
         self.recipe.heroCoverImageUrl != nil
+    }
+
+    private var baseServings: Int? {
+        guard let s = self.recipe.servings, s > 0 else { return nil }
+        return s
+    }
+
+    private var effectiveServings: Int {
+        self.currentServings ?? self.baseServings ?? 1
+    }
+
+    /// Multiplier applied to ingredient quantities. Returns 1 when scaling
+    /// is unavailable (no base servings or no override).
+    private var scale: Decimal {
+        guard let base = self.baseServings, base > 0 else { return 1 }
+        return Decimal(self.effectiveServings) / Decimal(base)
     }
 
     var body: some View {
@@ -39,7 +59,7 @@ struct RecipeDetailContentView: View {
                         self.durationCard
                     }
 
-                    if !self.recipe.ingredients.isEmpty {
+                    if !self.recipe.resolvedIngredients.isEmpty {
                         self.ingredientsSection
                     }
 
@@ -110,26 +130,39 @@ struct RecipeDetailContentView: View {
     private var durationCard: some View {
         let hasPrep = (self.recipe.prepTime ?? 0) > 0
         let hasCook = (self.recipe.cookTime ?? 0) > 0
+        let hasDuration = hasPrep || hasCook
 
         return HStack(spacing: 0) {
-            if let prepTime = self.recipe.prepTime, prepTime > 0 {
-                self.durationItem(icon: "clock", label: "Prep", value: "\(prepTime)m")
+            if hasDuration {
+                HStack(spacing: 0) {
+                    if let prepTime = self.recipe.prepTime, prepTime > 0 {
+                        self.durationItem(icon: "clock", label: "Prep", value: "\(prepTime)m")
+                    }
+
+                    if let cookTime = self.recipe.cookTime, cookTime > 0 {
+                        if hasPrep {
+                            Divider()
+                                .frame(height: 32)
+                        }
+                        self.durationItem(icon: "flame", label: "Cook", value: "\(cookTime)m")
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
 
-            if let cookTime = self.recipe.cookTime, cookTime > 0 {
-                if hasPrep {
+            if let baseServings = self.baseServings {
+                if hasDuration {
                     Divider()
                         .frame(height: 32)
                 }
-                self.durationItem(icon: "flame", label: "Cook", value: "\(cookTime)m")
-            }
-
-            if let servings = self.recipe.servings, servings > 0 {
-                if hasPrep || hasCook {
-                    Divider()
-                        .frame(height: 32)
-                }
-                self.durationItem(icon: "person.2", label: "Servings", value: "\(servings)")
+                PortionScalerView(
+                    servings: Binding(
+                        get: { self.effectiveServings },
+                        set: { self.currentServings = $0 }
+                    ),
+                    baseServings: baseServings
+                )
+                .frame(maxWidth: .infinity)
             }
         }
         .frame(maxWidth: .infinity)
@@ -143,8 +176,8 @@ struct RecipeDetailContentView: View {
             self.sectionHeader("Ingredients")
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                ForEach(Array(self.recipe.ingredients.enumerated()), id: \.offset) { _, ingredient in
-                    self.ingredientRow(ingredient)
+                ForEach(self.recipe.resolvedIngredients) { ingredient in
+                    IngredientRow(ingredient: ingredient, scale: self.scale)
                 }
             }
         }
@@ -248,31 +281,19 @@ struct RecipeDetailContentView: View {
             Image(systemName: icon)
                 .font(.system(size: 18))
                 .foregroundColor(.hauptgangPrimary)
+                .frame(height: 24)
 
             Text(value)
                 .font(.headline)
                 .foregroundColor(.hauptgangTextPrimary)
+                .frame(height: 28)
 
             Text(label)
                 .font(.caption)
                 .foregroundColor(.hauptgangTextSecondary)
+                .frame(height: 18)
         }
         .frame(maxWidth: .infinity)
-    }
-
-    private func ingredientRow(_ ingredient: String) -> some View {
-        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-            Circle()
-                .fill(Color.hauptgangPrimary)
-                .frame(width: 6, height: 6)
-                .padding(.top, 6)
-
-            Text(ingredient)
-                .font(.body)
-                .foregroundColor(.hauptgangTextPrimary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 
     private func notesSection(_ notes: String) -> some View {
@@ -298,5 +319,59 @@ private struct PressDownButtonStyle: ButtonStyle {
         configuration.label
             .offset(y: configuration.isPressed ? 2 : 0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+/// Renders a single ingredient row with differential styling for parsed
+/// rows (quantity in tabular figures + accent unit) and a plain `raw`
+/// fallback for unparsed rows. Honors the `scale` multiplier from the
+/// portion scaler.
+private struct IngredientRow: View {
+    let ingredient: StructuredIngredient
+    let scale: Decimal
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Circle()
+                .fill(Color.hauptgangPrimary)
+                .frame(width: 6, height: 6)
+                .padding(.top, 8)
+
+            if self.ingredient.hasStructuredFields {
+                self.structuredText
+            } else {
+                Text(self.ingredient.raw)
+                    .font(.body)
+                    .foregroundColor(.hauptgangTextPrimary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var structuredText: some View {
+        let quantityText = IngredientFormatter.formatQuantity(
+            amount: self.ingredient.amount,
+            amountMax: self.ingredient.amountMax,
+            unit: self.ingredient.unit,
+            scale: self.scale
+        )
+
+        (
+            Text(quantityText.isEmpty ? "" : "\(quantityText) ")
+                .font(.body)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+                .foregroundColor(.hauptgangPrimary)
+                + Text(self.ingredient.name ?? self.ingredient.raw)
+                .font(.body)
+                .foregroundColor(.hauptgangTextPrimary)
+                + Text(self.ingredient.note.map { ", \($0)" } ?? "")
+                .font(.body)
+                .foregroundColor(.hauptgangTextSecondary)
+        )
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

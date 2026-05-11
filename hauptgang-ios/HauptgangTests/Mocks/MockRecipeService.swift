@@ -79,7 +79,7 @@ final class MockRecipeService: RecipeServiceProtocol, @unchecked Sendable {
     var updateRecipeCoverImageCalled = false
     var updateRecipeCoverImageCalledWithId: Int?
 
-    func updateRecipeCoverImage(id: Int, imageData: Data, mimeType: String) async throws -> RecipeDetail {
+    func updateRecipeCoverImage(id: Int, imageData _: Data, mimeType _: String) async throws -> RecipeDetail {
         self.updateRecipeCoverImageCalled = true
         self.updateRecipeCoverImageCalledWithId = id
         return try self.updateRecipeCoverImageResult.get()

@@ -51,7 +51,7 @@ enum ShareImportExtractor {
     /// Result of attempting to extract JS preprocessing data from a web page share.
     /// When JS preprocessing returns data, we get a full PageContent.
     /// When it fails, we may still get the URL from the property list provider.
-    enum PageContentResult: Sendable {
+    enum PageContentResult {
         case success(PageContent)
         case urlOnly(URL)
         case none

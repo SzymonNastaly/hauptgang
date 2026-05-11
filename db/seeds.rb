@@ -29,12 +29,12 @@ if Rails.env.development?
       favorite: false,
       image_file: "overnight-oats.jpg",
       ingredients: [
-        "50g rolled oats",
-        "150ml milk of choice",
-        "1 tbsp chia seeds",
-        "1 tbsp maple syrup",
-        "Pinch of salt",
-        "Fresh berries for topping"
+        { raw: "50g rolled oats", name: "rolled oats", amount: 50, unit: "g" },
+        { raw: "150ml milk of choice", name: "milk of choice", amount: 150, unit: "ml" },
+        { raw: "1 tbsp chia seeds", name: "chia seeds", amount: 1, unit: "tbsp" },
+        { raw: "1 tbsp maple syrup", name: "maple syrup", amount: 1, unit: "tbsp" },
+        { raw: "Pinch of salt", name: "salt", note: "pinch" },
+        { raw: "Fresh berries for topping", name: "fresh berries", note: "for topping" }
       ],
       instructions: [
         "Combine oats, milk, chia seeds, maple syrup, and salt in a jar.",
@@ -52,14 +52,14 @@ if Rails.env.development?
       image_file: "quick-veggie-stir-fry.jpg",
       source_url: "https://example.com/stir-fry",
       ingredients: [
-        "2 tbsp vegetable oil",
-        "2 cloves garlic, minced",
-        "1 bell pepper, sliced",
-        "1 zucchini, sliced",
-        "150g broccoli florets",
-        "3 tbsp soy sauce",
-        "1 tbsp sesame oil",
-        "Cooked rice for serving"
+        { raw: "2 tbsp vegetable oil", name: "vegetable oil", amount: 2, unit: "tbsp" },
+        { raw: "2 cloves garlic, minced", name: "garlic", amount: 2, unit: "cloves", note: "minced" },
+        { raw: "1 bell pepper, sliced", name: "bell pepper", amount: 1, note: "sliced" },
+        { raw: "1 zucchini, sliced", name: "zucchini", amount: 1, note: "sliced" },
+        { raw: "150g broccoli florets", name: "broccoli florets", amount: 150, unit: "g" },
+        { raw: "3 tbsp soy sauce", name: "soy sauce", amount: 3, unit: "tbsp" },
+        { raw: "1 tbsp sesame oil", name: "sesame oil", amount: 1, unit: "tbsp" },
+        { raw: "Cooked rice for serving", name: "cooked rice", note: "for serving" }
       ],
       instructions: [
         "Heat oil in a wok over high heat.",
@@ -78,14 +78,14 @@ if Rails.env.development?
       favorite: false,
       image_file: "fluffy-pancakes.jpg",
       ingredients: [
-        "200g all-purpose flour",
-        "2 tbsp sugar",
-        "2 tsp baking powder",
-        "1/2 tsp salt",
-        "1 egg",
-        "250ml milk",
-        "30g melted butter",
-        "1 tsp vanilla extract"
+        { raw: "200g all-purpose flour", name: "all-purpose flour", amount: 200, unit: "g" },
+        { raw: "2 tbsp sugar", name: "sugar", amount: 2, unit: "tbsp" },
+        { raw: "2 tsp baking powder", name: "baking powder", amount: 2, unit: "tsp" },
+        { raw: "1/2 tsp salt", name: "salt", amount: 0.5, unit: "tsp" },
+        { raw: "1 egg", name: "egg", amount: 1 },
+        { raw: "250ml milk", name: "milk", amount: 250, unit: "ml" },
+        { raw: "30g melted butter", name: "butter", amount: 30, unit: "g", note: "melted" },
+        { raw: "1 tsp vanilla extract", name: "vanilla extract", amount: 1, unit: "tsp" }
       ],
       instructions: [
         "Whisk flour, sugar, baking powder, and salt in a bowl.",
@@ -105,14 +105,14 @@ if Rails.env.development?
       favorite: false,
       image_file: "garlic-butter-shrimp.jpg",
       ingredients: [
-        "400g large shrimp, peeled and deveined",
-        "4 tbsp butter",
-        "6 cloves garlic, minced",
-        "1/4 cup white wine",
-        "Juice of 1 lemon",
-        "2 tbsp fresh parsley, chopped",
-        "Salt and pepper",
-        "Crusty bread for serving"
+        { raw: "400g large shrimp, peeled and deveined", name: "large shrimp", amount: 400, unit: "g", note: "peeled and deveined" },
+        { raw: "4 tbsp butter", name: "butter", amount: 4, unit: "tbsp" },
+        { raw: "6 cloves garlic, minced", name: "garlic", amount: 6, unit: "cloves", note: "minced" },
+        { raw: "1/4 cup white wine", name: "white wine", amount: 0.25, unit: "cup" },
+        { raw: "Juice of 1 lemon", name: "lemon", amount: 1, note: "juiced" },
+        { raw: "2 tbsp fresh parsley, chopped", name: "fresh parsley", amount: 2, unit: "tbsp", note: "chopped" },
+        { raw: "Salt and pepper", name: "salt and pepper", note: "to taste" },
+        { raw: "Crusty bread for serving", name: "crusty bread", note: "for serving" }
       ],
       instructions: [
         "Pat shrimp dry, season with salt and pepper.",
@@ -132,12 +132,12 @@ if Rails.env.development?
       favorite: false,
       image_file: "avocado-toast.jpg",
       ingredients: [
-        "2 slices sourdough bread",
-        "1 ripe avocado",
-        "1/2 lemon, juiced",
-        "Red pepper flakes",
-        "Flaky sea salt",
-        "Everything bagel seasoning (optional)"
+        { raw: "2 slices sourdough bread", name: "sourdough bread", amount: 2, unit: "slices" },
+        { raw: "1 ripe avocado", name: "avocado", amount: 1, note: "ripe" },
+        { raw: "1/2 lemon, juiced", name: "lemon", amount: 0.5, note: "juiced" },
+        { raw: "Red pepper flakes", name: "red pepper flakes", note: "to taste" },
+        { raw: "Flaky sea salt", name: "flaky sea salt", note: "to taste" },
+        { raw: "Everything bagel seasoning (optional)", name: "everything bagel seasoning", note: "optional" }
       ],
       instructions: [
         "Toast bread until golden and crispy.",
@@ -155,13 +155,13 @@ if Rails.env.development?
       favorite: false,
       image_file: "caprese-salad.jpg",
       ingredients: [
-        "3 large ripe tomatoes, sliced",
-        "250g fresh mozzarella, sliced",
-        "Fresh basil leaves",
-        "3 tbsp extra virgin olive oil",
-        "1 tbsp balsamic glaze",
-        "Flaky sea salt",
-        "Freshly ground black pepper"
+        { raw: "3 large ripe tomatoes, sliced", name: "tomatoes", amount: 3, note: "large, ripe, sliced" },
+        { raw: "250g fresh mozzarella, sliced", name: "fresh mozzarella", amount: 250, unit: "g", note: "sliced" },
+        { raw: "Fresh basil leaves", name: "fresh basil leaves" },
+        { raw: "3 tbsp extra virgin olive oil", name: "extra virgin olive oil", amount: 3, unit: "tbsp" },
+        { raw: "1 tbsp balsamic glaze", name: "balsamic glaze", amount: 1, unit: "tbsp" },
+        { raw: "Flaky sea salt", name: "flaky sea salt", note: "to taste" },
+        { raw: "Freshly ground black pepper", name: "black pepper", note: "freshly ground" }
       ],
       instructions: [
         "Arrange tomato and mozzarella slices alternating on a platter.",
@@ -185,6 +185,7 @@ if Rails.env.development?
   recipes_data.each do |recipe_data|
     tag_names = recipe_data.delete(:tags)
     image_file = recipe_data.delete(:image_file)
+    ingredient_entries = recipe_data.delete(:ingredients)
 
     recipe = test_user.recipes.find_or_create_by!(name: recipe_data[:name]) do |r|
       r.cookbook = test_cookbook
@@ -192,6 +193,11 @@ if Rails.env.development?
     end
     recipe.update!(cookbook: test_cookbook) if recipe.cookbook_id != test_cookbook.id
     recipe.tags = Tag.where(name: tag_names)
+
+    if ingredient_entries
+      structured = recipe.ingredients.any? { |i| i.amount.present? || i.unit.present? }
+      recipe.replace_ingredients_from_hashes(ingredient_entries) unless structured
+    end
     recipes_by_name[recipe.name] = recipe
 
     next if image_file.blank? || recipe.cover_image.attached?

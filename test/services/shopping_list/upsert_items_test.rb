@@ -163,6 +163,66 @@ class ShoppingList::UpsertItemsTest < ActiveSupport::TestCase
     ShoppingListItem.define_method(:save, original_save)
   end
 
+  test "creates an item with details" do
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "details-1", name: "Tomato", details: "200g, halved" } ]
+    ).call
+
+    assert result.success?
+    assert_equal "200g, halved", result.items.first.details
+  end
+
+  test "upsert replaces details with new value" do
+    ShoppingListItem.create!(
+      cookbook: @cookbook,
+      user: @user,
+      client_id: "details-replace",
+      name: "Tomato",
+      details: "old"
+    )
+
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "details-replace", name: "Tomato", details: "new" } ]
+    ).call
+
+    assert result.success?
+    assert_equal "new", result.items.first.details
+  end
+
+  test "upsert clears details when client sends nil" do
+    ShoppingListItem.create!(
+      cookbook: @cookbook,
+      user: @user,
+      client_id: "details-clear",
+      name: "Tomato",
+      details: "200g"
+    )
+
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "details-clear", name: "Tomato", details: nil } ]
+    ).call
+
+    assert result.success?
+    assert_nil result.items.first.details
+  end
+
+  test "blank details normalizes to nil" do
+    result = ShoppingList::UpsertItems.new(
+      user: @user,
+      cookbook: @cookbook,
+      items: [ { client_id: "details-blank", name: "Tomato", details: "   " } ]
+    ).call
+
+    assert result.success?
+    assert_nil result.items.first.details
+  end
+
   test "unchecks item by upserting with blank checked_at" do
     existing = ShoppingListItem.create!(
       cookbook: @cookbook,

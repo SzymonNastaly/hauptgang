@@ -35,7 +35,7 @@ final class NetworkMonitorTests: XCTestCase {
         try await super.tearDown()
     }
 
-    func testRefreshStatus_whenHealthCheckSucceeds_clearsOffline() async throws {
+    func testRefreshStatus_whenHealthCheckSucceeds_clearsOffline() async {
         self.pathMonitor.currentStatus = .satisfied
         NetworkMonitorMockURLProtocol.requestHandler = { [healthCheckURL] request in
             XCTAssertEqual(request.url, healthCheckURL)
@@ -55,7 +55,7 @@ final class NetworkMonitorTests: XCTestCase {
         XCTAssertFalse(self.sut.isOffline)
     }
 
-    func testRefreshStatus_whenPathIsUnsatisfiedButHealthCheckSucceeds_clearsOffline() async throws {
+    func testRefreshStatus_whenPathIsUnsatisfiedButHealthCheckSucceeds_clearsOffline() async {
         NetworkMonitorMockURLProtocol.requestHandler = { [healthCheckURL] request in
             XCTAssertEqual(request.url, healthCheckURL)
 
@@ -146,7 +146,7 @@ final class NetworkMonitorTests: XCTestCase {
         XCTAssertTrue(self.sut.isOffline)
     }
 
-    func testRefreshStatus_usesFreshSessionForLaterProbeRecovery() async throws {
+    func testRefreshStatus_usesFreshSessionForLaterProbeRecovery() async {
         let failingConfiguration = URLSessionConfiguration.ephemeral
         failingConfiguration.protocolClasses = [AlwaysFailingNetworkMonitorURLProtocol.self]
         let failingSession = URLSession(configuration: failingConfiguration)
@@ -230,7 +230,7 @@ private final class MockPathMonitor: NetworkPathMonitoring {
         self.currentStatus = initialStatus
     }
 
-    func start(queue: DispatchQueue) {
+    func start(queue _: DispatchQueue) {
         self.startCallCount += 1
     }
 
@@ -245,7 +245,7 @@ private final class MockPathMonitor: NetworkPathMonitoring {
 }
 
 private final class AlwaysFailingNetworkMonitorURLProtocol: URLProtocol {
-    override class func canInit(with request: URLRequest) -> Bool {
+    override class func canInit(with _: URLRequest) -> Bool {
         true
     }
 
@@ -261,7 +261,7 @@ private final class AlwaysFailingNetworkMonitorURLProtocol: URLProtocol {
 }
 
 private final class AlwaysSucceedingNetworkMonitorURLProtocol: URLProtocol {
-    override class func canInit(with request: URLRequest) -> Bool {
+    override class func canInit(with _: URLRequest) -> Bool {
         true
     }
 
@@ -291,7 +291,7 @@ private final class NetworkMonitorMockURLProtocol: URLProtocol {
         self.requestHandler = nil
     }
 
-    override class func canInit(with request: URLRequest) -> Bool {
+    override class func canInit(with _: URLRequest) -> Bool {
         true
     }
 

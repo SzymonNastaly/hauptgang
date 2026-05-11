@@ -107,7 +107,10 @@ module RecipeImporters
     def extract_ingredients(recipe)
       ingredients = recipe["recipeIngredient"] || recipe["ingredients"] || []
       ingredients = [ ingredients ] unless ingredients.is_a?(Array)
-      ingredients.map { |ingredient| ingredient.to_s.strip }.reject(&:blank?)
+      ingredients
+        .map { |ingredient| ingredient.to_s.strip }
+        .reject(&:blank?)
+        .map { |line| { raw: line, name: line } }
     end
 
     def extract_instructions(recipe)

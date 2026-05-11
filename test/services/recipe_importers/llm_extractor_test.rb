@@ -22,7 +22,7 @@ module RecipeImporters
 
       assert result.success?
       assert_equal "Chocolate Cake", result.recipe_attributes[:name]
-      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "2 cups flour", "1 cup sugar" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
       assert_equal [ "Mix ingredients", "Bake at 350°F for 30 minutes" ], result.recipe_attributes[:instructions]
       assert_equal 15, result.recipe_attributes[:prep_time]
       assert_equal 30, result.recipe_attributes[:cook_time]
@@ -284,7 +284,7 @@ module RecipeImporters
       result = LlmExtractor.new(html, "https://example.com/recipe").extract
 
       assert result.success?
-      assert_equal [ "flour", "sugar" ], result.recipe_attributes[:ingredients]
+      assert_equal [ "flour", "sugar" ], result.recipe_attributes[:ingredients].map { |i| i[:raw] }
       assert_equal [ "Step 1" ], result.recipe_attributes[:instructions]
     end
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RecipeDetailToolbarContent: ToolbarContent {
-    let ingredients: [String]
+    let hasIngredients: Bool
     let onAddToShoppingList: () -> Void
     let onEdit: () -> Void
 
@@ -14,7 +14,7 @@ struct RecipeDetailToolbarContent: ToolbarContent {
 
     @ViewBuilder
     private var addToShoppingListButton: some View {
-        if !self.ingredients.isEmpty {
+        if self.hasIngredients {
             if #available(iOS 26, *) {
                 Button(action: self.onAddToShoppingList) {
                     Image(systemName: "cart.badge.plus")

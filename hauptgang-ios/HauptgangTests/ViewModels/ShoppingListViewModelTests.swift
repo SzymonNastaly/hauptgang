@@ -9,6 +9,7 @@ struct ShoppingListViewModelTests {
         id: Int = 1,
         clientId: String = UUID().uuidString,
         name: String = "Milk",
+        details: String? = nil,
         checkedAt: Date? = nil,
         sourceRecipeId: Int? = nil
     ) -> ShoppingListItemResponse {
@@ -16,6 +17,7 @@ struct ShoppingListViewModelTests {
             id: id,
             clientId: clientId,
             name: name,
+            details: details,
             checkedAt: checkedAt,
             sourceRecipeId: sourceRecipeId,
             createdAt: Date(),
@@ -153,7 +155,13 @@ struct ShoppingListViewModelTests {
         ]
 
         let vm = ShoppingListViewModel(repository: repo, service: service)
-        vm.addIngredientsFromRecipe(["Flour", "Sugar"], recipeId: 42)
+        vm.addIngredientsFromRecipe(
+            [
+                ShoppingListDraftItem(name: "Flour"),
+                ShoppingListDraftItem(name: "Sugar")
+            ],
+            sourceRecipeId: 42
+        )
 
         try? await Task.sleep(for: .milliseconds(150))
 
@@ -243,7 +251,14 @@ struct ShoppingListViewModelTests {
         let (vm, repo, service) = self.makeVM()
         service.createResult = []
 
-        vm.addIngredientsFromRecipe(["Flour", "  Sugar  ", ""], recipeId: 42)
+        vm.addIngredientsFromRecipe(
+            [
+                ShoppingListDraftItem(name: "Flour"),
+                ShoppingListDraftItem(name: "  Sugar  "),
+                ShoppingListDraftItem(name: "")
+            ],
+            sourceRecipeId: 42
+        )
 
         #expect(repo.items.count == 2)
         let names = repo.items.map(\.name)
@@ -255,9 +270,38 @@ struct ShoppingListViewModelTests {
     @Test func addIngredientsFromRecipe_ignoresAllEmpty() {
         let (vm, repo, _) = self.makeVM()
 
-        vm.addIngredientsFromRecipe(["", "  "], recipeId: nil)
+        vm.addIngredientsFromRecipe(
+            [
+                ShoppingListDraftItem(name: ""),
+                ShoppingListDraftItem(name: "  ")
+            ],
+            sourceRecipeId: nil
+        )
 
         #expect(repo.items.isEmpty)
+    }
+
+    @Test func addIngredientsFromRecipe_propagatesDetails() {
+        let repo = MockShoppingListRepository()
+        let service = MockShoppingListService()
+        service.createResult = []
+
+        let vm = ShoppingListViewModel(repository: repo, service: service)
+        vm.addIngredientsFromRecipe(
+            [
+                ShoppingListDraftItem(name: "Tomato", details: "200g, halved"),
+                ShoppingListDraftItem(name: "Salt", details: "  "),
+                ShoppingListDraftItem(name: "Eggs", details: nil)
+            ],
+            sourceRecipeId: 7
+        )
+
+        let tomato = repo.items.first { $0.name == "Tomato" }
+        let salt = repo.items.first { $0.name == "Salt" }
+        let eggs = repo.items.first { $0.name == "Eggs" }
+        #expect(tomato?.details == "200g, halved")
+        #expect(salt?.details == nil)
+        #expect(eggs?.details == nil)
     }
 
     // MARK: - Toggle item

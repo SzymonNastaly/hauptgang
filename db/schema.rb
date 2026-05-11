@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_26_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_09_120000) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -94,6 +94,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_120000) do
     t.index ["user_id"], name: "index_device_tokens_on_user_id"
   end
 
+  create_table "ingredients", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 4
+    t.decimal "amount_max", precision: 10, scale: 4
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.string "note"
+    t.integer "position", null: false
+    t.string "raw", null: false
+    t.integer "recipe_id", null: false
+    t.string "unit"
+    t.datetime "updated_at", null: false
+    t.index ["recipe_id"], name: "index_ingredients_on_recipe_id"
+  end
+
+  create_table "legacy_recipe_ingredients", force: :cascade do |t|
+    t.json "ingredients", default: []
+    t.integer "recipe_id", null: false
+    t.index ["recipe_id"], name: "index_legacy_recipe_ingredients_on_recipe_id"
+  end
+
   create_table "meal_plan_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "meal_plan_id", null: false
@@ -163,7 +183,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_120000) do
     t.datetime "failed_recipe_fetched_at"
     t.boolean "favorite", default: false
     t.integer "import_status", default: 1, null: false
-    t.json "ingredients", default: []
     t.json "instructions", default: []
     t.string "name"
     t.text "notes"
@@ -192,6 +211,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_120000) do
     t.string "client_id", null: false
     t.integer "cookbook_id", null: false
     t.datetime "created_at", null: false
+    t.string "details"
     t.string "name", null: false
     t.integer "source_recipe_id"
     t.datetime "updated_at", null: false
@@ -230,6 +250,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_26_120000) do
   add_foreign_key "cookbook_memberships", "cookbooks", on_delete: :cascade
   add_foreign_key "cookbook_memberships", "users", on_delete: :cascade
   add_foreign_key "device_tokens", "users", on_delete: :cascade
+  add_foreign_key "ingredients", "recipes", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "meal_plans", on_delete: :cascade
   add_foreign_key "meal_plan_entries", "recipes", on_delete: :restrict
   add_foreign_key "meal_plan_entries", "users", column: "proposed_by_user_id", on_delete: :nullify

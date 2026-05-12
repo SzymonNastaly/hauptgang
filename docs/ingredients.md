@@ -44,7 +44,3 @@ The `_recipe.json.jbuilder` partial preserves backwards compatibility:
 - `structured_ingredients` — array of objects with `raw`, `name`, `amount`, `amount_max`, `unit`, `note`. New clients can use this for richer rendering (e.g. shopping list aggregation).
 
 `PATCH /api/v1/recipes/:id` accepts `ingredients: [string, string, ...]`. The controller calls `replace_ingredients_from_strings` and enqueues a parse job, so structured fields fill in over the next seconds.
-
-## Backfill
-
-Legacy data lives in the `legacy_recipe_ingredients` snapshot table created by the introductory migration. Run `bin/rails recipes:backfill_ingredients` to enqueue `BackfillRecipeIngredientsJob` for each snapshotted recipe; the job creates `Ingredient` rows from the snapshot and chains `ParseRecipeIngredientsJob` to populate structured fields. The job is idempotent: it skips recipes that already have ingredients.

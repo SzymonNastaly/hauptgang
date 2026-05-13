@@ -36,7 +36,6 @@ struct RootView: View {
                     await self.subscriptionManager.identify(userId: String(user.id))
                     await self.subscriptionManager.refreshStatus()
                     await PushNotificationService.shared.setAuthenticated(true)
-                    await PushNotificationService.shared.requestAuthorizationIfNeeded()
 
                     // Check for invitation stored while unauthenticated
                     if let storedToken = self.deepLinkRouter.consumeStoredToken() {

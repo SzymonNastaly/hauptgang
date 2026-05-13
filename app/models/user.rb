@@ -17,7 +17,7 @@ class User < ApplicationRecord
   validates :name, length: { maximum: 50 }
 
   after_create :create_personal_cookbook!
-  before_destroy :destroy_owned_cookbooks!, prepend: true
+  before_destroy :handle_owned_cookbooks!, prepend: true
 
   def personal_cookbook
     cookbooks.personal.first
@@ -38,11 +38,24 @@ class User < ApplicationRecord
     cookbook_memberships.create!(cookbook: cookbook, role: :owner)
   end
 
-  def destroy_owned_cookbooks!
-    # Must run before dependent callbacks. Destroys owned cookbooks (cascading to their recipes
-    # and shopping list items). DB-level ON DELETE CASCADE handles memberships cleanup.
+  def handle_owned_cookbooks!
+    # Must run before dependent callbacks. For each owned cookbook:
+    # - if other members exist, transfer ownership to the oldest remaining collaborator
+    #   so their data survives (only personal cookbooks and solo shared cookbooks die).
+    # - otherwise destroy the cookbook (cascading to recipes, shopping list, meal plans).
     cookbook_memberships.where(role: :owner).includes(:cookbook).find_each do |membership|
-      membership.cookbook.destroy!
+      cookbook = membership.cookbook
+      successor = cookbook.cookbook_memberships
+                          .where.not(user_id: id)
+                          .order(:created_at)
+                          .first
+
+      if successor && !cookbook.personal?
+        membership.destroy!
+        successor.update!(role: :owner)
+      else
+        cookbook.destroy!
+      end
     end
   end
 end

@@ -94,6 +94,17 @@ final class AuthService: AuthServiceProtocol {
         await self.keychain.clearAll()
     }
 
+    // MARK: - Delete Account
+
+    func deleteAccount() async throws {
+        try await self.api.requestVoid(
+            endpoint: "account",
+            method: .delete,
+            authenticated: true
+        )
+        await self.keychain.clearAll()
+    }
+
     // MARK: - Session Check
 
     func getCurrentUser() async -> User? {

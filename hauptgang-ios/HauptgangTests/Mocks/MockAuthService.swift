@@ -6,6 +6,8 @@ import Foundation
 final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
     var loginResult: Result<User, Error> = .success(User(id: 1, email: "test@example.com"))
     var logoutCalled = false
+    var deleteAccountCalled = false
+    var deleteAccountResult: Result<Void, Error> = .success(())
     var currentUser: User?
 
     func login(email _: String, password _: String) async throws -> User {
@@ -29,6 +31,12 @@ final class MockAuthService: AuthServiceProtocol, @unchecked Sendable {
 
     func logout() async {
         self.logoutCalled = true
+        self.currentUser = nil
+    }
+
+    func deleteAccount() async throws {
+        try self.deleteAccountResult.get()
+        self.deleteAccountCalled = true
         self.currentUser = nil
     }
 

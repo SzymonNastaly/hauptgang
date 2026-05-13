@@ -61,7 +61,7 @@ class UserTest < ActiveSupport::TestCase
     assert_not CookbookMembership.exists?(user_id: collaborator.id, cookbook_id: shared.id)
   end
 
-  test "destroying user who owns shared cookbook deletes shared cookbook and its recipes" do
+  test "destroying user who owns shared cookbook with no other members deletes it" do
     user = users(:one)
     shared = Cookbook.create!(name: "Shared", personal: false)
     CookbookMembership.create!(cookbook: shared, user: user, role: :owner)
@@ -71,5 +71,20 @@ class UserTest < ActiveSupport::TestCase
 
     assert_nil Cookbook.find_by(id: shared.id)
     assert_nil Recipe.find_by(id: recipe.id)
+  end
+
+  test "destroying user who owns shared cookbook with collaborators transfers ownership" do
+    owner = users(:one)
+    collaborator = users(:two)
+    shared = Cookbook.create!(name: "Shared", personal: false)
+    CookbookMembership.create!(cookbook: shared, user: owner, role: :owner)
+    CookbookMembership.create!(cookbook: shared, user: collaborator, role: :collaborator)
+    recipe = shared.recipes.create!(name: "Shared Recipe", user: owner)
+
+    owner.destroy!
+
+    assert Cookbook.exists?(shared.id), "Shared cookbook should survive"
+    assert Recipe.exists?(recipe.id), "Shared recipe should survive"
+    assert_equal collaborator, shared.reload.owner
   end
 end

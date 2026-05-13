@@ -7,6 +7,7 @@ protocol AuthServiceProtocol: Sendable {
     func signup(name: String, email: String, password: String, passwordConfirmation: String) async throws -> User
     func updateName(_ name: String) async throws -> User
     func logout() async
+    func deleteAccount() async throws
     func getCurrentUser() async -> User?
     func isAuthenticated() async -> Bool
 }

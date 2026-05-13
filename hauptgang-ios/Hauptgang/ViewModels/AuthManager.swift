@@ -75,4 +75,16 @@ final class AuthManager: ObservableObject {
         await self.authService.logout()
         self.authState = .unauthenticated
     }
+
+    /// Permanently delete the user's account and clear local state.
+    /// Server-side `User.dependent: :destroy` cascades through api_tokens and device_tokens,
+    /// so we only touch local state after the destroy succeeds — otherwise a network failure
+    /// would leave a signed-in user with their cookbook context and push registration wiped.
+    func deleteAccount() async throws {
+        try await self.authService.deleteAccount()
+        await CookbookContext.shared.reset()
+        await PushNotificationService.shared.unregister()
+        await PushNotificationService.shared.setAuthenticated(false)
+        self.authState = .unauthenticated
+    }
 }

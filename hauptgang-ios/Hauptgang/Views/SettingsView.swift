@@ -76,6 +76,17 @@ struct SettingsView: View {
                             .foregroundColor(.hauptgangTextSecondary)
                     }
                 }
+
+                NavigationLink {
+                    ManageAccountView()
+                        .environmentObject(self.authManager)
+                } label: {
+                    HStack {
+                        Image(systemName: "person.crop.circle.badge.exclamationmark")
+                            .foregroundColor(.hauptgangPrimary)
+                        Text("Manage Account")
+                    }
+                }
             }
         }
     }

@@ -7,16 +7,13 @@ final class AuthViewModel: ObservableObject {
     @Published var name = ""
     @Published var email = ""
     @Published var password = ""
-    @Published var passwordConfirmation = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var isSignUp = false {
         didSet {
             self.errorMessage = nil
-            self.passwordConfirmation = ""
             self.nameDirty = false
             self.emailDirty = false
-            self.passwordConfirmationDirty = false
             self.passwordDirty = false
         }
     }
@@ -25,7 +22,6 @@ final class AuthViewModel: ObservableObject {
     @Published var nameDirty = false
     @Published var emailDirty = false
     @Published var passwordDirty = false
-    @Published var passwordConfirmationDirty = false
 
     private let authService: AuthServiceProtocol
 
@@ -45,8 +41,7 @@ final class AuthViewModel: ObservableObject {
             let trimmedName = self.name.trimmingCharacters(in: .whitespaces)
             return baseValid &&
                 !trimmedName.isEmpty &&
-                self.password.count >= 12 &&
-                self.password == self.passwordConfirmation
+                self.password.count >= 12
         }
 
         return baseValid
@@ -68,19 +63,10 @@ final class AuthViewModel: ObservableObject {
         return nil
     }
 
-    var passwordConfirmationError: String? {
-        guard self.isSignUp, self.passwordConfirmationDirty, !self.passwordConfirmation.isEmpty else { return nil }
-        if self.password != self.passwordConfirmation {
-            return "Passwords don't match"
-        }
-        return nil
-    }
-
     func markAllDirty() {
         self.nameDirty = true
         self.emailDirty = true
         self.passwordDirty = true
-        self.passwordConfirmationDirty = true
     }
 
     // MARK: - Login
@@ -102,7 +88,7 @@ final class AuthViewModel: ObservableObject {
                 name: self.name.trimmingCharacters(in: .whitespaces),
                 email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
                 password: self.password,
-                passwordConfirmation: self.passwordConfirmation
+                passwordConfirmation: self.password
             )
         }
     }

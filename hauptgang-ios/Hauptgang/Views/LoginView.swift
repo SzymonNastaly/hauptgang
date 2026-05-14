@@ -6,21 +6,22 @@ struct LoginView: View {
     @FocusState private var focusedField: Field?
 
     private enum Field {
-        case name, email, password, passwordConfirmation
+        case name, email, password
     }
 
     var body: some View {
         ZStack {
-            Color.hauptgangBackground.ignoresSafeArea()
+            Color.hauptgangBackground
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture { self.focusedField = nil }
             self.content
         }
-        .onTapGesture { self.focusedField = nil }
         .onChange(of: self.focusedField) { old, _ in
             switch old {
             case .name: self.viewModel.nameDirty = true
             case .email: self.viewModel.emailDirty = true
             case .password: self.viewModel.passwordDirty = true
-            case .passwordConfirmation: self.viewModel.passwordConfirmationDirty = true
             case nil: break
             }
         }
@@ -62,7 +63,6 @@ struct LoginView: View {
             self.nameField
             self.emailField
             self.passwordField
-            self.passwordConfirmationField
             self.errorBanner
             self.submitButton
         }
@@ -75,7 +75,7 @@ struct LoginView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 TextField("Your first name", text: self.$viewModel.name)
                     .themeTextField(isError: self.viewModel.nameError != nil)
-                    .textContentType(.name)
+                    .textContentType(.givenName)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                     .focused(self.$focusedField, equals: .name)
@@ -116,37 +116,16 @@ struct LoginView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             SecureField("Enter your password", text: self.$viewModel.password)
                 .themeTextField()
-                .textContentType(self.viewModel.isSignUp ? .newPassword : .password)
+                .textContentType(.password)
                 .focused(self.$focusedField, equals: .password)
-                .submitLabel(self.viewModel.isSignUp ? .next : .go)
-                .onSubmit(self.handlePasswordSubmit)
+                .submitLabel(.go)
+                .onSubmit(self.submitForm)
 
             if self.showPasswordLengthError {
                 Text("Password must be at least 12 characters")
                     .font(.caption)
                     .foregroundStyle(Color.hauptgangError)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var passwordConfirmationField: some View {
-        if self.viewModel.isSignUp {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                SecureField("Confirm your password", text: self.$viewModel.passwordConfirmation)
-                    .themeTextField(isError: self.viewModel.passwordConfirmationError != nil)
-                    .textContentType(.newPassword)
-                    .focused(self.$focusedField, equals: .passwordConfirmation)
-                    .submitLabel(.go)
-                    .onSubmit(self.submitForm)
-
-                if let error = self.viewModel.passwordConfirmationError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(Color.hauptgangError)
-                }
-            }
-            .transition(.opacity.combined(with: .move(edge: .top)))
         }
     }
 
@@ -231,14 +210,6 @@ struct LoginView: View {
     private var showPasswordLengthError: Bool {
         self.viewModel.isSignUp && self.viewModel.passwordDirty &&
             !self.viewModel.password.isEmpty && self.viewModel.password.count < 12
-    }
-
-    private func handlePasswordSubmit() {
-        if self.viewModel.isSignUp {
-            self.focusedField = .passwordConfirmation
-        } else {
-            self.submitForm()
-        }
     }
 
     private var buttonLabel: String {

@@ -6,9 +6,12 @@ struct ThemeTextFieldModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .textFieldStyle(.plain)
-            .padding(Theme.Spacing.md)
+            .padding(.horizontal, Theme.Spacing.md)
+            .frame(maxWidth: .infinity)
+            .frame(minHeight: 52, alignment: .center)
             .background(self.isError ? Color.hauptgangError.opacity(0.1) : Color.hauptgangCard)
             .clipShape(.rect(cornerRadius: Theme.CornerRadius.md))
+            .contentShape(.rect(cornerRadius: Theme.CornerRadius.md))
     }
 }
 

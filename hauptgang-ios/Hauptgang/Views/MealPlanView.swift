@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MealPlanView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
@@ -100,14 +101,14 @@ struct MealPlanView: View {
 
         self.viewModel.didReceiveForbidden = false
         Task {
-            await self.cookbookViewModel.handleForbidden()
+            await self.session.handleForbidden()
             await self.refreshMealPlan()
         }
     }
 
     private func selectCookbook(_ cookbook: Cookbook) {
         Task {
-            await self.cookbookViewModel.setActiveCookbook(cookbook)
+            await self.session.switchCookbook(cookbook)
         }
     }
 
@@ -183,9 +184,11 @@ extension String: @retroactive Identifiable {
 
 #Preview {
     let authManager = AuthManager()
+    let session = AuthenticatedSessionViewModel()
     return MealPlanView()
         .environmentObject(authManager)
-        .environment(CookbookViewModel())
+        .environment(session)
+        .environment(session.cookbookViewModel)
         .environment(NetworkMonitor.shared)
         .modelContainer(
             for: [PersistedRecipe.self, PersistedMealPlanDay.self, PersistedMealPlanEntry.self],

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ShoppingListView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
@@ -84,7 +85,7 @@ struct ShoppingListView: View {
             guard forbidden else { return }
             self.viewModel.didReceiveForbidden = false
             Task {
-                await self.cookbookViewModel.handleForbidden()
+                await self.session.handleForbidden()
                 await self.viewModel.refresh()
             }
         }
@@ -92,7 +93,7 @@ struct ShoppingListView: View {
 
     private func selectCookbook(_ cookbook: Cookbook) {
         Task {
-            await self.cookbookViewModel.setActiveCookbook(cookbook)
+            await self.session.switchCookbook(cookbook)
         }
     }
 
@@ -255,9 +256,11 @@ private struct RemoveAllButtonStyle: ButtonStyle {
 
 #Preview {
     let authManager = AuthManager()
-    return ShoppingListView(viewModel: ShoppingListViewModel())
+    let session = AuthenticatedSessionViewModel()
+    return ShoppingListView(viewModel: session.shoppingListViewModel)
         .environmentObject(authManager)
-        .environment(CookbookViewModel())
+        .environment(session)
+        .environment(session.cookbookViewModel)
         .environment(NetworkMonitor.shared)
         .modelContainer(for: PersistedShoppingListItem.self, inMemory: true)
         .onAppear {

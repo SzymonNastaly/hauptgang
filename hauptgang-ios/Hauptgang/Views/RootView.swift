@@ -5,7 +5,7 @@ struct RootView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
     @Environment(DeepLinkRouter.self) private var deepLinkRouter
-    @State private var cookbookViewModel = CookbookViewModel()
+    @State private var session = AuthenticatedSessionViewModel()
     @State private var showingInvitation = false
     @State private var invitationToken: String?
 
@@ -16,11 +16,10 @@ struct RootView: View {
                 SplashView()
             case .unauthenticated:
                 LoginView()
-            case .authenticated:
-                MainTabView()
+            case let .authenticated(user):
+                AuthenticatedAppShell(user: user, session: self.session)
             }
         }
-        .environment(self.cookbookViewModel)
         // Note: animation removed to prevent iOS 26 Liquid Glass tab bar background initialization bug
         // .animation(.easeInOut(duration: 0.3), value: self.authManager.authState)
         .task {
@@ -30,9 +29,9 @@ struct RootView: View {
             Task {
                 switch newValue {
                 case let .authenticated(user):
-                    await CookbookContext.shared.configure(userId: user.id)
-                    self.cookbookViewModel.configure(userId: user.id)
-                    await self.cookbookViewModel.loadCookbooks()
+                    // Cookbook + recipe startup is owned by AuthenticatedSessionViewModel via
+                    // AuthenticatedAppShell.task. Here we only handle authenticated-user
+                    // concerns that aren't cookbook-scoped.
                     await self.subscriptionManager.identify(userId: String(user.id))
                     await self.subscriptionManager.refreshStatus()
                     await PushNotificationService.shared.setAuthenticated(true)
@@ -43,7 +42,7 @@ struct RootView: View {
                         self.showingInvitation = true
                     }
                 case .unauthenticated:
-                    await self.cookbookViewModel.reset()
+                    await self.session.reset()
                     await self.subscriptionManager.reset()
                 case .unknown:
                     break
@@ -68,7 +67,8 @@ struct RootView: View {
                     self.showingInvitation = false
                     self.invitationToken = nil
                 }
-                .environment(self.cookbookViewModel)
+                .environment(self.session)
+                .environment(self.session.cookbookViewModel)
             }
         }
     }

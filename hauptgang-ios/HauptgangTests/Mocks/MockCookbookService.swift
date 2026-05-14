@@ -8,9 +8,13 @@ final class MockCookbookService: CookbookServiceProtocol, @unchecked Sendable {
     var createInvitationResult: CookbookInvitationResponse?
     var invitationPreviewResult: CookbookInvitationPreview?
     var acceptInvitationResult: CookbookInvitationAcceptResponse?
+    var shouldThrowError = false
 
     func fetchCookbooks() async throws -> [Cookbook] {
         self.fetchCookbooksCallCount += 1
+        if self.shouldThrowError {
+            throw MockCookbookError.notConfigured
+        }
         return self.cookbooksToReturn
     }
 

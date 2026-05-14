@@ -4,13 +4,22 @@ import Sentry
 import SwiftData
 import SwiftUI
 
+/// Cookbook-scoped state describing whether `RecipeViewModel` has attempted
+/// (and possibly resolved) an initial content load for a particular cookbook.
+enum RecipeContentState: Equatable {
+    case idle
+    case loading(cookbookId: Int)
+    case resolved(cookbookId: Int)
+    case failed(cookbookId: Int, message: String)
+}
+
 /// Manages recipe state for the UI
 @MainActor @Observable
 final class RecipeViewModel {
     private(set) var recipes: [PersistedRecipe] = []
     private(set) var isLoading = false
     private(set) var isImporting = false
-    private(set) var hasResolvedInitialContent = false
+    private(set) var contentState: RecipeContentState = .idle
     private(set) var searchResults: [PersistedRecipe] = []
     private(set) var pendingDeletionIDs: Set<Int> = []
     var importError: String?
@@ -42,7 +51,7 @@ final class RecipeViewModel {
     private var pollingTask: Task<Void, Never>?
     private var detailSyncTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
-    private var refreshTask: Task<Void, Never>?
+    private var refreshTask: Task<RefreshResult, Never>?
     private var currentUserId: Int?
     private(set) var currentCookbookId: Int?
 
@@ -71,18 +80,28 @@ final class RecipeViewModel {
 
     /// Configure search indexing for the current user and cookbook.
     ///
-    /// When cookbook selection has not resolved yet (for example during an offline cold launch),
-    /// keep cached recipes visible and defer cookbook-scoped sync/search setup until we know the scope.
-    func configureSearchIndex(userId: Int, cookbookId: Int? = nil) async {
+    /// Requires an explicit cookbook id; the authenticated session coordinator is responsible
+    /// for resolving an active cookbook before configuring the recipe view model.
+    func configureSearchIndex(userId: Int, cookbookId: Int) async {
         self.currentUserId = userId
         self.currentCookbookId = cookbookId
         self.loadCachedRecipes()
 
-        guard let cookbookId else { return }
         if !self.recipes.isEmpty {
-            self.hasResolvedInitialContent = true
+            self.contentState = .resolved(cookbookId: cookbookId)
         }
         await self.searchIndex.configure(userId: userId, cookbookId: cookbookId)
+    }
+
+    /// Whether recipe content has been resolved (success or failure) for the given cookbook.
+    /// Used by the session coordinator to decide whether the startup splash can dismiss.
+    func hasResolvedContent(for cookbookId: Int) -> Bool {
+        switch self.contentState {
+        case .resolved(let id), .failed(let id, _):
+            id == cookbookId
+        default:
+            false
+        }
     }
 }
 
@@ -121,59 +140,84 @@ extension RecipeViewModel {
 
     /// Fetch fresh recipes from API and update local cache.
     ///
-    /// Cancels any in-flight refresh so the latest caller always wins.
+    /// Cancels any in-flight refresh so the latest caller always wins. Final state writes
+    /// (`.resolved` / `.failed`) only happen for the winning task and are scoped to the
+    /// cookbook id captured at the start of the refresh.
     func refreshRecipes() async {
-        self.refreshTask?.cancel()
-        self.refreshTask = nil
-
-        self.logger.info("Starting recipe refresh")
-        self.isLoading = true
-
-        let task = Task { @MainActor in
-            await self.performRefresh()
-        }
-
-        self.refreshTask = task
-        await task.value
-
-        // Only clear isLoading if this task wasn't superseded
-        if self.refreshTask == task {
-            self.isLoading = false
-            if self.currentCookbookId != nil {
-                self.hasResolvedInitialContent = true
-            }
-            self.refreshTask = nil
-        }
-    }
-
-    private func performRefresh() async {
-        guard self.currentCookbookId != nil else {
-            self.logger.info("Skipping recipe refresh until cookbook selection is resolved")
+        guard let cookbookId = self.currentCookbookId else {
+            self.logger.warning("Ignoring recipe refresh without cookbook selection")
+            self.contentState = .idle
             return
         }
 
+        self.refreshTask?.cancel()
+        self.refreshTask = nil
+
+        self.logger.info("Starting recipe refresh for cookbook \(cookbookId)")
+        self.isLoading = true
+        self.contentState = .loading(cookbookId: cookbookId)
+
+        let taskCookbookId = cookbookId
+        let task = Task { @MainActor in
+            await self.performRefresh(cookbookId: taskCookbookId)
+        }
+
+        self.refreshTask = task
+        let result = await task.value
+
+        // Only the winning task writes final state.
+        guard self.refreshTask == task else { return }
+
+        self.isLoading = false
+        self.refreshTask = nil
+
+        switch result {
+        case .success:
+            self.contentState = .resolved(cookbookId: taskCookbookId)
+        case .cancelled:
+            // Cancelled by a newer request; keep state at loading until that one writes.
+            break
+        case .failure(let message):
+            self.contentState = .failed(cookbookId: taskCookbookId, message: message)
+        }
+    }
+
+    private enum RefreshResult {
+        case success
+        case cancelled
+        case failure(String)
+    }
+
+    private func performRefresh(cookbookId: Int) async -> RefreshResult {
         do {
-            try await self.fetchAndPersistRecipes()
-            self.logger.info("Recipe refresh completed successfully")
+            try await self.fetchAndPersistRecipes(cookbookId: cookbookId)
+            self.startDetailSyncIfNeeded()
+            self.logger.info("Recipe refresh completed successfully for cookbook \(cookbookId)")
+            return .success
         } catch is CancellationError {
             self.logger.info("Recipe refresh cancelled by newer request")
+            return .cancelled
         } catch {
             guard !Task.isCancelled else {
                 self.logger.info("Recipe refresh cancelled by newer request")
-                return
+                return .cancelled
             }
             self.handleRefreshError(error)
+            self.startDetailSyncIfNeeded()
+            return .failure(error.localizedDescription)
         }
-
-        // Always attempt detail sync — resumes from cursor even if list refresh failed
-        self.startDetailSyncIfNeeded()
     }
 
-    private func fetchAndPersistRecipes() async throws {
+    private func fetchAndPersistRecipes(cookbookId: Int) async throws {
         let apiRecipes = try await self.recipeService.fetchRecipes()
         try Task.checkCancellation()
 
-        let deletedIds = try self.repository.saveRecipes(apiRecipes, cookbookId: self.currentCookbookId)
+        // Bail if the active cookbook changed mid-refresh; the new switch will trigger its own refresh.
+        guard self.currentCookbookId == cookbookId else {
+            throw CancellationError()
+        }
+
+        let deletedIds = try self.repository.saveRecipes(apiRecipes, cookbookId: cookbookId)
         self.loadCachedRecipes()
 
         let visibleRecipes = self.successfulRecipes
@@ -342,6 +386,7 @@ extension RecipeViewModel {
         self.recipes = []
         self.searchResults = []
         self.isLoading = false
+        self.contentState = .idle
     }
 
     /// Stop polling for pending imports
@@ -351,10 +396,22 @@ extension RecipeViewModel {
         self.pollingTask = nil
     }
 
-    /// Clear all recipe data (call on logout)
-    func clearData() {
+    /// Clear all recipe data (call on logout). Async so that search-index reset is awaited and
+    /// cannot race a subsequent login's search-index configuration.
+    func clearData() async {
         self.logger.info("Clearing recipe data")
-        self.hasResolvedInitialContent = false
+
+        self.refreshTask?.cancel()
+        self.refreshTask = nil
+        self.pollingTask?.cancel()
+        self.pollingTask = nil
+        self.detailSyncTask?.cancel()
+        self.detailSyncTask = nil
+        self.searchTask?.cancel()
+        self.searchTask = nil
+
+        self.contentState = .idle
+
         do {
             try self.repository.clearAllRecipes()
             self.recipes = []
@@ -363,14 +420,11 @@ extension RecipeViewModel {
             self.logger.error("Failed to clear recipe data: \(error.localizedDescription)")
         }
 
-        self.refreshTask?.cancel()
-        self.refreshTask = nil
-        self.detailSyncTask?.cancel()
-        self.detailSyncTask = nil
+        // clearDetailSyncCursor reads currentUserId, so call it before nil-ing identifiers.
         self.clearDetailSyncCursor()
-        Task {
-            await self.searchIndex.reset()
-        }
+        self.currentUserId = nil
+        self.currentCookbookId = nil
+        await self.searchIndex.reset()
     }
 
     /// Import a recipe from pasted text

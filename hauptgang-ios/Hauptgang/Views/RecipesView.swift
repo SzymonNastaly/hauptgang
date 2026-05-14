@@ -27,10 +27,10 @@ private struct ClipboardContent: Identifiable {
 
 struct RecipesView: View {
     @EnvironmentObject var authManager: AuthManager
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     let recipeViewModel: RecipeViewModel
     let suppressTransientUI: Bool
@@ -56,37 +56,17 @@ struct RecipesView: View {
 
     private var recipeContent: some View {
         self.recipeLayout
-            .task {
-                logger.info("RecipesView appeared, configuring recipe view model")
-                self.recipeViewModel.configure(modelContext: self.modelContext)
-                if let userId = self.authManager.authState.user?.id {
-                    let cookbookId = await self.resolvedCookbookId()
-                    await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
-                }
-                await self.recipeViewModel.refreshRecipes()
-            }
-            .onChange(of: self.authManager.authState) { _, newValue in
-                self.handleAuthChange(newValue)
-            }
-            .onChange(of: self.cookbookViewModel.activeCookbook?.id) { _, newValue in
-                guard newValue != self.recipeViewModel.currentCookbookId else { return }
-                self.handleCookbookSwitch()
-            }
             .onChange(of: self.recipeViewModel.didReceiveForbidden) { _, forbidden in
                 guard forbidden else { return }
                 self.recipeViewModel.didReceiveForbidden = false
                 Task {
-                    await self.cookbookViewModel.handleForbidden()
-                    await self.recipeViewModel.refreshRecipes()
+                    await self.session.handleForbidden()
                 }
             }
             .onChange(of: self.scenePhase) { oldPhase, newPhase in
                 if oldPhase == .background && newPhase == .active {
                     Task {
-                        // Refresh cookbooks first — if the initial load failed while offline,
-                        // this recovers the cookbook list and active selection.
-                        await self.cookbookViewModel.refresh()
-                        await self.recipeViewModel.refreshRecipes()
+                        await self.session.refreshActiveCookbook()
                     }
                 }
             }
@@ -203,41 +183,9 @@ struct RecipesView: View {
 
     // MARK: - Handlers
 
-    private func handleAuthChange(_ newValue: AuthManager.AuthState) {
-        switch newValue {
-        case .unauthenticated:
-            self.recipeViewModel.clearData()
-        case let .authenticated(user):
-            Task {
-                let cookbookId = await self.resolvedCookbookId()
-                await self.recipeViewModel.configureSearchIndex(userId: user.id, cookbookId: cookbookId)
-            }
-        case .unknown:
-            break
-        }
-    }
-
-    private func handleCookbookSwitch() {
-        guard let userId = self.authManager.authState.user?.id else { return }
-        self.recipeViewModel.resetForCookbookSwitch()
-        Task {
-            let cookbookId = await self.resolvedCookbookId()
-            await self.recipeViewModel.configureSearchIndex(userId: userId, cookbookId: cookbookId)
-            await self.recipeViewModel.refreshRecipes()
-        }
-    }
-
-    private func resolvedCookbookId() async -> Int? {
-        if let activeCookbookId = self.cookbookViewModel.activeCookbook?.id {
-            return activeCookbookId
-        }
-
-        return await CookbookContext.shared.getActiveCookbookId()
-    }
-
     private func selectCookbook(_ cookbook: Cookbook) {
         Task {
-            await self.cookbookViewModel.setActiveCookbook(cookbook)
+            await self.session.switchCookbook(cookbook)
         }
     }
 
@@ -280,8 +228,7 @@ struct RecipesView: View {
         }
         .refreshable {
             await self.networkMonitor.refreshStatus()
-            await self.cookbookViewModel.refresh()
-            await self.recipeViewModel.refreshRecipes()
+            await self.session.refreshActiveCookbook()
         }
         .navigationDestination(for: Int.self) { recipeId in
             RecipeDetailView(recipeId: recipeId)
@@ -403,8 +350,7 @@ struct RecipesView: View {
             Button {
                 Task {
                     await self.networkMonitor.refreshStatus()
-                    await self.cookbookViewModel.refresh()
-                    await self.recipeViewModel.refreshRecipes()
+                    await self.session.refreshActiveCookbook()
                 }
             } label: {
                 Label("Refresh", systemImage: "arrow.clockwise")
@@ -433,9 +379,11 @@ private struct ImportingOverlayBackground: ViewModifier {
 
 #Preview {
     let authManager = AuthManager()
-    return RecipesView(recipeViewModel: RecipeViewModel(), suppressTransientUI: false)
+    let session = AuthenticatedSessionViewModel()
+    return RecipesView(recipeViewModel: session.recipeViewModel, suppressTransientUI: false)
         .environmentObject(authManager)
-        .environment(CookbookViewModel())
+        .environment(session)
+        .environment(session.cookbookViewModel)
         .environment(NetworkMonitor.shared)
         .modelContainer(for: PersistedRecipe.self, inMemory: true)
         .onAppear {

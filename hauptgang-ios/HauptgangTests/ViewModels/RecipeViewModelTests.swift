@@ -153,15 +153,17 @@ final class RecipeViewModelTests: XCTestCase {
 
     // MARK: - clearData Tests
 
-    func testClearData_clearsRecipes() {
+    func testClearData_clearsRecipes() async {
         let recipe = self.createMockPersistedRecipe(id: 1, name: "Recipe")
         self.mockRepository.allRecipes = [recipe]
         self.loadCachedRecipesIntoViewModel()
         XCTAssertEqual(self.sut.recipes.count, 1)
 
-        self.sut.clearData()
+        await self.sut.clearData()
 
         XCTAssertEqual(self.sut.recipes.count, 0)
+        XCTAssertNil(self.sut.currentCookbookId)
+        XCTAssertEqual(self.sut.contentState, .idle)
     }
 
     func testConfigureSearchIndex_filtersCachedRecipesToActiveCookbook() async {
@@ -178,37 +180,60 @@ final class RecipeViewModelTests: XCTestCase {
         XCTAssertEqual(self.sut.recipes.first?.cookbookId, 2)
     }
 
-    func testOfflineLaunch_beforeCookbookSelectionIsResolved_keepsCachedRecipesVisible() async {
-        let personalRecipe = self.createMockPersistedRecipe(id: 1, name: "Personal", cookbookId: 1)
-        let sharedRecipe = self.createMockPersistedRecipe(id: 2, name: "Shared", cookbookId: 2)
-        self.mockRepository.allRecipes = [personalRecipe, sharedRecipe]
+    // MARK: - contentState Tests
 
-        self.loadCachedRecipesIntoViewModel()
-        XCTAssertEqual(self.sut.recipes.map(\.id), [1, 2])
-
-        await self.sut.configureSearchIndex(userId: 99, cookbookId: nil)
-
-        XCTAssertEqual(
-            self.sut.recipes.map(\.id),
-            [1, 2],
-            "When the active cookbook has not loaded yet, cached recipes should stay visible instead of being filtered to an empty placeholder scope."
-        )
-        let configuredCookbookId = await self.mockSearchIndex.configuredCookbookId
-        XCTAssertNil(configuredCookbookId)
-    }
-
-    func testRefreshRecipes_beforeCookbookSelectionIsResolved_skipsNetworkSync() async {
+    func testRefreshRecipes_withoutConfiguredCookbook_doesNotMarkResolved() async {
+        // The session coordinator owns ordering, so an unscoped refresh should be a no-op.
         self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock(id: 1, name: "Server Recipe")])
 
-        await self.sut.configureSearchIndex(userId: 99, cookbookId: nil)
         await self.sut.refreshRecipes()
 
-        XCTAssertFalse(
-            self.mockRecipeService.fetchRecipesCalled,
-            "Refreshing before cookbook selection resolves should not fetch and persist into a placeholder cookbook scope."
-        )
-        XCTAssertTrue(self.mockRepository.savedRecipes.isEmpty)
+        XCTAssertFalse(self.mockRecipeService.fetchRecipesCalled)
+        XCTAssertEqual(self.sut.contentState, .idle)
         XCTAssertFalse(self.sut.isLoading)
+    }
+
+    func testRefreshRecipes_success_setsContentResolvedForActiveCookbook() async {
+        let apiRecipes = [RecipeListItem.mock(id: 1, name: "Recipe 1")]
+        self.mockRecipeService.fetchRecipesResult = .success(apiRecipes)
+        self.mockRepository.allRecipes = [self.createMockPersistedRecipe(id: 1, name: "Recipe 1", cookbookId: 7)]
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 7)
+        await self.sut.refreshRecipes()
+
+        XCTAssertEqual(self.sut.contentState, .resolved(cookbookId: 7))
+        XCTAssertTrue(self.sut.hasResolvedContent(for: 7))
+        XCTAssertFalse(self.sut.hasResolvedContent(for: 8))
+    }
+
+    func testRefreshRecipes_failure_setsContentFailedForActiveCookbook() async {
+        self.mockRecipeService.fetchRecipesResult = .failure(MockRecipeError.networkError)
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 5)
+        await self.sut.refreshRecipes()
+
+        if case .failed(let cookbookId, _) = self.sut.contentState {
+            XCTAssertEqual(cookbookId, 5)
+        } else {
+            XCTFail("Expected .failed content state, got \(self.sut.contentState)")
+        }
+        XCTAssertTrue(self.sut.hasResolvedContent(for: 5))
+    }
+
+    func testResetForCookbookSwitch_clearsRecipesAndContentState() async {
+        let recipe = self.createMockPersistedRecipe(id: 1, name: "Recipe", cookbookId: 1)
+        self.mockRepository.allRecipes = [recipe]
+        self.mockRecipeService.fetchRecipesResult = .success([RecipeListItem.mock(id: 1, name: "Recipe")])
+
+        await self.sut.configureSearchIndex(userId: 99, cookbookId: 1)
+        await self.sut.refreshRecipes()
+        XCTAssertEqual(self.sut.contentState, .resolved(cookbookId: 1))
+
+        self.sut.resetForCookbookSwitch()
+
+        XCTAssertTrue(self.sut.recipes.isEmpty)
+        XCTAssertTrue(self.sut.searchResults.isEmpty)
+        XCTAssertEqual(self.sut.contentState, .idle)
     }
 
     // MARK: - refreshRecipes Cancellation Tests

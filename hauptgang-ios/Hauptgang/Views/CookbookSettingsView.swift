@@ -205,6 +205,7 @@ struct CookbookSettingsView: View {
 // MARK: - Create Cookbook Sheet
 
 private struct CreateCookbookSheet: View {
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -271,7 +272,7 @@ private struct CreateCookbookSheet: View {
                 name: trimmedName,
                 moveRecipes: self.moveRecipes
             )
-            await self.cookbookViewModel.setActiveCookbook(cookbook)
+            await self.session.switchCookbook(cookbook)
             self.dismiss()
         } catch {
             self.errorMessage = error.localizedDescription

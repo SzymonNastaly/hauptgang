@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// Main tab view container for authenticated users
+/// Main tab view container for authenticated users.
+/// Renders tabs only; startup readiness and the splash overlay are owned by
+/// `AuthenticatedAppShell`.
 struct MainTabView: View {
-    @Environment(CookbookViewModel.self) private var cookbookViewModel
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @State private var selectedTab: Tab = .recipes
-    @State private var shoppingListViewModel = ShoppingListViewModel()
-    @State private var recipeViewModel = RecipeViewModel()
     @State private var searchQuery = ""
-    @State private var showsStartupSplash = true
 
     enum Tab: Hashable {
         case recipes
@@ -18,41 +17,16 @@ struct MainTabView: View {
     }
 
     var body: some View {
-        ZStack {
-            self.tabContent
-
-            if self.showsStartupSplash {
-                SplashView()
-                    .transition(.opacity)
-                    .zIndex(1)
-            }
-        }
-        .tint(.hauptgangPrimary)
-        .modifier(TabBarBackgroundModifier())
-        .modifier(TabBarMinimizeModifier())
-        .modifier(TabSearchActivationModifier())
-        .onChange(of: self.searchQuery) { _, newValue in
-            Task { await self.recipeViewModel.search(query: newValue) }
-        }
-        .onChange(of: self.startupCanDismissSplash, initial: true) { _, canDismiss in
-            guard canDismiss, self.showsStartupSplash else { return }
-            withAnimation(.easeOut(duration: 0.08)) {
-                self.showsStartupSplash = false
-            }
-        }
-    }
-
-    private var tabContent: some View {
         TabView(selection: self.$selectedTab) {
             SwiftUI.Tab("Recipes", systemImage: "fork.knife", value: Tab.recipes) {
                 RecipesView(
-                    recipeViewModel: self.recipeViewModel,
-                    suppressTransientUI: self.showsStartupSplash
+                    recipeViewModel: self.session.recipeViewModel,
+                    suppressTransientUI: !self.session.canDismissStartupSplash
                 )
             }
 
             SwiftUI.Tab("Shopping List", systemImage: "cart", value: Tab.shoppingList) {
-                ShoppingListView(viewModel: self.shoppingListViewModel)
+                ShoppingListView(viewModel: self.session.shoppingListViewModel)
             }
 
             SwiftUI.Tab("Meal Plan", systemImage: "calendar", value: Tab.mealPlan) {
@@ -64,17 +38,19 @@ struct MainTabView: View {
             }
 
             SwiftUI.Tab(value: Tab.search, role: .search) {
-                RecipeSearchView(recipeViewModel: self.recipeViewModel, searchQuery: self.$searchQuery)
+                RecipeSearchView(
+                    recipeViewModel: self.session.recipeViewModel,
+                    searchQuery: self.$searchQuery
+                )
             }
         }
-    }
-
-    private var startupCanDismissSplash: Bool {
-        self.cookbookViewModel.error != nil || (
-            !self.cookbookViewModel.isLoading &&
-                self.cookbookViewModel.activeCookbook != nil &&
-                self.recipeViewModel.hasResolvedInitialContent
-        )
+        .tint(.hauptgangPrimary)
+        .modifier(TabBarBackgroundModifier())
+        .modifier(TabBarMinimizeModifier())
+        .modifier(TabSearchActivationModifier())
+        .onChange(of: self.searchQuery) { _, newValue in
+            Task { await self.session.recipeViewModel.search(query: newValue) }
+        }
     }
 }
 
@@ -110,9 +86,11 @@ private struct TabSearchActivationModifier: ViewModifier {
 
 #Preview {
     let authManager = AuthManager()
+    let session = AuthenticatedSessionViewModel()
     return MainTabView()
         .environmentObject(authManager)
-        .environment(CookbookViewModel())
+        .environment(session)
+        .environment(session.cookbookViewModel)
         .modelContainer(
             for: [
                 PersistedRecipe.self,

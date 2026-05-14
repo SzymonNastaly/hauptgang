@@ -5,6 +5,7 @@ struct InvitationView: View {
     let token: String
     let onComplete: () -> Void
 
+    @Environment(AuthenticatedSessionViewModel.self) private var session
     @Environment(CookbookViewModel.self) private var cookbookViewModel
     @State private var preview: CookbookInvitationPreview?
     @State private var state: InvitationState = .loading
@@ -253,7 +254,7 @@ struct InvitationView: View {
             let response = try await service.acceptInvitation(token: self.token)
             await self.cookbookViewModel.loadCookbooks()
             if let cookbook = cookbookViewModel.cookbooks.first(where: { $0.id == response.cookbookId }) {
-                await self.cookbookViewModel.setActiveCookbook(cookbook)
+                await self.session.switchCookbook(cookbook)
             }
             await PushNotificationService.shared.requestAuthorizationIfNeeded()
             self.state = .accepted

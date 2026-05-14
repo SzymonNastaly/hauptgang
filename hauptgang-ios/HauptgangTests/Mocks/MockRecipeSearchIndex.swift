@@ -52,6 +52,7 @@ actor MockRecipeSearchIndex: RecipeSearchIndexProtocol {
 
     func reset() async {
         self.configuredUserId = nil
+        self.configuredCookbookId = nil
         self.indexedNames = []
         self.indexedDetails = []
         self.deletedIds = []

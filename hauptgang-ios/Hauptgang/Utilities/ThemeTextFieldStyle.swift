@@ -2,17 +2,13 @@ import SwiftUI
 
 struct ThemeTextFieldModifier: ViewModifier {
     var isError: Bool = false
-    @FocusState private var isFocused: Bool
 
     func body(content: Content) -> some View {
         content
             .textFieldStyle(.plain)
-            .focused(self.$isFocused)
             .padding(Theme.Spacing.md)
             .background(self.isError ? Color.hauptgangError.opacity(0.1) : Color.hauptgangCard)
             .clipShape(.rect(cornerRadius: Theme.CornerRadius.md))
-            .contentShape(Rectangle())
-            .onTapGesture { self.isFocused = true }
     }
 }
 

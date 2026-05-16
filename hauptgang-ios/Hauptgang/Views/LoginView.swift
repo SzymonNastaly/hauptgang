@@ -2,20 +2,40 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authManager: AuthManager
-    @StateObject private var viewModel = AuthViewModel()
+    @StateObject private var viewModel: AuthViewModel
     @FocusState private var focusedField: Field?
+
+    private let isEmbeddedInOnboarding: Bool
+    private let onAuthenticated: (() -> Void)?
 
     private enum Field {
         case name, email, password
     }
 
+    init(
+        isEmbeddedInOnboarding: Bool = false,
+        startsInSignUpMode: Bool = false,
+        onAuthenticated: (() -> Void)? = nil
+    ) {
+        self.isEmbeddedInOnboarding = isEmbeddedInOnboarding
+        self.onAuthenticated = onAuthenticated
+        self._viewModel = StateObject(wrappedValue: AuthViewModel(initialIsSignUp: startsInSignUpMode))
+    }
+
     var body: some View {
-        ZStack {
-            Color.hauptgangBackground
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { self.focusedField = nil }
-            self.content
+        Group {
+            if self.isEmbeddedInOnboarding {
+                self.content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ZStack {
+                    Color.hauptgangBackground
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { self.focusedField = nil }
+                    self.content
+                }
+            }
         }
         .onChange(of: self.focusedField) { old, _ in
             switch old {
@@ -28,114 +48,163 @@ struct LoginView: View {
     }
 
     private var content: some View {
-        VStack(spacing: Theme.Spacing.xl) {
-            Spacer()
+        VStack(alignment: self.isEmbeddedInOnboarding ? .leading : .center, spacing: Theme.Spacing.xl) {
+            if !self.isEmbeddedInOnboarding {
+                Spacer()
+            }
+
             self.logoHeader
             self.form
             self.modeToggle
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            if !self.isEmbeddedInOnboarding {
+                Spacer()
+            }
         }
-        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.horizontal, self.isEmbeddedInOnboarding ? 0 : Theme.Spacing.lg)
+        .padding(.top, self.isEmbeddedInOnboarding ? Theme.Spacing.xl : 0)
     }
 
+    @ViewBuilder
     private var logoHeader: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Image("LoginLogo")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
-
-            (Text("Cook something ")
+        if self.isEmbeddedInOnboarding {
+            Text(self.viewModel.isSignUp ? "Create your account" : "Welcome back")
+                .font(.system(.title, design: .serif))
+                .fontWeight(.bold)
                 .foregroundColor(.hauptgangTextPrimary)
-                + Text("delicious")
-                .foregroundColor(.hauptgangPrimary)
-                .italic()
-                .underline()
-                + Text(" today")
-                .foregroundColor(.hauptgangTextPrimary))
-                .font(.system(.title2, design: .serif))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            VStack(spacing: Theme.Spacing.md) {
+                Image("LoginLogo")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.xl))
+
+                (Text("Cook something ")
+                    .foregroundColor(.hauptgangTextPrimary)
+                    + Text("delicious")
+                    .foregroundColor(.hauptgangPrimary)
+                    .italic()
+                    .underline()
+                    + Text(" today")
+                    .foregroundColor(.hauptgangTextPrimary))
+                    .font(.system(.title2, design: .serif))
+            }
         }
     }
 
     private var form: some View {
         VStack(spacing: Theme.Spacing.md) {
-            self.nameField
-            self.emailField
-            self.passwordField
-            self.errorBanner
+            VStack(spacing: 0) {
+                if self.viewModel.isSignUp {
+                    self.nameField
+                    Divider()
+                        .padding(.leading, Theme.Spacing.md)
+                }
+                self.emailField
+                Divider()
+                    .padding(.leading, Theme.Spacing.md)
+                self.passwordField
+            }
+            .background(Color.hauptgangCard)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.CornerRadius.lg))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                    .stroke(Color.hauptgangBorderSubtle, lineWidth: 1)
+            )
+            
+            self.errorSection
+            
             self.submitButton
+                .padding(.top, Theme.Spacing.xs)
         }
         .id(self.viewModel.isSignUp)
     }
 
     @ViewBuilder
     private var nameField: some View {
-        if self.viewModel.isSignUp {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                TextField("Your first name", text: self.$viewModel.name)
-                    .themeTextField(isError: self.viewModel.nameError != nil)
-                    .textContentType(.givenName)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .focused(self.$focusedField, equals: .name)
-                    .submitLabel(.next)
-                    .onSubmit { self.focusedField = .email }
+        TextField("First name", text: self.$viewModel.name)
+            .themeTextField(isError: self.viewModel.nameError != nil, isGrouped: true)
+            .textContentType(.givenName)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .focused(self.$focusedField, equals: .name)
+            .submitLabel(.next)
+            .onSubmit { self.focusedField = .email }
+            .onChange(of: self.viewModel.name) { old, new in
+                guard self.focusedField == .name else { return }
+                if self.looksLikeAutofillJump(old: old, new: new),
+                   !new.trimmingCharacters(in: .whitespaces).isEmpty {
+                    self.focusedField = .email
+                }
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+    }
 
+    private var emailField: some View {
+        TextField("Email", text: self.$viewModel.email)
+            .themeTextField(isError: self.viewModel.emailError != nil, isGrouped: true)
+            .textContentType(.emailAddress)
+            .keyboardType(.emailAddress)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .focused(self.$focusedField, equals: .email)
+            .submitLabel(.next)
+            .onSubmit { self.focusedField = .password }
+            .onChange(of: self.viewModel.email) { old, new in
+                guard self.focusedField == .email else { return }
+                let trimmed = new.trimmingCharacters(in: .whitespaces)
+                if self.looksLikeAutofillJump(old: old, new: new),
+                   self.isCompleteEmail(trimmed) {
+                    self.focusedField = .password
+                }
+            }
+    }
+
+    private var passwordField: some View {
+        SecureField("Password", text: self.$viewModel.password)
+            .themeTextField(isError: self.showPasswordLengthError, isGrouped: true)
+            .textContentType(.password)
+            .focused(self.$focusedField, equals: .password)
+            .submitLabel(.go)
+            .onSubmit(self.submitForm)
+    }
+
+    @ViewBuilder
+    private var errorSection: some View {
+        let hasErrors = self.viewModel.nameError != nil || 
+                        self.viewModel.emailError != nil || 
+                        self.showPasswordLengthError || 
+                        self.viewModel.errorMessage != nil
+                        
+        if hasErrors {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 if let error = self.viewModel.nameError {
                     Text(error)
                         .font(.caption)
                         .foregroundStyle(Color.hauptgangError)
                 }
+                if let error = self.viewModel.emailError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(Color.hauptgangError)
+                }
+                if self.showPasswordLengthError {
+                    Text("Password must be at least 12 characters")
+                        .font(.caption)
+                        .foregroundStyle(Color.hauptgangError)
+                }
+                if let errorMessage = self.viewModel.errorMessage {
+                    Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundColor(.hauptgangError)
+                }
             }
-            .transition(.opacity.combined(with: .move(edge: .top)))
-        }
-    }
-
-    private var emailField: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            TextField("Enter your email", text: self.$viewModel.email)
-                .themeTextField(isError: self.viewModel.emailError != nil)
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .focused(self.$focusedField, equals: .email)
-                .submitLabel(.next)
-                .onSubmit { self.focusedField = .password }
-
-            if let error = self.viewModel.emailError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(Color.hauptgangError)
-            }
-        }
-    }
-
-    private var passwordField: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-            SecureField("Enter your password", text: self.$viewModel.password)
-                .themeTextField()
-                .textContentType(.password)
-                .focused(self.$focusedField, equals: .password)
-                .submitLabel(.go)
-                .onSubmit(self.submitForm)
-
-            if self.showPasswordLengthError {
-                Text("Password must be at least 12 characters")
-                    .font(.caption)
-                    .foregroundStyle(Color.hauptgangError)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var errorBanner: some View {
-        if let errorMessage = self.viewModel.errorMessage {
-            Label(errorMessage, systemImage: "exclamationmark.circle.fill")
-                .font(.subheadline)
-                .foregroundColor(.hauptgangError)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Theme.Spacing.xs)
         }
     }
 
@@ -147,40 +216,16 @@ struct LoginView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 }
                 Text(self.buttonLabel)
+                if !self.viewModel.isLoading {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 14, weight: .semibold))
+                }
             }
-            .font(.headline)
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(Theme.Spacing.md)
-            .background(self.submitButtonBackground)
         }
+        .primaryButton()
         .puffyButton()
         .disabled(!self.viewModel.isFormValid || self.viewModel.isLoading)
         .opacity((!self.viewModel.isFormValid || self.viewModel.isLoading) ? 0.5 : 1.0)
-    }
-
-    private var submitButtonBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .fill(Color.hauptgangPrimary)
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .fill(
-                    LinearGradient(
-                        colors: [.white.opacity(0.25), .clear, .black.opacity(0.15)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-            RoundedRectangle(cornerRadius: Theme.CornerRadius.md)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [.white.opacity(0.35), .clear],
-                        startPoint: .top,
-                        endPoint: .center
-                    ),
-                    lineWidth: 1
-                )
-        }
     }
 
     private var modeToggle: some View {
@@ -219,16 +264,32 @@ struct LoginView: View {
         return self.viewModel.isLoading ? "Signing in…" : "Sign In"
     }
 
+    /// Heuristic: a single change that adds more than one character at once
+    /// is almost certainly autofill / paste rather than typing.
+    private func looksLikeAutofillJump(old: String, new: String) -> Bool {
+        new.count - old.count > 1
+    }
+
+    private func isCompleteEmail(_ value: String) -> Bool {
+        let regex = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        return value.range(of: regex, options: .regularExpression) != nil
+    }
+
     private func submitForm() {
         self.viewModel.markAllDirty()
         guard self.viewModel.isFormValid, !self.viewModel.isLoading else { return }
         self.focusedField = nil
 
         Task {
+            let didAuthenticate: Bool
             if self.viewModel.isSignUp {
-                await self.viewModel.signup(authManager: self.authManager)
+                didAuthenticate = await self.viewModel.signup(authManager: self.authManager)
             } else {
-                await self.viewModel.login(authManager: self.authManager)
+                didAuthenticate = await self.viewModel.login(authManager: self.authManager)
+            }
+
+            if didAuthenticate {
+                self.onAuthenticated?()
             }
         }
     }

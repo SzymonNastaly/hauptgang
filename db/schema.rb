@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_12_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_14_104241) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -144,6 +144,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_12_000001) do
     t.index ["selected_entry_id"], name: "index_meal_plans_on_selected_entry_id"
   end
 
+  create_table "onboarding_responses", force: :cascade do |t|
+    t.json "answers", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.string "device_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id"
+    t.index ["device_id"], name: "index_onboarding_responses_on_device_id", unique: true
+    t.index ["user_id"], name: "index_onboarding_responses_on_user_id"
+  end
+
   create_table "pending_notifications", force: :cascade do |t|
     t.integer "actor_id", null: false
     t.string "category", null: false
@@ -253,6 +263,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_12_000001) do
   add_foreign_key "meal_plans", "cookbooks", on_delete: :cascade
   add_foreign_key "meal_plans", "meal_plan_entries", column: "selected_entry_id", on_delete: :nullify
   add_foreign_key "meal_plans", "users", column: "selected_by_user_id", on_delete: :nullify
+  add_foreign_key "onboarding_responses", "users", on_delete: :cascade
   add_foreign_key "pending_notifications", "cookbooks", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "actor_id", on_delete: :cascade
   add_foreign_key "pending_notifications", "users", column: "recipient_id", on_delete: :cascade

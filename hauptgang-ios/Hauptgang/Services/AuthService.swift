@@ -14,11 +14,13 @@ final class AuthService: AuthServiceProtocol {
 
     func login(email: String, password: String) async throws -> User {
         let deviceName = await getDeviceName()
+        let onboardingDeviceId = OnboardingService.consumeDeviceIdForAuth()
 
         let request = LoginRequest(
             email: email,
             password: password,
-            deviceName: deviceName
+            deviceName: deviceName,
+            onboardingDeviceId: onboardingDeviceId
         )
 
         let response: AuthResponse = try await api.request(
@@ -38,13 +40,15 @@ final class AuthService: AuthServiceProtocol {
 
     func signup(name: String, email: String, password: String, passwordConfirmation: String) async throws -> User {
         let deviceName = await getDeviceName()
+        let onboardingDeviceId = OnboardingService.consumeDeviceIdForAuth()
 
         let request = SignupRequest(
             name: name,
             email: email,
             password: password,
             passwordConfirmation: passwordConfirmation,
-            deviceName: deviceName
+            deviceName: deviceName,
+            onboardingDeviceId: onboardingDeviceId
         )
 
         let response: AuthResponse = try await api.request(
@@ -136,6 +140,7 @@ private struct LoginRequest: Encodable {
     let email: String
     let password: String
     let deviceName: String
+    let onboardingDeviceId: String?
 }
 
 private struct SignupRequest: Encodable {
@@ -144,6 +149,7 @@ private struct SignupRequest: Encodable {
     let password: String
     let passwordConfirmation: String
     let deviceName: String
+    let onboardingDeviceId: String?
 }
 
 private struct AccountUpdateRequest: Encodable {

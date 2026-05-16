@@ -15,6 +15,7 @@ module Api
         )
 
         if user
+          OnboardingResponse.link_to_user!(device_id: params[:onboarding_device_id], user: user)
           token_record, raw_token = ApiToken.generate_for(user, name: params[:device_name])
           render json: {
             token: raw_token,

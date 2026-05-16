@@ -134,3 +134,24 @@ schemes:
       config: Debug
     archive:
       config: Release
+
+  Hauptgang (Reset Onboarding):
+    build:
+      targets:
+        Hauptgang: all
+        HauptgangTests: [test]
+    run:
+      config: Debug
+      storeKitConfiguration: Hauptgang-StoreKit.storekit
+      commandLineArguments:
+        "-resetOnboarding YES": true
+    test:
+      config: Debug
+      targets:
+        - HauptgangTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

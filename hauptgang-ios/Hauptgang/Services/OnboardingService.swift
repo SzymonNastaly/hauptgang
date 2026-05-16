@@ -1,0 +1,138 @@
+import Foundation
+import os
+import RevenueCat
+
+/// Submits onboarding answers to the backend, keyed by the RevenueCat anonymous app user ID.
+///
+/// We pick RC's anon ID (`$RCAnonymousID:...`) as the device identifier because:
+/// - it's already generated and persisted by the RevenueCat SDK before login
+/// - on signup we call `Purchases.logIn(...)` and RC aliases the anon ID server-side,
+///   while we link our own `OnboardingResponse` row on the Rails side via the same value.
+///
+/// The ID lives in UserDefaults and dies on uninstall — same as IDFV. Good enough for MVP.
+actor OnboardingService {
+    static let shared = OnboardingService()
+
+    private let api: APIClientProtocol
+    private let logger = Logger(subsystem: "app.hauptgang.ios", category: "Onboarding")
+
+    /// UserDefaults key for persisting the anonymous device id used during onboarding,
+    /// so AuthService can attach it to the signup/login request and the server can link
+    /// the prior anonymous responses to the new user.
+    static let deviceIdDefaultsKey = "hauptgang.onboarding.deviceId"
+
+    /// UserDefaults key for the completion timestamp. Non-zero means the user has been
+    /// through the onboarding flow (either answered or skipped) and we should jump
+    /// straight to login on subsequent launches.
+    static let completedAtDefaultsKey = "hauptgang.onboarding.completedAt"
+
+    /// UserDefaults key for remembering that the user already finished the question
+    /// portion of onboarding and should resume at the embedded auth screen.
+    static let authStepReachedAtDefaultsKey = "hauptgang.onboarding.authStepReachedAt"
+
+    init(api: APIClientProtocol = APIClient.shared) {
+        self.api = api
+    }
+
+    /// Submit the full set of onboarding answers to the server. Best-effort — failures
+    /// are logged but don't block the UI.
+    func submit(deviceId: String, answers: [String: AnyCodable]) async {
+        guard !deviceId.isEmpty else { return }
+
+        let body = OnboardingRequest(deviceId: deviceId, answers: answers)
+        do {
+            let _: OnboardingResponse = try await self.api.request(
+                endpoint: "onboarding_response",
+                method: .post,
+                body: body,
+                authenticated: false
+            )
+            self.logger.info("Submitted onboarding response for device \(deviceId, privacy: .public)")
+        } catch {
+            self.logger.error("Failed to submit onboarding: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    /// Read the current anonymous device id from RevenueCat. Must be called BEFORE
+    /// `Purchases.logIn(...)` switches the ID to the user's id.
+    @MainActor
+    static func currentDeviceId() -> String {
+        Purchases.shared.appUserID
+    }
+
+    /// Persist the device id used during onboarding so the auth flow can include it on
+    /// the next signup/login request.
+    static func storeDeviceIdForAuth(_ deviceId: String) {
+        UserDefaults.standard.set(deviceId, forKey: Self.deviceIdDefaultsKey)
+    }
+
+    /// Pop the stored onboarding device id (read once, then clear). Returns nil if none.
+    static func consumeDeviceIdForAuth() -> String? {
+        let defaults = UserDefaults.standard
+        let value = defaults.string(forKey: Self.deviceIdDefaultsKey)
+        defaults.removeObject(forKey: Self.deviceIdDefaultsKey)
+        return value
+    }
+
+    static func markAuthStepReached() {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.authStepReachedAtDefaultsKey)
+    }
+
+    static func clearAuthStepReached() {
+        UserDefaults.standard.removeObject(forKey: Self.authStepReachedAtDefaultsKey)
+    }
+
+    static func hasReachedAuthenticationStep() -> Bool {
+        UserDefaults.standard.double(forKey: Self.authStepReachedAtDefaultsKey) > 0
+    }
+}
+
+// MARK: - Request / Response
+
+private struct OnboardingRequest: Encodable {
+    let deviceId: String
+    let answers: [String: AnyCodable]
+}
+
+private struct OnboardingResponse: Decodable {
+    let id: Int
+    let deviceId: String
+}
+
+/// Lightweight type-erased Codable so we can encode mixed-type answers (Int for
+/// household size, [String] for multi-selects) in the same JSON object.
+struct AnyCodable: Codable, Sendable {
+    let value: any Sendable
+
+    init(_ value: any Sendable) {
+        self.value = value
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self.value {
+        case let v as Int: try container.encode(v)
+        case let v as String: try container.encode(v)
+        case let v as Bool: try container.encode(v)
+        case let v as Double: try container.encode(v)
+        case let v as [String]: try container.encode(v)
+        case let v as [Int]: try container.encode(v)
+        default:
+            throw EncodingError.invalidValue(
+                self.value,
+                EncodingError.Context(codingPath: encoder.codingPath, debugDescription: "Unsupported AnyCodable value")
+            )
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let v = try? container.decode(Int.self) { self.value = v; return }
+        if let v = try? container.decode(Bool.self) { self.value = v; return }
+        if let v = try? container.decode(Double.self) { self.value = v; return }
+        if let v = try? container.decode([String].self) { self.value = v; return }
+        if let v = try? container.decode([Int].self) { self.value = v; return }
+        if let v = try? container.decode(String.self) { self.value = v; return }
+        throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported AnyCodable value")
+    }
+}

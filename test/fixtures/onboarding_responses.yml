@@ -1,0 +1,9 @@
+anonymous:
+  device_id: "$RCAnonymousID:anon-device-1"
+  user: # nil — captured before signup
+  answers: <%= { household_size: 2, save_today: %w[screenshots notes] }.to_json %>
+
+linked:
+  device_id: "$RCAnonymousID:linked-device-1"
+  user: one
+  answers: <%= { household_size: 4, diet: %w[vegetarian] }.to_json %>

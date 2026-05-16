@@ -25,7 +25,8 @@ final class AuthViewModel: ObservableObject {
 
     private let authService: AuthServiceProtocol
 
-    init(authService: AuthServiceProtocol = AuthService.shared) {
+    init(initialIsSignUp: Bool = false, authService: AuthServiceProtocol = AuthService.shared) {
+        self.isSignUp = initialIsSignUp
         self.authService = authService
     }
 
@@ -71,7 +72,7 @@ final class AuthViewModel: ObservableObject {
 
     // MARK: - Login
 
-    func login(authManager: AuthManager) async {
+    func login(authManager: AuthManager) async -> Bool {
         await self.performAuthAction(authManager: authManager) {
             try await self.authService.login(
                 email: self.email.trimmingCharacters(in: .whitespaces).lowercased(),
@@ -82,7 +83,7 @@ final class AuthViewModel: ObservableObject {
 
     // MARK: - Signup
 
-    func signup(authManager: AuthManager) async {
+    func signup(authManager: AuthManager) async -> Bool {
         await self.performAuthAction(authManager: authManager) {
             try await self.authService.signup(
                 name: self.name.trimmingCharacters(in: .whitespaces),
@@ -95,22 +96,24 @@ final class AuthViewModel: ObservableObject {
 
     // MARK: - Private
 
-    private func performAuthAction(authManager: AuthManager, action: () async throws -> User) async {
-        guard self.isFormValid else { return }
+    private func performAuthAction(authManager: AuthManager, action: () async throws -> User) async -> Bool {
+        guard self.isFormValid else { return false }
 
         self.isLoading = true
         self.errorMessage = nil
+        defer { self.isLoading = false }
 
         do {
             let user = try await action()
             authManager.signIn(user: user)
+            return true
         } catch let error as APIError {
             self.errorMessage = error.localizedDescription
         } catch {
             self.errorMessage = "An unexpected error occurred. Please try again."
         }
 
-        self.isLoading = false
+        return false
     }
 
     private func isValidEmail(_ email: String) -> Bool {

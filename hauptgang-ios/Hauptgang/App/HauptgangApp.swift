@@ -13,6 +13,10 @@ struct HauptgangApp: App {
     @StateObject private var subscriptionManager = SubscriptionManager()
 
     init() {
+        #if DEBUG
+        Self.applyDebugLaunchArguments()
+        #endif
+
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: Constants.RevenueCat.apiKey)
 
@@ -83,6 +87,25 @@ struct HauptgangApp: App {
         }
         .modelContainer(self.sharedModelContainer)
     }
+
+    #if DEBUG
+    /// Honor debug-only launch arguments so we can re-trigger flows without uninstalling
+    /// the app. Toggle these in Xcode → Edit Scheme → Run → Arguments → Arguments Passed
+    /// On Launch.
+    ///
+    /// Supported:
+    /// - `-resetOnboarding YES` — clears the onboarding completion flag (and the stored
+    ///   device id) so the welcome + question flow shows on next launch.
+    private static func applyDebugLaunchArguments() {
+        let defaults = UserDefaults.standard
+        if defaults.bool(forKey: "resetOnboarding") {
+            defaults.removeObject(forKey: OnboardingService.completedAtDefaultsKey)
+            defaults.removeObject(forKey: OnboardingService.deviceIdDefaultsKey)
+            defaults.removeObject(forKey: OnboardingService.authStepReachedAtDefaultsKey)
+            logger.info("DEBUG: reset onboarding flags from launch argument")
+        }
+    }
+    #endif
 
     /// Delete a SwiftData/SQLite store and all associated files
     private static func deleteStore(at url: URL) {

@@ -9,13 +9,27 @@ struct RootView: View {
     @State private var showingInvitation = false
     @State private var invitationToken: String?
 
+    /// Onboarding flag — set to a non-zero timestamp once the user finishes (or skips)
+    /// the pre-signup onboarding flow. We use a TimeInterval rather than a Bool so we
+    /// can debug exactly when each install completed if needed.
+    @AppStorage(OnboardingService.completedAtDefaultsKey) private var onboardingCompletedAt: Double = 0
+
     var body: some View {
         Group {
             switch self.authManager.authState {
             case .unknown:
                 SplashView()
             case .unauthenticated:
-                LoginView()
+                if self.onboardingCompletedAt > 0 {
+                    LoginView()
+                } else {
+                    OnboardingFlowView(onFinished: {
+                        // @AppStorage reads from UserDefaults; the view model wrote the
+                        // timestamp directly, but we re-read it here to trigger the swap.
+                        self.onboardingCompletedAt = UserDefaults.standard
+                            .double(forKey: OnboardingService.completedAtDefaultsKey)
+                    })
+                }
             case let .authenticated(user):
                 AuthenticatedAppShell(user: user, session: self.session)
             }

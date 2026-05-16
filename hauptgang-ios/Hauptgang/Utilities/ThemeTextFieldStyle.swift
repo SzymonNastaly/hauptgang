@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ThemeTextFieldModifier: ViewModifier {
     var isError: Bool = false
+    var isGrouped: Bool = false
 
     func body(content: Content) -> some View {
         content
@@ -9,9 +10,9 @@ struct ThemeTextFieldModifier: ViewModifier {
             .padding(.horizontal, Theme.Spacing.md)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 52, alignment: .center)
-            .background(self.isError ? Color.hauptgangError.opacity(0.1) : Color.hauptgangCard)
-            .clipShape(.rect(cornerRadius: Theme.CornerRadius.md))
-            .contentShape(.rect(cornerRadius: Theme.CornerRadius.md))
+            .background(self.isError ? Color.hauptgangError.opacity(0.1) : (self.isGrouped ? Color.clear : Color.hauptgangCard))
+            .clipShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
+            .contentShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
     }
 }
 
@@ -60,8 +61,8 @@ struct PuffyButtonStyle: ButtonStyle {
 // MARK: - View Extension
 
 extension View {
-    func themeTextField(isError: Bool = false) -> some View {
-        self.modifier(ThemeTextFieldModifier(isError: isError))
+    func themeTextField(isError: Bool = false, isGrouped: Bool = false) -> some View {
+        self.modifier(ThemeTextFieldModifier(isError: isError, isGrouped: isGrouped))
     }
 
     func primaryButton() -> some View {

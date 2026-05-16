@@ -160,10 +160,7 @@ actor APIClient: APIClientProtocol {
     func uploadMultipart<T: Decodable>(
         endpoint: String,
         method: HTTPMethod = .post,
-        fileData: Data,
-        fileName: String,
-        mimeType: String,
-        paramName: String,
+        file: MultipartFile,
         authenticated: Bool = false
     ) async throws -> T {
         let url = Constants.API.baseURL.appendingPathComponent(endpoint)
@@ -185,11 +182,11 @@ actor APIClient: APIClientProtocol {
         body.append(Data("--\(boundary)\r\n".utf8))
         body.append(
             Data(
-                "Content-Disposition: form-data; name=\"\(paramName)\"; filename=\"\(fileName)\"\r\n".utf8
+                "Content-Disposition: form-data; name=\"\(file.paramName)\"; filename=\"\(file.fileName)\"\r\n".utf8
             )
         )
-        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
-        body.append(fileData)
+        body.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+        body.append(file.data)
         body.append(Data("\r\n--\(boundary)--\r\n".utf8))
 
         do {

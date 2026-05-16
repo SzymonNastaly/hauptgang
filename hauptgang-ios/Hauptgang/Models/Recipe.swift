@@ -9,6 +9,7 @@ struct RecipeListItem: Codable, Identifiable {
     let prepTime: Int?
     let cookTime: Int?
     let favorite: Bool
+    // swiftlint:disable:next todo
     // TODO: Remove legacy coverImageUrl fallback once the backend no longer serves
     // the old cover_image_url field for older app builds.
     let coverImageUrl: String?
@@ -63,6 +64,7 @@ struct RecipeDetail: Codable, Identifiable {
     let prepTime: Int?
     let cookTime: Int?
     let favorite: Bool
+    // swiftlint:disable:next todo
     // TODO: Remove legacy coverImageUrl fallback once the backend no longer serves
     // the old cover_image_url field for older app builds.
     let coverImageUrl: String?

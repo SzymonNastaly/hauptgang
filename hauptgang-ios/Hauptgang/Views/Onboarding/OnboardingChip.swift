@@ -13,20 +13,20 @@ struct OnboardingChip: View {
                 .font(.system(.body, design: .default))
                 .fontWeight(.medium)
                 .foregroundColor(self.isSelected ? .white : .hauptgangTextPrimary)
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, Theme.Spacing.sm + 2)
-            .background(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                    .fill(self.isSelected ? Color.hauptgangPrimary : Color.hauptgangCard)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
-                    .stroke(
-                        self.isSelected ? Color.clear : Color.hauptgangBorderSubtle,
-                        lineWidth: 1
-                    )
-            )
-            .shadow(color: Color.black.opacity(self.isSelected ? 0.08 : 0.04), radius: 2, y: 1)
+                .padding(.horizontal, Theme.Spacing.md)
+                .padding(.vertical, Theme.Spacing.sm + 2)
+                .background(
+                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                        .fill(self.isSelected ? Color.hauptgangPrimary : Color.hauptgangCard)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
+                        .stroke(
+                            self.isSelected ? Color.clear : Color.hauptgangBorderSubtle,
+                            lineWidth: 1
+                        )
+                )
+                .shadow(color: Color.black.opacity(self.isSelected ? 0.08 : 0.04), radius: 2, y: 1)
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.15), value: self.isSelected)

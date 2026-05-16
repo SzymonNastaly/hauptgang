@@ -10,7 +10,8 @@ struct ThemeTextFieldModifier: ViewModifier {
             .padding(.horizontal, Theme.Spacing.md)
             .frame(maxWidth: .infinity)
             .frame(minHeight: 52, alignment: .center)
-            .background(self.isError ? Color.hauptgangError.opacity(0.1) : (self.isGrouped ? Color.clear : Color.hauptgangCard))
+            .background(self.isError ? Color.hauptgangError
+                .opacity(0.1) : (self.isGrouped ? Color.clear : Color.hauptgangCard))
             .clipShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
             .contentShape(.rect(cornerRadius: self.isGrouped ? 0 : Theme.CornerRadius.md))
     }

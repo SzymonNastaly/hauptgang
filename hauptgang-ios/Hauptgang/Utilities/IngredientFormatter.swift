@@ -16,10 +16,10 @@ enum IngredientFormatter {
         let unit = (unit?.isEmpty == false) ? unit : nil
 
         let quantity: String? = switch (amount, amountMax) {
-        case let (a?, b?):
-            "\(self.formatAmount(a * scale))\u{2013}\(self.formatAmount(b * scale))"
-        case let (a?, nil):
-            self.formatAmount(a * scale)
+        case let (min?, max?):
+            "\(self.formatAmount(min * scale))\u{2013}\(self.formatAmount(max * scale))"
+        case let (min?, nil):
+            self.formatAmount(min * scale)
         default:
             nil
         }

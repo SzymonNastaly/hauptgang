@@ -21,59 +21,66 @@ struct RecipeEditView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                self.coverImageSection
-                self.nameSection
-                self.durationSection
-                self.ingredientsSection
-                self.instructionsSection
-                self.notesSection
-                self.sourceSection
+            self.form
+        }
+    }
+
+    private var form: some View {
+        Form {
+            self.coverImageSection
+            self.nameSection
+            self.durationSection
+            self.ingredientsSection
+            self.instructionsSection
+            self.notesSection
+            self.sourceSection
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .navigationTitle("Edit Recipe")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { self.toolbarContent }
+        .task {
+            self.viewModel.configure(modelContext: self.modelContext)
+            self.viewModel.populate(from: self.recipe)
+        }
+        .onChange(of: self.viewModel.selectedPhoto) { _, _ in
+            Task { await self.viewModel.loadPhoto() }
+        }
+        .onChange(of: self.viewModel.didSave) { _, saved in
+            if saved {
+                self.onSave?()
+                self.dismiss()
             }
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle("Edit Recipe")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { self.dismiss() }
+        }
+        .alert("Error", isPresented: Binding(
+            get: { self.viewModel.errorMessage != nil },
+            set: { if !$0 { self.viewModel.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            if let msg = self.viewModel.errorMessage {
+                Text(msg)
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") { self.dismiss() }
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button {
+                Task { await self.viewModel.save() }
+            } label: {
+                if self.viewModel.isSaving {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                } else {
+                    Text("Save")
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        Task { await self.viewModel.save() }
-                    } label: {
-                        if self.viewModel.isSaving {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        } else {
-                            Text("Save")
-                        }
-                    }
-                    .disabled(!self.viewModel.isValid || self.viewModel.isSaving)
-                }
             }
-            .task {
-                self.viewModel.configure(modelContext: self.modelContext)
-                self.viewModel.populate(from: self.recipe)
-            }
-            .onChange(of: self.viewModel.selectedPhoto) { _, _ in
-                Task { await self.viewModel.loadPhoto() }
-            }
-            .onChange(of: self.viewModel.didSave) { _, saved in
-                if saved {
-                    self.onSave?()
-                    self.dismiss()
-                }
-            }
-            .alert("Error", isPresented: Binding(
-                get: { self.viewModel.errorMessage != nil },
-                set: { if !$0 { self.viewModel.errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                if let msg = self.viewModel.errorMessage {
-                    Text(msg)
-                }
-            }
+            .disabled(!self.viewModel.isValid || self.viewModel.isSaving)
         }
     }
 

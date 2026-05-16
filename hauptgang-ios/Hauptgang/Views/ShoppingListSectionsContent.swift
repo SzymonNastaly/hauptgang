@@ -25,19 +25,19 @@ struct ShoppingListDisplayItem: Identifiable {
     }
 }
 
-struct ShoppingListSectionsContent<UncheckedHeaderTrailing: View>: View {
+struct ShoppingListSectionsContent<HeaderTrailing: View>: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     let uncheckedItems: [ShoppingListDisplayItem]
     let checkedItems: [ShoppingListDisplayItem]
     @Binding var checkedSectionExpanded: Bool
-    let uncheckedHeaderTrailing: UncheckedHeaderTrailing
+    let uncheckedHeaderTrailing: HeaderTrailing
 
     init(
         uncheckedItems: [ShoppingListDisplayItem],
         checkedItems: [ShoppingListDisplayItem],
         checkedSectionExpanded: Binding<Bool>,
-        @ViewBuilder uncheckedHeaderTrailing: () -> UncheckedHeaderTrailing
+        @ViewBuilder uncheckedHeaderTrailing: () -> HeaderTrailing
     ) {
         self.uncheckedItems = uncheckedItems
         self.checkedItems = checkedItems
@@ -60,66 +60,74 @@ struct ShoppingListSectionsContent<UncheckedHeaderTrailing: View>: View {
     var body: some View {
         LazyVStack(alignment: .leading, spacing: Theme.Spacing.lg) {
             if self.shouldShowUncheckedSection {
-                Section {
-                    if !self.uncheckedItems.isEmpty {
-                        LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                            ForEach(self.uncheckedItems) { item in
-                                ShoppingListItemTile(item: item)
-                                    .transition(.asymmetric(
-                                        insertion: .scale(scale: 0.5).combined(with: .opacity),
-                                        removal: .identity
-                                    ))
-                            }
-                        }
-                        .animation(.snappy(duration: 0.25), value: self.uncheckedItems.map(\.id))
-                    }
-                } header: {
-                    HStack {
-                        Text("To Buy")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.hauptgangTextSecondary)
-                            .textCase(.uppercase)
-                        Spacer()
-                        self.uncheckedHeaderTrailing
-                    }
-                }
+                self.uncheckedSection
             }
 
             if !self.checkedItems.isEmpty {
-                Section {
-                    if self.checkedSectionExpanded {
-                        LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
-                            ForEach(self.checkedItems) { item in
-                                ShoppingListItemTile(item: item)
-                                    .transition(.asymmetric(
-                                        insertion: .scale(scale: 0.5).combined(with: .opacity),
-                                        removal: .identity
-                                    ))
-                            }
-                        }
-                        .animation(.snappy(duration: 0.25), value: self.checkedItems.map(\.id))
-                    }
-                } header: {
-                    Button {
-                        withAnimation(.snappy(duration: 0.25)) {
-                            self.checkedSectionExpanded.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: Theme.Spacing.sm) {
-                            Text("Already Got")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color.hauptgangTextSecondary)
-                                .textCase(.uppercase)
+                self.checkedSection
+            }
+        }
+    }
 
-                            Image(systemName: "chevron.right")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.hauptgangTextMuted)
-                                .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
-                        }
+    private var uncheckedSection: some View {
+        Section {
+            if !self.uncheckedItems.isEmpty {
+                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
+                    ForEach(self.uncheckedItems) { item in
+                        ShoppingListItemTile(item: item)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.5).combined(with: .opacity),
+                                removal: .identity
+                            ))
                     }
-                    .buttonStyle(.plain)
+                }
+                .animation(.snappy(duration: 0.25), value: self.uncheckedItems.map(\.id))
+            }
+        } header: {
+            HStack {
+                Text("To Buy")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.hauptgangTextSecondary)
+                    .textCase(.uppercase)
+                Spacer()
+                self.uncheckedHeaderTrailing
+            }
+        }
+    }
+
+    private var checkedSection: some View {
+        Section {
+            if self.checkedSectionExpanded {
+                LazyVGrid(columns: self.gridColumns, spacing: Theme.Spacing.sm) {
+                    ForEach(self.checkedItems) { item in
+                        ShoppingListItemTile(item: item)
+                            .transition(.asymmetric(
+                                insertion: .scale(scale: 0.5).combined(with: .opacity),
+                                removal: .identity
+                            ))
+                    }
+                }
+                .animation(.snappy(duration: 0.25), value: self.checkedItems.map(\.id))
+            }
+        } header: {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) {
+                    self.checkedSectionExpanded.toggle()
+                }
+            } label: {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Text("Already Got")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.hauptgangTextSecondary)
+                        .textCase(.uppercase)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.hauptgangTextMuted)
+                        .rotationEffect(.degrees(self.checkedSectionExpanded ? 90 : 0))
                 }
             }
+            .buttonStyle(.plain)
         }
     }
 }

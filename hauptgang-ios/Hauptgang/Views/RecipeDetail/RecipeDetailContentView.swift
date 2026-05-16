@@ -18,8 +18,8 @@ struct RecipeDetailContentView: View {
     }
 
     private var baseServings: Int? {
-        guard let s = self.recipe.servings, s > 0 else { return nil }
-        return s
+        guard let servings = self.recipe.servings, servings > 0 else { return nil }
+        return servings
     }
 
     private var effectiveServings: Int {

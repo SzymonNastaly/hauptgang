@@ -44,7 +44,6 @@ struct OnboardingFlowView: View {
 
     // MARK: - Header
 
-    @ViewBuilder
     private var header: some View {
         HStack {
             if self.viewModel.step != .household {

@@ -75,11 +75,11 @@ struct PortionScalerView: View {
 private extension String {
     func trimmingTrailingZeros() -> String {
         guard self.contains(".") else { return self }
-        var s = self
-        while s.hasSuffix("0") {
-            s.removeLast()
+        var result = self
+        while result.hasSuffix("0") {
+            result.removeLast()
         }
-        if s.hasSuffix(".") { s.removeLast() }
-        return s
+        if result.hasSuffix(".") { result.removeLast() }
+        return result
     }
 }

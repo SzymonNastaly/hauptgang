@@ -17,7 +17,9 @@ final class OnboardingViewModel: ObservableObject {
         case diet
         case auth
 
-        var isQuestion: Bool { self != .auth }
+        var isQuestion: Bool {
+            self != .auth
+        }
 
         var progressIndex: Int {
             switch self {
@@ -27,7 +29,9 @@ final class OnboardingViewModel: ObservableObject {
             }
         }
 
-        static var questionCount: Int { 3 }
+        static var questionCount: Int {
+            3
+        }
     }
 
     // MARK: - Published state
@@ -125,7 +129,6 @@ final class OnboardingViewModel: ObservableObject {
         dict["diet"] = AnyCodable(self.dietSelections.map(\.serverValue).sorted())
         return dict
     }
-
 }
 
 // MARK: - Answer option enums
@@ -133,7 +136,9 @@ final class OnboardingViewModel: ObservableObject {
 enum HouseholdSize: String, CaseIterable, Identifiable {
     case one, two, threeOrFour, fiveOrMore
 
-    var id: String { self.rawValue }
+    var id: String {
+        self.rawValue
+    }
 
     var label: String {
         switch self {
@@ -154,13 +159,14 @@ enum HouseholdSize: String, CaseIterable, Identifiable {
         case .fiveOrMore: 5
         }
     }
-
 }
 
 enum SaveTodayOption: String, CaseIterable, Identifiable {
     case screenshots, browserBookmarks, notes, paprika, cookbooks, dontSave
 
-    var id: String { self.rawValue }
+    var id: String {
+        self.rawValue
+    }
 
     var label: String {
         switch self {
@@ -188,7 +194,9 @@ enum SaveTodayOption: String, CaseIterable, Identifiable {
 enum DietOption: String, CaseIterable, Identifiable {
     case vegetarian, vegan, glutenFree, pescatarian, halal, kosher, lactoseFree
 
-    var id: String { self.rawValue }
+    var id: String {
+        self.rawValue
+    }
 
     var label: String {
         switch self {
@@ -202,5 +210,7 @@ enum DietOption: String, CaseIterable, Identifiable {
         }
     }
 
-    var serverValue: String { self.rawValue }
+    var serverValue: String {
+        self.rawValue
+    }
 }

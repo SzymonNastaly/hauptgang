@@ -134,19 +134,19 @@ struct FlowLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
         let maxWidth = proposal.width ?? bounds.width
-        var x: CGFloat = bounds.minX
-        var y: CGFloat = bounds.minY
+        var xPos: CGFloat = bounds.minX
+        var yPos: CGFloat = bounds.minY
         var rowHeight: CGFloat = 0
 
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > bounds.minX + maxWidth, x > bounds.minX {
-                x = bounds.minX
-                y += rowHeight + self.spacing
+            if xPos + size.width > bounds.minX + maxWidth, xPos > bounds.minX {
+                xPos = bounds.minX
+                yPos += rowHeight + self.spacing
                 rowHeight = 0
             }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
-            x += size.width + self.spacing
+            subview.place(at: CGPoint(x: xPos, y: yPos), proposal: ProposedViewSize(size))
+            xPos += size.width + self.spacing
             rowHeight = max(rowHeight, size.height)
         }
     }

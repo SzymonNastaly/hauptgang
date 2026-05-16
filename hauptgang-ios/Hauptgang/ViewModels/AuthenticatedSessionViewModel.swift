@@ -102,7 +102,7 @@ final class AuthenticatedSessionViewModel {
         guard !Task.isCancelled else { return }
 
         // Make sure we don't override a fresher state written by a newer startup.
-        guard case .loading(let loadingUserId) = self.startupState, loadingUserId == user.id else {
+        guard case let .loading(loadingUserId) = self.startupState, loadingUserId == user.id else {
             return
         }
 

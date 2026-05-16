@@ -63,7 +63,7 @@ struct AuthenticatedSessionViewModelTests {
         await session.start(user: self.makeUser(), modelContext: self.makeModelContext())
 
         #expect(session.canDismissStartupSplash == true)
-        if case .ready(let userId, let cookbookId) = session.startupState {
+        if case let .ready(userId, cookbookId) = session.startupState {
             #expect(userId == 100)
             // Default selection prefers shared cookbook (id 2)
             #expect(cookbookId == 2)
@@ -85,7 +85,7 @@ struct AuthenticatedSessionViewModelTests {
         await session.start(user: self.makeUser(), modelContext: self.makeModelContext())
 
         #expect(session.canDismissStartupSplash == true)
-        if case .failed(let userId, _) = session.startupState {
+        if case let .failed(userId, _) = session.startupState {
             #expect(userId == 100)
         } else {
             Issue.record("Expected .failed, got \(session.startupState)")
@@ -117,7 +117,7 @@ struct AuthenticatedSessionViewModelTests {
         } else {
             Issue.record("Expected .ready with degraded recipe state, got \(session.startupState)")
         }
-        if case .failed(let cookbookId, _) = session.recipeViewModel.contentState {
+        if case let .failed(cookbookId, _) = session.recipeViewModel.contentState {
             #expect(cookbookId == 1)
         } else {
             Issue.record("Expected recipe content state .failed, got \(session.recipeViewModel.contentState)")

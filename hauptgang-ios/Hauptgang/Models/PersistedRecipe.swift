@@ -15,7 +15,7 @@ final class PersistedRecipe {
     var cookTime: Int?
     var favorite: Bool
     /// Legacy single-url field kept as a fallback while the store migrates to semantic variants.
-    /// TODO: Remove this field after older app builds and older persisted stores no longer
+    /// Remove this field after older app builds and older persisted stores no longer
     /// depend on the legacy cover_image_url compatibility path.
     var coverImageUrl: String?
     var coverImageThumbUrl: String?

@@ -27,12 +27,15 @@ struct DeleteAccountConfirmationView: View {
                     )
                     .foregroundColor(.hauptgangTextPrimary)
                     VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                        bulletRow("Your personal cookbook and all its recipes")
-                        bulletRow("Your shopping list and meal plans")
-                        bulletRow("Your subscription will not be refunded")
+                        self.bulletRow("Your personal cookbook and all its recipes")
+                        self.bulletRow("Your shopping list and meal plans")
+                        self.bulletRow("Your subscription will not be refunded")
                     }
                     Text(
-                        "Cookbooks you share with others will be transferred to a collaborator so their data is preserved."
+                        """
+                        Cookbooks you share with others will be transferred to a collaborator \
+                        so their data is preserved.
+                        """
                     )
                     .foregroundColor(.hauptgangTextSecondary)
                     .font(.callout)
@@ -81,7 +84,6 @@ struct DeleteAccountConfirmationView: View {
         }
     }
 
-    @ViewBuilder
     private func bulletRow(_ text: String) -> some View {
         HStack(alignment: .top, spacing: Theme.Spacing.sm) {
             Text("•")

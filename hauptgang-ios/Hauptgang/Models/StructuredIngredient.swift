@@ -85,14 +85,14 @@ struct StructuredIngredient: Codable, Identifiable, Hashable {
 
         // Wire format is String. Fall back to Decimal/Double for resilience
         // (e.g. cached responses written before the wire format was firmed up).
-        if let s = try? container.decode(String.self, forKey: key) {
-            return s.isEmpty ? nil : Decimal(string: s)
+        if let string = try? container.decode(String.self, forKey: key) {
+            return string.isEmpty ? nil : Decimal(string: string)
         }
-        if let d = try? container.decode(Decimal.self, forKey: key) {
-            return d
+        if let decimal = try? container.decode(Decimal.self, forKey: key) {
+            return decimal
         }
-        if let d = try? container.decode(Double.self, forKey: key) {
-            return Decimal(d)
+        if let double = try? container.decode(Double.self, forKey: key) {
+            return Decimal(double)
         }
         return nil
     }

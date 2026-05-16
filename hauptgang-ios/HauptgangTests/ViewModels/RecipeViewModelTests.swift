@@ -212,7 +212,7 @@ final class RecipeViewModelTests: XCTestCase {
         await self.sut.configureSearchIndex(userId: 99, cookbookId: 5)
         await self.sut.refreshRecipes()
 
-        if case .failed(let cookbookId, _) = self.sut.contentState {
+        if case let .failed(cookbookId, _) = self.sut.contentState {
             XCTAssertEqual(cookbookId, 5)
         } else {
             XCTFail("Expected .failed content state, got \(self.sut.contentState)")

@@ -63,7 +63,7 @@ actor OnboardingService {
     /// Persist the device id used during onboarding so the auth flow can include it on
     /// the next signup/login request.
     static func storeDeviceIdForAuth(_ deviceId: String) {
-        UserDefaults.standard.set(deviceId, forKey: Self.deviceIdDefaultsKey)
+        UserDefaults.standard.set(deviceId, forKey: self.deviceIdDefaultsKey)
     }
 
     /// Pop the stored onboarding device id (read once, then clear). Returns nil if none.
@@ -75,15 +75,15 @@ actor OnboardingService {
     }
 
     static func markAuthStepReached() {
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Self.authStepReachedAtDefaultsKey)
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: self.authStepReachedAtDefaultsKey)
     }
 
     static func clearAuthStepReached() {
-        UserDefaults.standard.removeObject(forKey: Self.authStepReachedAtDefaultsKey)
+        UserDefaults.standard.removeObject(forKey: self.authStepReachedAtDefaultsKey)
     }
 
     static func hasReachedAuthenticationStep() -> Bool {
-        UserDefaults.standard.double(forKey: Self.authStepReachedAtDefaultsKey) > 0
+        UserDefaults.standard.double(forKey: self.authStepReachedAtDefaultsKey) > 0
     }
 }
 
@@ -101,7 +101,7 @@ private struct OnboardingResponse: Decodable {
 
 /// Lightweight type-erased Codable so we can encode mixed-type answers (Int for
 /// household size, [String] for multi-selects) in the same JSON object.
-struct AnyCodable: Codable, Sendable {
+struct AnyCodable: Codable {
     let value: any Sendable
 
     init(_ value: any Sendable) {
@@ -111,12 +111,12 @@ struct AnyCodable: Codable, Sendable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self.value {
-        case let v as Int: try container.encode(v)
-        case let v as String: try container.encode(v)
-        case let v as Bool: try container.encode(v)
-        case let v as Double: try container.encode(v)
-        case let v as [String]: try container.encode(v)
-        case let v as [Int]: try container.encode(v)
+        case let intValue as Int: try container.encode(intValue)
+        case let stringValue as String: try container.encode(stringValue)
+        case let boolValue as Bool: try container.encode(boolValue)
+        case let doubleValue as Double: try container.encode(doubleValue)
+        case let stringArray as [String]: try container.encode(stringArray)
+        case let intArray as [Int]: try container.encode(intArray)
         default:
             throw EncodingError.invalidValue(
                 self.value,
@@ -127,12 +127,30 @@ struct AnyCodable: Codable, Sendable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if let v = try? container.decode(Int.self) { self.value = v; return }
-        if let v = try? container.decode(Bool.self) { self.value = v; return }
-        if let v = try? container.decode(Double.self) { self.value = v; return }
-        if let v = try? container.decode([String].self) { self.value = v; return }
-        if let v = try? container.decode([Int].self) { self.value = v; return }
-        if let v = try? container.decode(String.self) { self.value = v; return }
+        if let intValue = try? container.decode(Int.self) {
+            self.value = intValue
+            return
+        }
+        if let boolValue = try? container.decode(Bool.self) {
+            self.value = boolValue
+            return
+        }
+        if let doubleValue = try? container.decode(Double.self) {
+            self.value = doubleValue
+            return
+        }
+        if let stringArray = try? container.decode([String].self) {
+            self.value = stringArray
+            return
+        }
+        if let intArray = try? container.decode([Int].self) {
+            self.value = intArray
+            return
+        }
+        if let stringValue = try? container.decode(String.self) {
+            self.value = stringValue
+            return
+        }
         throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported AnyCodable value")
     }
 }

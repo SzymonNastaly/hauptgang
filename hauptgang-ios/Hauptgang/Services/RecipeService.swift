@@ -119,10 +119,12 @@ final class RecipeService: RecipeServiceProtocol, @unchecked Sendable {
         let recipe: RecipeDetail = try await api.uploadMultipart(
             endpoint: "recipes/\(id)",
             method: .patch,
-            fileData: imageData,
-            fileName: "cover.\(ext)",
-            mimeType: mimeType,
-            paramName: "cover_image",
+            file: MultipartFile(
+                data: imageData,
+                fileName: "cover.\(ext)",
+                mimeType: mimeType,
+                paramName: "cover_image"
+            ),
             authenticated: true
         )
 

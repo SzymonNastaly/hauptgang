@@ -163,7 +163,10 @@ struct RecipeDetailView: View {
     /// shopping list. Parsed rows put `ingredient.name` on the first line and
     /// the formatted quantity (+ optional note) on the second. Unparsed rows
     /// fall back to the raw string with no details.
-    private func shoppingListSplit(for ingredient: StructuredIngredient, scale: Decimal) -> (name: String, details: String?) {
+    private func shoppingListSplit(
+        for ingredient: StructuredIngredient,
+        scale: Decimal
+    ) -> (name: String, details: String?) {
         guard ingredient.hasStructuredFields else {
             return (ingredient.raw, nil)
         }

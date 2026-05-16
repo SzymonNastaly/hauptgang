@@ -1,3 +1,5 @@
+// swiftlint:disable file_length
+
 import Foundation
 import os
 import Sentry
@@ -97,7 +99,7 @@ final class RecipeViewModel {
     /// Used by the session coordinator to decide whether the startup splash can dismiss.
     func hasResolvedContent(for cookbookId: Int) -> Bool {
         switch self.contentState {
-        case .resolved(let id), .failed(let id, _):
+        case let .resolved(id), let .failed(id, _):
             id == cookbookId
         default:
             false
@@ -177,7 +179,7 @@ extension RecipeViewModel {
         case .cancelled:
             // Cancelled by a newer request; keep state at loading until that one writes.
             break
-        case .failure(let message):
+        case let .failure(message):
             self.contentState = .failed(cookbookId: taskCookbookId, message: message)
         }
     }

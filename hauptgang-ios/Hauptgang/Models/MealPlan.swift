@@ -27,6 +27,7 @@ struct MealPlanEntry: Codable, Identifiable {
 struct MealPlanRecipeSummary: Codable {
     let id: Int
     let name: String
+    // swiftlint:disable:next todo
     // TODO: Remove legacy coverImageUrl fallback once the backend no longer serves
     // the old cover_image_url field for older app builds.
     let coverImageUrl: String?

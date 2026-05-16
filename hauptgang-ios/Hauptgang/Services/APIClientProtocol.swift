@@ -5,6 +5,15 @@ protocol TokenProviding: Sendable {
     func getToken() async -> String?
 }
 
+/// Bundles the file payload for a multipart upload to keep call sites under the
+/// function-parameter limit.
+struct MultipartFile {
+    let data: Data
+    let fileName: String
+    let mimeType: String
+    let paramName: String
+}
+
 /// Protocol defining the API client interface for testability
 protocol APIClientProtocol: Actor {
     func request<T: Decodable>(
@@ -26,10 +35,7 @@ protocol APIClientProtocol: Actor {
     func uploadMultipart<T: Decodable>(
         endpoint: String,
         method: HTTPMethod,
-        fileData: Data,
-        fileName: String,
-        mimeType: String,
-        paramName: String,
+        file: MultipartFile,
         authenticated: Bool
     ) async throws -> T
 }
@@ -67,19 +73,13 @@ extension APIClientProtocol {
 
     func uploadMultipart<T: Decodable>(
         endpoint: String,
-        fileData: Data,
-        fileName: String,
-        mimeType: String,
-        paramName: String,
+        file: MultipartFile,
         authenticated: Bool = false
     ) async throws -> T {
         try await self.uploadMultipart(
             endpoint: endpoint,
             method: .post,
-            fileData: fileData,
-            fileName: fileName,
-            mimeType: mimeType,
-            paramName: paramName,
+            file: file,
             authenticated: authenticated
         )
     }

@@ -37,7 +37,11 @@ struct ManageAccountView: View {
                 }
             } footer: {
                 Text(
-                    "Deleting your account permanently removes your personal cookbook, recipes, shopping list, and meal plans. Cookbooks you share with others will be transferred to a collaborator."
+                    """
+                    Deleting your account permanently removes your personal cookbook, recipes, \
+                    shopping list, and meal plans. Cookbooks you share with others will be \
+                    transferred to a collaborator.
+                    """
                 )
             }
         }

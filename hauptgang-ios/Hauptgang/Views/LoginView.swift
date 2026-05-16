@@ -115,16 +115,15 @@ struct LoginView: View {
                 RoundedRectangle(cornerRadius: Theme.CornerRadius.lg)
                     .stroke(Color.hauptgangBorderSubtle, lineWidth: 1)
             )
-            
+
             self.errorSection
-            
+
             self.submitButton
                 .padding(.top, Theme.Spacing.xs)
         }
         .id(self.viewModel.isSignUp)
     }
 
-    @ViewBuilder
     private var nameField: some View {
         TextField("First name", text: self.$viewModel.name)
             .themeTextField(isError: self.viewModel.nameError != nil, isGrouped: true)
@@ -175,11 +174,11 @@ struct LoginView: View {
 
     @ViewBuilder
     private var errorSection: some View {
-        let hasErrors = self.viewModel.nameError != nil || 
-                        self.viewModel.emailError != nil || 
-                        self.showPasswordLengthError || 
-                        self.viewModel.errorMessage != nil
-                        
+        let hasErrors = self.viewModel.nameError != nil ||
+            self.viewModel.emailError != nil ||
+            self.showPasswordLengthError ||
+            self.viewModel.errorMessage != nil
+
         if hasErrors {
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 if let error = self.viewModel.nameError {
@@ -281,11 +280,10 @@ struct LoginView: View {
         self.focusedField = nil
 
         Task {
-            let didAuthenticate: Bool
-            if self.viewModel.isSignUp {
-                didAuthenticate = await self.viewModel.signup(authManager: self.authManager)
+            let didAuthenticate: Bool = if self.viewModel.isSignUp {
+                await self.viewModel.signup(authManager: self.authManager)
             } else {
-                didAuthenticate = await self.viewModel.login(authManager: self.authManager)
+                await self.viewModel.login(authManager: self.authManager)
             }
 
             if didAuthenticate {

@@ -67,10 +67,12 @@ actor RecipeImportService {
     func importRecipe(from imageData: Data, mimeType: String = "image/jpeg") async throws -> ImportRecipeResponse {
         try await self.apiClient.uploadMultipart(
             endpoint: "recipes/extract_from_image",
-            fileData: imageData,
-            fileName: "recipe.\(mimeType == "image/png" ? "png" : "jpg")",
-            mimeType: mimeType,
-            paramName: "image",
+            file: MultipartFile(
+                data: imageData,
+                fileName: "recipe.\(mimeType == "image/png" ? "png" : "jpg")",
+                mimeType: mimeType,
+                paramName: "image"
+            ),
             authenticated: true
         )
     }

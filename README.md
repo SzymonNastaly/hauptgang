@@ -44,8 +44,6 @@ Hauptgang is split into two main pieces:
 
 See [`architecture.md`](architecture.md) for a deeper look at how the pieces fit together, and [`written_proposal.md`](written_proposal.md) for the original project proposal. Feature-area guides live in [`docs/`](docs/).
 
-The landing page is a separate Astro project at [`../hauptgang-landing`](../hauptgang-landing).
-
 
 ## Development
 

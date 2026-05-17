@@ -14,20 +14,17 @@ Landing page: [hauptgang.app](https://hauptgang.app)
 
 ## What it does
 
-### Rescue recipes from Instagram, TikTok, and YouTube
-Share a reel or video to Hauptgang and the server transcribes the audio, reads on-screen text, and turns it into a structured recipe you can actually cook from.
+### Capture recipes from anywhere
 
-<img src="docs/images/socialimport.webp" alt="Importing a recipe from a social media video" width="320" />
+- **Rescue from Instagram, TikTok, and YouTube.** Share a reel or video to Hauptgang and the server transcribes the audio, reads on-screen text, and turns it into a structured recipe you can actually cook from.
+- **Save from any website.** Paste a link from any recipe site and Hauptgang pulls in the ingredients, steps, and photo automatically — using JSON-LD when available, or an LLM as a fallback.
+- **Snap a photo of a cookbook page.** Point your camera at a handwritten card or an open cookbook. Hauptgang uses on-device OCR to turn the photo into an editable recipe in seconds.
 
-### Save from any website
-Paste a link from any recipe site and Hauptgang pulls in the ingredients, steps, and photo automatically — using JSON-LD when available, or an LLM as a fallback.
-
-<img src="docs/images/internetexport.webp" alt="Importing a recipe from a website via the iOS share sheet" width="320" />
-
-### Snap a photo of a cookbook page
-Point your camera at a handwritten card or an open cookbook. Hauptgang uses on-device OCR to turn the photo into an editable recipe in seconds.
-
-<img src="docs/images/takephoto.webp" alt="Capturing a handwritten recipe with the iPhone camera" width="320" />
+<p align="center">
+  <img src="docs/images/socialimport.webp" alt="Importing a recipe from a social media video" width="240" />
+  <img src="docs/images/internetexport.webp" alt="Importing a recipe from a website via the iOS share sheet" width="240" />
+  <img src="docs/images/takephoto.webp" alt="Capturing a handwritten recipe with the iPhone camera" width="240" />
+</p>
 
 ### Plan the whole week at a glance
 Drop recipes onto any day of the week and see your meals laid out in a clean calendar. Rearrange, repeat, or swap dishes in seconds.

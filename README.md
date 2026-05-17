@@ -10,7 +10,6 @@ Hauptgang is a recipe manager for iPhone and iPad. Save recipes from websites, I
 
 Landing page: [hauptgang.app](https://hauptgang.app)
 
----
 
 ## What it does
 
@@ -21,22 +20,20 @@ Landing page: [hauptgang.app](https://hauptgang.app)
 - **Snap a photo of a cookbook page.** Point your camera at a handwritten card or an open cookbook. Hauptgang uses on-device OCR to turn the photo into an editable recipe in seconds.
 
 <p align="center">
-  <img src="docs/images/socialimport.webp" alt="Importing a recipe from a social media video" width="240" />
-  <img src="docs/images/internetexport.webp" alt="Importing a recipe from a website via the iOS share sheet" width="240" />
-  <img src="docs/images/takephoto.webp" alt="Capturing a handwritten recipe with the iPhone camera" width="240" />
+  <img src="docs/images/socialimport.webp" alt="Importing a recipe from a social media video" width="300" />
+  <img src="docs/images/internetexport.webp" alt="Importing a recipe from a website via the iOS share sheet" width="215" />
+  <img src="docs/images/takephoto.webp" alt="Capturing a handwritten recipe with the iPhone camera" width="175" />
 </p>
 
-### Plan the whole week at a glance
+### Weekly plan and shopping list
 Drop recipes onto any day of the week and see your meals laid out in a clean calendar. Rearrange, repeat, or swap dishes in seconds.
+Hauptgang turns your meal plan into a single, consolidated shopping list
+<p align="center">
+  <img src="docs/images/mealplan.webp" alt="Weekly meal plan view" width="240" />
+  <img src="docs/images/shoppinglist.webp" alt="Shopping list grouped by aisle" width="240" />
+</p>
 
-<img src="docs/images/mealplan.webp" alt="Weekly meal plan view" width="320" />
 
-### One shopping list, grouped by aisle
-Hauptgang turns your meal plan into a single, consolidated shopping list — quantities combined, items grouped by aisle.
-
-<img src="docs/images/shoppinglist.webp" alt="Shopping list grouped by aisle" width="320" />
-
----
 
 ## Architecture
 
@@ -49,7 +46,6 @@ See [`architecture.md`](architecture.md) for a deeper look at how the pieces fit
 
 The landing page is a separate Astro project at [`../hauptgang-landing`](../hauptgang-landing).
 
----
 
 ## Development
 
@@ -75,8 +71,6 @@ bin/ios-test       # iOS tests (auto-finds simulator, macOS only)
 `bin/ci` runs rubocop, brakeman, bundler-audit, importmap audit, iOS linting, Rails tests, system tests, and seed verification.
 
 A regression test suite for recipe extractors using cached HTML snapshots is documented in [`docs/recipe-import-corpus.md`](docs/recipe-import-corpus.md) — see the `recipe_corpus:*` rake tasks.
-
----
 
 ## Deployment
 
